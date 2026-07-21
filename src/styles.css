@@ -377,6 +377,19 @@ h1 {
   z-index: 4;
 }
 
+.sticky-timeline::before {
+  background: #fff;
+  content: "";
+  height: 20px;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: -20px;
+  transition: opacity 180ms ease;
+}
+
 .sticky-timeline::after {
   background: linear-gradient(to bottom, #fff 0%, #fff 22%, rgb(255 255 255 / 0%) 100%);
   bottom: -24px;
@@ -391,6 +404,10 @@ h1 {
 }
 
 .screen.is-content-scrolled .sticky-timeline::after {
+  opacity: 1;
+}
+
+.screen.is-content-scrolled .sticky-timeline::before {
   opacity: 1;
 }
 
@@ -797,13 +814,16 @@ h1 {
 }
 
 .my-task-address-with-metro {
-  align-items: flex-start;
-  display: flex;
-  gap: 4px;
+  display: block;
 }
 
-.my-task-address-with-metro > span {
-  min-width: 0;
+.my-task-address-with-metro .metro-icon,
+.task-address-with-metro .metro-icon {
+  display: inline-block;
+  height: 18px;
+  margin-right: 4px;
+  vertical-align: -4px;
+  width: 14px;
 }
 
 .my-task-card .brand-logo {
@@ -929,6 +949,13 @@ h1 {
   grid-template-columns: minmax(0, 1fr) 28px;
 }
 
+.special-card-badges {
+  align-items: center;
+  display: inline-flex;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
 .special-card-badge {
   align-items: center;
   background: #6446ff;
@@ -937,13 +964,16 @@ h1 {
   display: inline-flex;
   font-size: 12px;
   line-height: 14px;
-  margin-bottom: 2px;
   padding: 2px 6px;
 }
 
-.special-card-badge b {
-  font: inherit;
-  margin-left: 2px;
+.special-card-timer {
+  background: #6446ff;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  line-height: 14px;
+  padding: 2px 6px;
 }
 
 .task-card-copy {
@@ -984,13 +1014,7 @@ h1 {
 }
 
 .task-address-with-metro {
-  align-items: flex-start;
-  display: flex;
-  gap: 4px;
-}
-
-.task-address-text {
-  min-width: 0;
+  display: block;
 }
 
 .metro-icon {
@@ -1044,6 +1068,30 @@ h1 {
   font-size: 12px;
   line-height: 14px;
   padding: 2px 6px;
+}
+
+.hide-incompatible-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #000;
+  cursor: pointer;
+  display: flex;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 16px;
+  height: 40px;
+  justify-content: center;
+  line-height: 20px;
+  margin: 4px 0 8px;
+  padding: 0;
+  width: 100%;
+}
+
+.hide-incompatible-button img {
+  height: 16px;
+  margin-left: 8px;
+  transform: rotate(180deg);
+  width: 16px;
 }
 
 .special-task-action {
@@ -1141,7 +1189,19 @@ h1 {
   flex: 1 1 auto;
 }
 
-.task-message-actions img {
+.task-message-actions .task-message-icon-button {
+  align-items: center;
+  background: transparent;
+  border-radius: 0;
+  display: inline-flex;
+  flex: 0 0 24px;
+  height: 40px;
+  justify-content: center;
+  padding: 0;
+  width: 24px;
+}
+
+.task-message-actions .task-message-icon-button img {
   height: 24px;
   width: 24px;
 }
@@ -3049,6 +3109,163 @@ button.filter-field {
   content: "";
   inset: 4px;
   position: absolute;
+}
+
+.card-sheet-layer {
+  align-items: end;
+  animation: sheet-backdrop-in 180ms ease;
+  background: rgb(0 0 0 / 0.32);
+  display: flex;
+  inset: 0;
+  position: absolute;
+  z-index: 35;
+}
+
+.card-sheet {
+  animation: sheet-enter 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  box-sizing: border-box;
+  padding: 8px 16px 32px;
+  width: 100%;
+}
+
+.card-sheet-handle {
+  background: #d5d5d5;
+  border-radius: 100px;
+  display: block;
+  height: 4px;
+  margin: 0 auto 18px;
+  width: 36px;
+}
+
+.card-sheet-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.card-sheet-header h2 {
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 26px;
+  margin: 0;
+}
+
+.card-sheet-close {
+  align-items: center;
+  background: #f4f4f5;
+  border: 0;
+  border-radius: 50%;
+  color: #000;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: Arial, sans-serif;
+  font-size: 26px;
+  font-weight: 200;
+  height: 32px;
+  justify-content: center;
+  line-height: 28px;
+  padding: 0 0 3px;
+  width: 32px;
+}
+
+.card-sheet-description {
+  color: #6c737d;
+  font-size: 16px;
+  line-height: 20px;
+  margin: 8px 0 16px;
+}
+
+.card-sheet-brands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.card-sheet-field {
+  border: 1px solid rgb(0 0 0 / 0.12);
+  border-radius: 12px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 56px;
+  justify-content: center;
+  margin-top: 16px;
+  padding: 0 16px;
+}
+
+.card-sheet-field > span {
+  color: #6c737d;
+  font-size: 12px;
+  line-height: 14px;
+}
+
+.card-sheet-field:not(.card-sheet-field-filled) > span {
+  font-size: 18px;
+  line-height: 24px;
+}
+
+.card-sheet-field input {
+  background: transparent;
+  border: 0;
+  color: #000;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 18px;
+  line-height: 24px;
+  min-width: 0;
+  outline: 0;
+  padding: 0;
+}
+
+.card-sheet-field input::placeholder {
+  color: #6c737d;
+  opacity: 1;
+}
+
+.card-sheet-time-inputs {
+  display: flex;
+  gap: 12px;
+}
+
+.card-sheet-time-inputs .availability-time-input {
+  flex: 1 1 0;
+}
+
+.card-sheet .availability-time-presets {
+  margin-top: 12px;
+}
+
+.card-sheet-link {
+  background: transparent;
+  border: 0;
+  color: #5337ec;
+  cursor: pointer;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 16px;
+  height: 40px;
+  line-height: 20px;
+  margin-top: 12px;
+  padding: 0;
+}
+
+.card-sheet-primary {
+  align-items: center;
+  background: #6458ff;
+  border: 0;
+  border-radius: 100px;
+  box-shadow: inset 0 6px 20px rgb(255 255 255 / 0.6), inset 0 -6px 36px rgb(255 255 255 / 0.6);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 18px;
+  height: 56px;
+  justify-content: center;
+  line-height: 24px;
+  margin-top: 8px;
+  padding: 0 32px;
+  width: 100%;
 }
 
 @keyframes sheet-backdrop-in {

@@ -61,6 +61,14 @@ const defaultSearchLocation = {
   label: "улица Лефортовский Вал",
 };
 
+const availabilityTimePresets = [
+  { id: "all-day", label: "весь день", from: "8:00", to: "22:00" },
+  { id: "morning", label: "утро", from: "8:00", to: "12:00" },
+  { id: "afternoon", label: "день", from: "12:00", to: "16:00" },
+  { id: "evening", label: "вечер", from: "16:00", to: "22:00" },
+  { id: "night", label: "ночью", from: "22:00", to: "6:00" },
+];
+
 const prototypeStorageKey = "x5-shift-prototype-state";
 
 function readPrototypeState() {
@@ -563,16 +571,28 @@ function getTaskDuration(task) {
 
 function isTaskWithinAvailability(task, availability) {
   const { end, start } = getTaskHours(task);
-  const availableFrom = Number.parseInt(availability.from, 10);
-  const availableTo = Number.parseInt(availability.to, 10);
-  if (![start, end, availableFrom, availableTo].every(Number.isFinite)) return true;
-
-  const isInside = (hour) => (availableFrom < availableTo
-    ? hour >= availableFrom && hour <= availableTo
-    : hour >= availableFrom || hour <= availableTo);
   const duration = getTaskDuration(task);
+  const isWithinWindow = (from, to) => {
+    const availableFrom = Number.parseInt(from, 10);
+    const availableTo = Number.parseInt(to, 10);
+    if (![start, end, availableFrom, availableTo].every(Number.isFinite)) return true;
 
-  return Array.from({ length: duration + 1 }, (_, index) => isInside((start + index) % 24)).every(Boolean);
+    const isInside = (hour) => (availableFrom < availableTo
+      ? hour >= availableFrom && hour <= availableTo
+      : hour >= availableFrom || hour <= availableTo);
+
+    return Array.from({ length: duration + 1 }, (_, index) => isInside((start + index) % 24)).every(Boolean);
+  };
+  const selectedPresetIds = Array.isArray(availability.presets)
+    ? availability.presets
+    : availability.preset ? [availability.preset] : [];
+  const selectedPresets = availabilityTimePresets.filter((preset) => selectedPresetIds.includes(preset.id));
+
+  if (selectedPresets.length > 0) {
+    return selectedPresets.some((preset) => isWithinWindow(preset.from, preset.to));
+  }
+
+  return isWithinWindow(availability.from, availability.to);
 }
 
 function matchesDurationPreference(task, preference) {
@@ -652,7 +672,27 @@ function MetroIcon({ metro }) {
   );
 }
 
+function formatCountdown(seconds) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+  return [hours, minutes, remainingSeconds].map((unit) => String(unit).padStart(2, "0")).join(":");
+}
+
+function OfferCountdown({ initialSeconds = 19936 }) {
+  const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setSecondsLeft((current) => Math.max(0, current - 1)), 1000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  return <span aria-label={`До окончания предложения ${formatCountdown(secondsLeft)}`} className="special-card-timer">{formatCountdown(secondsLeft)}</span>;
+}
+
 function TaskCard({ task, onOpen }) {
+  const isRestricted = task.restrictionTags?.length > 0;
+  const isPersonalOffer = task.variant === "special" && !isRestricted;
   const handleKeyDown = (event) => {
     if (!onOpen || (event.key !== "Enter" && event.key !== " ")) return;
     event.preventDefault();
@@ -662,16 +702,16 @@ function TaskCard({ task, onOpen }) {
   return (
     <article
       aria-label={onOpen ? `Подробнее: ${task.title}` : undefined}
-      className={`${onOpen ? "task-card task-card-clickable" : "task-card"}${task.variant === "special" ? " task-card-special" : ""}`}
+      className={`${onOpen ? "task-card task-card-clickable" : "task-card"}${isPersonalOffer ? " task-card-special" : ""}`}
       onClick={onOpen}
       onKeyDown={handleKeyDown}
       role={onOpen ? "button" : undefined}
       tabIndex={onOpen ? 0 : undefined}
     >
-      <div className={task.variant === "special" ? "task-card-top task-card-top-special" : "task-card-top"}>
+      <div className={isPersonalOffer ? "task-card-top task-card-top-special" : "task-card-top"}>
         <div className="task-card-copy">
-          {task.badge && <span className="match-badge">{task.badge}</span>}
-          {task.variant === "special" && <span className="special-card-badge">специально для вас <b>05:32:16</b></span>}
+          {!isRestricted && task.badge && <span className="match-badge">{task.badge}</span>}
+          {isPersonalOffer && <span className="special-card-badges"><span className="special-card-badge">специально для вас</span><OfferCountdown /></span>}
           <h2>{task.title}</h2>
           <p className={task.metro ? "task-address task-address-with-metro" : "task-address"}>
             {task.metro && <MetroIcon metro={task.metro} />}
@@ -694,12 +734,12 @@ function TaskCard({ task, onOpen }) {
           <p>{task.breakInfo}</p>
         </div>
       </div>
-      {task.restrictionTags?.length > 0 && (
+      {isRestricted && (
         <div className="task-restrictions">
           {task.restrictionTags.map((tag) => <span key={tag}>{tag}</span>)}
         </div>
       )}
-      {task.variant === "special" && <button className="special-task-action" onClick={(event) => { event.stopPropagation(); onOpen?.(); }} type="button">принять задание</button>}
+      {isPersonalOffer && <button className="special-task-action" onClick={(event) => { event.stopPropagation(); onOpen?.(); }} type="button">принять задание</button>}
     </article>
   );
 }
@@ -725,15 +765,28 @@ function TimelineLoadingState() {
   );
 }
 
-function NoMoreTasksCard() {
+function getRussianPlural(count, forms) {
+  const remainder = Math.abs(count) % 100;
+  const lastDigit = remainder % 10;
+  if (remainder > 10 && remainder < 20) return forms[2];
+  if (lastDigit === 1) return forms[0];
+  if (lastDigit > 1 && lastDigit < 5) return forms[1];
+  return forms[2];
+}
+
+function NoMoreTasksCard({ hiddenCount, onOpenAvailability, onOpenFilters, onShowAll }) {
   return (
     <article className="task-message-card">
       <h3>подходящих услуг больше нет</h3>
-      <p>ещё 6 услуг скрыты из-за фильтров<br />или выбранного времени</p>
+      <p>ещё {hiddenCount} {getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"])} скрыты из-за фильтров<br />или выбранного времени</p>
       <div className="task-message-actions">
-        <button type="button">показать остальные <span aria-hidden="true">⌄</span></button>
-        <img alt="Фильтры" src={assetUrl("funnel.svg")} />
-        <img alt="Настройки расписания" src={assetUrl("filter.svg")} />
+        <button onClick={onShowAll} type="button">показать остальные <span aria-hidden="true">⌄</span></button>
+        <button aria-label="Открыть фильтры для этого дня" className="task-message-icon-button" onClick={onOpenFilters} type="button">
+          <img alt="" src={assetUrl("funnel.svg")} />
+        </button>
+        <button aria-label="Открыть настройки доступности для этого дня" className="task-message-icon-button" onClick={onOpenAvailability} type="button">
+          <img alt="" src={assetUrl("filter.svg")} />
+        </button>
       </div>
     </article>
   );
@@ -748,6 +801,97 @@ function NoTasksForDayCard() {
   );
 }
 
+function CardFiltersSheet({ filters, onApply, onClose, onOpenFullFilters }) {
+  const [brands, setBrands] = useState(filters.brands);
+  const [minimumPayment, setMinimumPayment] = useState(filters.minimumPayment);
+  const brandOptions = [
+    { id: "pyaterochka", label: "Пятёрочка" },
+    { id: "perekrestok", label: "Перекрёсток" },
+    { id: "chizhik", label: "Чижик" },
+  ];
+
+  function toggleBrand(id) {
+    setBrands((current) => current.includes(id)
+      ? current.filter((brand) => brand !== id)
+      : [...current, id]);
+  }
+
+  return (
+    <div className="card-sheet-layer" onClick={onClose}>
+      <section aria-label="Фильтры заданий" aria-modal="true" className="card-sheet" onClick={(event) => event.stopPropagation()} role="dialog">
+        <span aria-hidden="true" className="card-sheet-handle" />
+        <div className="card-sheet-header">
+          <h2>фильтры</h2>
+          <button aria-label="Закрыть фильтры" className="card-sheet-close" onClick={onClose} type="button">×</button>
+        </div>
+        <p className="card-sheet-description">Уточните, какие смены показывать в этот день</p>
+        <div className="card-sheet-brands">
+          {brandOptions.map((brand) => {
+            const isSelected = brands.includes(brand.id);
+            return <button
+              aria-pressed={isSelected}
+              className={isSelected ? "brand-filter-chip brand-filter-chip-selected" : "brand-filter-chip"}
+              key={brand.id}
+              onClick={() => toggleBrand(brand.id)}
+              type="button"
+            ><BrandMark brand={brand.id} /><span>{brand.label}</span></button>;
+          })}
+        </div>
+        <label className={minimumPayment ? "card-sheet-field card-sheet-field-filled" : "card-sheet-field"}>
+          <span>мин. стоимость ₽</span>
+          <input aria-label="Минимальная стоимость в боттомшите" inputMode="numeric" onChange={(event) => setMinimumPayment(event.target.value)} placeholder="Не указана" type="text" value={minimumPayment} />
+        </label>
+        <button className="card-sheet-link" onClick={onOpenFullFilters} type="button">все фильтры</button>
+        <button className="card-sheet-primary" onClick={() => onApply({ ...filters, brands, minimumPayment })} type="button">применить</button>
+      </section>
+    </div>
+  );
+}
+
+function CardAvailabilitySheet({ availability, onApply, onClose, onOpenFullSettings }) {
+  const [from, setFrom] = useState(availability.from);
+  const [to, setTo] = useState(availability.to);
+  const [presets, setPresets] = useState(() => (
+    Array.isArray(availability.presets) ? availability.presets : availability.preset ? [availability.preset] : []
+  ));
+
+  function togglePreset(preset) {
+    setPresets((current) => preset.id === "all-day"
+      ? (current.includes("all-day") ? [] : ["all-day"])
+      : (current.includes(preset.id)
+        ? current.filter((id) => id !== preset.id)
+        : [...current.filter((id) => id !== "all-day"), preset.id]));
+  }
+
+  return (
+    <div className="card-sheet-layer" onClick={onClose}>
+      <section aria-label="Настройки доступности" aria-modal="true" className="card-sheet" onClick={(event) => event.stopPropagation()} role="dialog">
+        <span aria-hidden="true" className="card-sheet-handle" />
+        <div className="card-sheet-header">
+          <h2>доступность</h2>
+          <button aria-label="Закрыть настройки доступности" className="card-sheet-close" onClick={onClose} type="button">×</button>
+        </div>
+        <p className="card-sheet-description">Покажем смены, которые не пересекаются с вашим графиком</p>
+        <div className="card-sheet-time-inputs">
+          <label className="availability-time-input"><span>доступен с</span><input aria-label="Доступен с в боттомшите" onChange={(event) => { setFrom(event.target.value); setPresets([]); }} type="text" value={from} /></label>
+          <label className="availability-time-input"><span>доступен до</span><input aria-label="Доступен до в боттомшите" onChange={(event) => { setTo(event.target.value); setPresets([]); }} type="text" value={to} /></label>
+        </div>
+        <div className="availability-time-presets">
+          {availabilityTimePresets.map((preset) => <button
+            aria-pressed={presets.includes(preset.id)}
+            className={presets.includes(preset.id) ? "availability-time-preset availability-time-preset-selected" : "availability-time-preset"}
+            key={preset.id}
+            onClick={() => togglePreset(preset)}
+            type="button"
+          >{preset.label}</button>)}
+        </div>
+        <button className="card-sheet-link" onClick={onOpenFullSettings} type="button">выбрать дни</button>
+        <button className="card-sheet-primary" onClick={() => onApply({ from, to, preset: presets[0] ?? null, presets })} type="button">применить</button>
+      </section>
+    </div>
+  );
+}
+
 function TaskDetailsScreen({ task, day, onBack, onBook, bookingState }) {
   return (
     <section className="details-screen">
@@ -757,7 +901,7 @@ function TaskDetailsScreen({ task, day, onBack, onBook, bookingState }) {
       </header>
       <main className="details-content">
         <div className="details-brand"><BrandMark brand={task.brand} /></div>
-        {task.badge && <span className="match-badge">{task.badge}</span>}
+        {!task.restrictionTags?.length && task.badge && <span className="match-badge">{task.badge}</span>}
         <h2>{task.title}</h2>
         <p className="details-payment">{task.payment}</p>
         <p className="details-rate">{task.rate}</p>
@@ -932,7 +1076,11 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
   const [selectedWeekdays, setSelectedWeekdays] = useState(initialSelectedWeekdays);
   const [availableFrom, setAvailableFrom] = useState(initialAvailabilityTime.from);
   const [availableTo, setAvailableTo] = useState(initialAvailabilityTime.to);
-  const [selectedTimePreset, setSelectedTimePreset] = useState(initialAvailabilityTime.preset ?? null);
+  const [selectedTimePresets, setSelectedTimePresets] = useState(() => (
+    Array.isArray(initialAvailabilityTime.presets)
+      ? initialAvailabilityTime.presets
+      : initialAvailabilityTime.preset ? [initialAvailabilityTime.preset] : []
+  ));
   const [selectedDuration, setSelectedDuration] = useState(() => (
     Array.isArray(initialSelectedDuration) ? initialSelectedDuration : initialSelectedDuration ? [initialSelectedDuration] : []
   ));
@@ -942,7 +1090,9 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
     || selectedWeekdays.join(",") !== initialSelectedWeekdays.join(",")
     || availableFrom !== initialAvailabilityTime.from
     || availableTo !== initialAvailabilityTime.to
-    || selectedTimePreset !== (initialAvailabilityTime.preset ?? null);
+    || selectedTimePresets.join(",") !== (Array.isArray(initialAvailabilityTime.presets)
+      ? initialAvailabilityTime.presets
+      : initialAvailabilityTime.preset ? [initialAvailabilityTime.preset] : []).join(",");
 
   function toggleDate(day) {
     if (day.status !== "free") return;
@@ -964,25 +1114,38 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
   }
 
   function applyTimePreset(preset) {
-    setAvailableFrom(preset.from);
-    setAvailableTo(preset.to);
-    setSelectedTimePreset(preset.id);
+    setSelectedTimePresets((current) => {
+      const next = preset.id === "all-day"
+        ? (current.includes("all-day") ? [] : ["all-day"])
+        : (current.includes(preset.id)
+          ? current.filter((id) => id !== preset.id)
+          : [...current.filter((id) => id !== "all-day"), preset.id]);
+      const selected = availabilityTimePresets.filter((item) => next.includes(item.id));
+
+      if (selected.length > 0) {
+        if (selected.length === 1) {
+          setAvailableFrom(selected[0].from);
+          setAvailableTo(selected[0].to);
+          return next;
+        }
+
+        const starts = selected.map((item) => Number.parseInt(item.from, 10));
+        setAvailableFrom(`${Math.min(...starts)}:00`);
+        setAvailableTo(selected.some((item) => item.id === "night")
+          ? "6:00"
+          : `${Math.max(...selected.map((item) => Number.parseInt(item.to, 10)))}:00`);
+      }
+
+      return next;
+    });
   }
 
   function updateTime(setTime) {
     return (event) => {
       setTime(event.target.value);
-      setSelectedTimePreset(null);
+      setSelectedTimePresets([]);
     };
   }
-
-  const timePresets = [
-    { id: "all-day", label: "весь день", from: "8:00", to: "22:00" },
-    { id: "morning", label: "утро", from: "8:00", to: "12:00" },
-    { id: "afternoon", label: "день", from: "12:00", to: "16:00" },
-    { id: "evening", label: "вечер", from: "16:00", to: "22:00" },
-    { id: "night", label: "ночью", from: "22:00", to: "6:00" },
-  ];
 
   if (isDaysPickerOpen) return (
     <section className="availability-screen">
@@ -1107,10 +1270,10 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
               </label>
             </div>
             <div className="availability-time-presets">
-              {timePresets.map((preset) => (
+              {availabilityTimePresets.map((preset) => (
                 <button
-                  aria-pressed={selectedTimePreset === preset.id}
-                  className={selectedTimePreset === preset.id ? "availability-time-preset availability-time-preset-selected" : "availability-time-preset"}
+                  aria-pressed={selectedTimePresets.includes(preset.id)}
+                  className={selectedTimePresets.includes(preset.id) ? "availability-time-preset availability-time-preset-selected" : "availability-time-preset"}
                   key={preset.id}
                   onClick={() => applyTimePreset(preset)}
                   type="button"
@@ -1152,13 +1315,18 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
           resetSelection();
           setAvailableFrom("8:00");
           setAvailableTo("22:00");
-          setSelectedTimePreset("all-day");
+          setSelectedTimePresets(["all-day"]);
           setSelectedDuration([]);
         }} type="button">сбросить</button>
         <button className="availability-save" onClick={() => onSave({
           selectedDates,
           selectedWeekdays,
-          availabilityTime: { from: availableFrom, to: availableTo, preset: selectedTimePreset },
+          availabilityTime: {
+            from: availableFrom,
+            to: availableTo,
+            preset: selectedTimePresets[0] ?? null,
+            presets: selectedTimePresets,
+          },
           selectedDuration,
         })} type="button">сохранить</button>
       </footer>
@@ -1685,6 +1853,7 @@ export function App() {
   const [isControlsRevealed, setIsControlsRevealed] = useState(false);
   const [isScrollTopVisible, setIsScrollTopVisible] = useState(false);
   const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
+  const [cardSheet, setCardSheet] = useState(null);
   const [sortBy, setSortBy] = useState(persistedState.sortBy || "recommended");
   const [hasAppliedSort, setHasAppliedSort] = useState(Boolean(persistedState.hasAppliedSort));
   const [searchRadius, setSearchRadius] = useState(persistedState.searchRadius || 1);
@@ -1707,6 +1876,7 @@ export function App() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [scrollTargetDay, setScrollTargetDay] = useState(null);
   const [isTimelineLoading, setIsTimelineLoading] = useState(false);
+  const [expandedFilteredDays, setExpandedFilteredDays] = useState([]);
   const screenRef = useRef(null);
   const daySectionRefs = useRef({});
   const timelineDayRefs = useRef({});
@@ -1943,7 +2113,7 @@ export function App() {
         ...source,
         title: DEMO_SERVICE_TITLES[(dayIndex * distanceBands.length + taskIndex) % DEMO_SERVICE_TITLES.length],
         address: `${locationAddress}, д. ${1 + Math.floor(seededValue(`${seed}-building`) * 96)}`,
-        badge: taskIndex === 0 ? "подходит вам" : undefined,
+        badge: taskIndex < 2 ? "подходит вам" : undefined,
         breakInfo: hasBreak ? `${duration - 1} ч + 1 ч перерыв` : `${duration} ч без перерыва`,
         distance: distanceInMeters >= 1000 ? `${(distanceInMeters / 1000).toFixed(1).replace(".", ",")} км` : `${distanceInMeters} м`,
         hours: `${String(startHour).padStart(2, "0")}:00 – ${String(endHour).padStart(2, "0")}:00`,
@@ -1987,12 +2157,18 @@ export function App() {
     const suggestedTasks = suitableTasks.filter((task) => task.badge || task.variant === "special");
     const restrictedTasks = decoratedTasks.filter((task) => task.restrictionTags.length > 0);
 
-    if (onlyMatching) return getOrderedTasks(suggestedTasks, sortBy, hasAppliedSort);
+    const matchingTasks = getOrderedTasks(suggestedTasks, sortBy, hasAppliedSort);
+    const hiddenTasks = getSortedTasks(restrictedTasks, sortBy);
 
-    return [
-      ...getOrderedTasks(suitableTasks, sortBy, hasAppliedSort),
-      ...getSortedTasks(restrictedTasks, sortBy),
-    ];
+    if (onlyMatching) return { hiddenTasks, visibleTasks: matchingTasks };
+
+    return {
+      hiddenTasks: [],
+      visibleTasks: [
+        ...getOrderedTasks(suitableTasks, sortBy, hasAppliedSort),
+        ...hiddenTasks,
+      ],
+    };
   }
 
   return (
@@ -2122,9 +2298,12 @@ export function App() {
           /> : activeTab === 2 ? <MyTasksView bookedTasks={bookedTasks} /> : activeTab === 3 ? <p className="task-empty-state my-tasks-empty">Заданий на подписание нет</p> : isTimelineLoading ? <TimelineLoadingState /> : dayGroups.map((day, dayIndex) => {
             const employeeShifts = getEmployeeShifts(day);
             const hasDemoEmptyDay = day.date === "14";
-            const visibleTasks = hasDemoEmptyDay
-              ? []
-              : getTasksForFeed(getLocationTasks(day, dayIndex), day.date);
+            const dayTasks = hasDemoEmptyDay ? [] : getLocationTasks(day, dayIndex);
+            const taskFeed = getTasksForFeed(dayTasks, day.date);
+            const isFilteredDayExpanded = expandedFilteredDays.includes(day.date);
+            const visibleTasks = taskFeed.visibleTasks;
+            const hasFilteredOutTasks = taskFeed.hiddenTasks.length > 0 && !isFilteredDayExpanded;
+            const hasNoTasks = dayTasks.length === 0;
 
             return (
               <section
@@ -2136,12 +2315,23 @@ export function App() {
                 <h2 className="day-heading">{day.label}, <span>{day.secondaryLabel}</span></h2>
                 {employeeShifts.map((shift, index) => <EmployeeShiftCard day={day} key={`${day.date}-${shift.type}-${shift.hours}-${index}`} shift={shift} />)}
                 {visibleTasks.map((task) => <TaskCard key={task.id} onOpen={() => openTaskDetails(task, day)} task={task} />)}
-                {day.date === "8" && <TaskSkeletonCard />}
-                {day.date === "10" && <NoMoreTasksCard />}
-                {hasDemoEmptyDay && <NoTasksForDayCard />}
-                {visibleTasks.length === 0 && employeeShifts.length === 0 && !hasDemoEmptyDay && (
-                  <NoTasksForDayCard />
-                )}
+                {isFilteredDayExpanded && taskFeed.hiddenTasks.length > 0 && <button
+                  className="hide-incompatible-button"
+                  onClick={() => setExpandedFilteredDays((current) => current.filter((date) => date !== day.date))}
+                  type="button"
+                >
+                  скрыть неподходящие <img alt="" src={assetUrl("chevron-down.svg")} />
+                </button>}
+                {isFilteredDayExpanded && taskFeed.hiddenTasks.map((task) => <TaskCard key={task.id} onOpen={() => openTaskDetails(task, day)} task={task} />)}
+                {hasFilteredOutTasks && <NoMoreTasksCard
+                  hiddenCount={taskFeed.hiddenTasks.length}
+                  onOpenAvailability={() => {
+                    setCardSheet("availability");
+                  }}
+                  onOpenFilters={() => setCardSheet("filters")}
+                  onShowAll={() => setExpandedFilteredDays((current) => [...current, day.date])}
+                />}
+                {hasNoTasks && <NoTasksForDayCard />}
               </section>
             );
           })}
@@ -2299,6 +2489,33 @@ export function App() {
           </section>
         </div>
       )}
+
+      {currentView === "tasks" && cardSheet === "filters" && <CardFiltersSheet
+        filters={appliedFilters}
+        onApply={(filters) => {
+          setAppliedFilters(filters);
+          setCardSheet(null);
+        }}
+        onClose={() => setCardSheet(null)}
+        onOpenFullFilters={() => {
+          setCardSheet(null);
+          setCurrentView("filters");
+        }}
+      />}
+
+      {currentView === "tasks" && cardSheet === "availability" && <CardAvailabilitySheet
+        availability={availabilityTime}
+        onApply={(nextAvailability) => {
+          setAvailabilityTime(nextAvailability);
+          setCardSheet(null);
+        }}
+        onClose={() => setCardSheet(null)}
+        onOpenFullSettings={() => {
+          setCardSheet(null);
+          setIsSettingsOnboardingVisible(false);
+          setCurrentView("settings");
+        }}
+      />}
 
       {currentView === "tasks" && isSettingsOnboardingVisible && (
         <div className="settings-onboarding" role="presentation">
