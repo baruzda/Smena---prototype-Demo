@@ -2,28 +2,28 @@
   font-family: "X5 Sans";
   font-style: normal;
   font-weight: 300;
-  src: url("/fonts/X5-Sans_Light.ttf") format("truetype");
+  src: url("../public/fonts/X5-Sans_Light.ttf") format("truetype");
 }
 
 @font-face {
   font-family: "X5 Sans";
   font-style: normal;
   font-weight: 400;
-  src: url("/fonts/X5-Sans_Regular.ttf") format("truetype");
+  src: url("../public/fonts/X5-Sans_Regular.ttf") format("truetype");
 }
 
 @font-face {
   font-family: "X5 Sans";
   font-style: normal;
   font-weight: 500 600;
-  src: url("/fonts/X5-Sans_Medium.ttf") format("truetype");
+  src: url("../public/fonts/X5-Sans_Medium.ttf") format("truetype");
 }
 
 @font-face {
   font-family: "X5 Sans";
   font-style: normal;
   font-weight: 700;
-  src: url("/fonts/X5-Sans_Bold.ttf") format("truetype");
+  src: url("../public/fonts/X5-Sans_Bold.ttf") format("truetype");
 }
 
 :root {

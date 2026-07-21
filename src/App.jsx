@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { getTaskHours, shiftsOverlap } from "./schedule-utils.js";
 
+const assetUrl = (name) => `${import.meta.env.BASE_URL}figma-assets/${name}`;
+
 const tabs = ["задания", "избранное", "мои задания", "задания на подписание"];
 const metroIconAssets = {
-  msk: "/figma-assets/metro-msk.svg",
-  spb: "/figma-assets/metro-spb.svg",
-  nino: "/figma-assets/metro-nino.svg",
+  msk: assetUrl("metro-msk.svg"),
+  spb: assetUrl("metro-spb.svg"),
+  nino: assetUrl("metro-nino.svg"),
 };
 const days = [
   { date: "1", weekday: "пн" },
@@ -603,11 +605,11 @@ function getSortedTasks(tasks, sortBy) {
 
 function BrandMark({ brand }) {
   const logos = {
-    pyaterochka: { alt: "Пятёрочка", src: "/figma-assets/logo-pyaterochka.svg" },
-    perekrestok: { alt: "Перекрёсток", src: "/figma-assets/logo-perekrestok.svg" },
-    chizhik: { alt: "Чижик", src: "/figma-assets/logo-chizhik.svg" },
-    vprok: { alt: "Впрок", src: "/figma-assets/logo-vprok.svg" },
-    mnogoLososya: { alt: "Много лосося", src: "/figma-assets/logo-mnogo-lososya.svg" },
+    pyaterochka: { alt: "Пятёрочка", src: assetUrl("logo-pyaterochka.svg") },
+    perekrestok: { alt: "Перекрёсток", src: assetUrl("logo-perekrestok.svg") },
+    chizhik: { alt: "Чижик", src: assetUrl("logo-chizhik.svg") },
+    vprok: { alt: "Впрок", src: assetUrl("logo-vprok.svg") },
+    mnogoLososya: { alt: "Много лосося", src: assetUrl("logo-mnogo-lososya.svg") },
   };
   const logo = logos[brand];
 
@@ -648,7 +650,7 @@ function TaskCard({ task, onOpen }) {
             {task.metro && <MetroIcon metro={task.metro} />}
             <span className="task-address-text">
               {task.metro && <>{task.metro.station} · </>}
-              {task.address} · <img alt="" className="distance-mark" src="/figma-assets/map-pin.svg" />{task.distance}
+              {task.address} · <img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />{task.distance}
             </span>
           </p>
         </div>
@@ -673,7 +675,7 @@ function TaskDetailsScreen({ task, day, onBack, onBook, bookingState }) {
   return (
     <section className="details-screen">
       <header className="details-header">
-        <IconButton alt="" label="Назад к заданиям" onClick={onBack} src="/figma-assets/back.svg" />
+        <IconButton alt="" label="Назад к заданиям" onClick={onBack} src={assetUrl("back.svg")} />
         <h1>детали задания</h1>
       </header>
       <main className="details-content">
@@ -766,7 +768,7 @@ function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollect
                 <button className="favorite-apply" onClick={() => onApplyCollection(collection)} type="button">показать задания</button>
                 <button className="favorite-edit" onClick={() => onEditCollection(collection)} type="button">изменить</button>
                 <button aria-label={`Удалить подборку ${collection.title}`} className="favorite-delete" onClick={() => onRemoveCollection(collection.id)} type="button">
-                  <img alt="" src="/figma-assets/trash.svg" />
+                  <img alt="" src={assetUrl("trash.svg")} />
                 </button>
               </div>
             </article>
@@ -796,7 +798,7 @@ function EmployeeShiftCard({ day, shift }) {
         <p>{shift.title}</p>
         <p>
           {shift.metro && <span className="employee-shift-metro"><MetroIcon metro={shift.metro} />{shift.metro.station} ·</span>}
-          {shift.address} · <img alt="" className="distance-mark" src="/figma-assets/map-pin.svg" />{shift.distance}
+          {shift.address} · <img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />{shift.distance}
         </p>
       </div>
     </article>
@@ -958,13 +960,13 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
     <section className="settings-screen">
       <header className="settings-header">
         <div className="settings-navigation-row">
-          <IconButton alt="" label="Назад к заданиям" onClick={onBack} src="/figma-assets/back.svg" />
+          <IconButton alt="" label="Назад к заданиям" onClick={onBack} src={assetUrl("back.svg")} />
         </div>
         <div className="settings-intro">
           <h1>настройки<br />расписания</h1>
           <p>расскажите, когда и в какое время вы готовы выполнять задания</p>
           <button className="how-it-works" type="button">
-            <img alt="" src="/figma-assets/settings-help.svg" />
+            <img alt="" src={assetUrl("settings-help.svg")} />
             <span>как это работает</span>
           </button>
         </div>
@@ -976,7 +978,7 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
             <span className="settings-select-copy">
               {hasSelection ? <><small>выберите дни</small><strong>{selectedDaysSummary}</strong></> : <strong className="settings-select-placeholder">выберите дни</strong>}
             </span>
-            <img alt="" src="/figma-assets/chevron-down.svg" />
+            <img alt="" src={assetUrl("chevron-down.svg")} />
           </button>
 
           <section className="availability-time-section" aria-label="Время доступности">
@@ -1219,16 +1221,16 @@ function LocationPicker({ initialLocation, initialRadius, onApply, onBack }) {
         {mapError && <button className="location-map-retry" onClick={() => { setMapError(false); setMapLoadAttempt((current) => current + 1); }} type="button">повторить загрузку карты</button>}
       </div>
       {!isSearchMode && <div aria-label="Управление картой" className="map-controls">
-        <button aria-label="Приблизить карту" onClick={() => mapRef.current?.zoomIn()} type="button"><img alt="" src="/figma-assets/map-zoom-in.svg" /></button>
-        <button aria-label="Отдалить карту" onClick={() => mapRef.current?.zoomOut()} type="button"><img alt="" src="/figma-assets/map-zoom-out.svg" /></button>
-        <button aria-label="Показать выбранную область" onClick={focusSelectedArea} type="button"><img alt="" src="/figma-assets/map-controls-chevron.svg" /></button>
+        <button aria-label="Приблизить карту" onClick={() => mapRef.current?.zoomIn()} type="button"><img alt="" src={assetUrl("map-zoom-in.svg")} /></button>
+        <button aria-label="Отдалить карту" onClick={() => mapRef.current?.zoomOut()} type="button"><img alt="" src={assetUrl("map-zoom-out.svg")} /></button>
+        <button aria-label="Показать выбранную область" onClick={focusSelectedArea} type="button"><img alt="" src={assetUrl("map-controls-chevron.svg")} /></button>
       </div>}
 
       <section className={isSearchMode ? "location-picker-sheet location-picker-sheet-search" : "location-picker-sheet"}>
         <span aria-hidden="true" className="location-picker-handle" />
         <div className="location-picker-title-row">
           <button aria-label="Вернуться к фильтрам" className="location-picker-back" onClick={onBack} type="button">
-            <img alt="" src="/figma-assets/back.svg" />
+            <img alt="" src={assetUrl("back.svg")} />
           </button>
           <h1>показать задания рядом</h1>
         </div>
@@ -1271,7 +1273,7 @@ function LocationPicker({ initialLocation, initialRadius, onApply, onBack }) {
             setSearchError("");
             setSearchResults([]);
             setIsSearchMode(false);
-          }} type="button"><img alt="" src="/figma-assets/map-pin.svg" />указать на карте</button>
+          }} type="button"><img alt="" src={assetUrl("map-pin.svg")} />указать на карте</button>
           {isSearching && <p className="location-search-status" role="status">Ищем адрес...</p>}
           {searchError && <p className="location-search-error" role="status">{searchError}</p>}
           <div aria-label="Варианты адреса" className="location-search-results">
@@ -1407,7 +1409,7 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
     <section className="filters-screen">
       <header className="filters-header">
         <div className="filters-navigation-row">
-          <IconButton alt="" label="Назад к заданиям" onClick={onBack} src="/figma-assets/back.svg" />
+          <IconButton alt="" label="Назад к заданиям" onClick={onBack} src={assetUrl("back.svg")} />
         </div>
         <h1>фильтры</h1>
       </header>
@@ -1439,7 +1441,7 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
         <section className="filter-fields">
           <button className="filter-field filter-field-placeholder" type="button">
             <span>адрес магазина</span>
-            <img alt="" src="/figma-assets/chevron-down.svg" />
+            <img alt="" src={assetUrl("chevron-down.svg")} />
           </button>
           <button
             className={service ? "filter-field filter-field-filled" : "filter-field filter-field-placeholder"}
@@ -1447,7 +1449,7 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
             type="button"
           >
             {service ? <span className="filter-field-content"><small>услуга</small><strong>{service}</strong></span> : <span>услуга</span>}
-            <img alt="" src="/figma-assets/chevron-down.svg" />
+            <img alt="" src={assetUrl("chevron-down.svg")} />
           </button>
           <label className={minimumPayment ? "filter-field filter-field-filled" : "filter-field filter-field-placeholder"}>
             {minimumPayment && <small>мин. стоимость ₽</small>}
@@ -1469,7 +1471,7 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
               <small>территория</small>
               <strong>{location.label}</strong>
             </span>
-            <img alt="" src="/figma-assets/chevron-down.svg" />
+            <img alt="" src={assetUrl("chevron-down.svg")} />
           </button>
           <div aria-label="Радиус поиска" className="radius-options">
             {[1, 2, 5, 10, 50].map((value) => (
@@ -1842,7 +1844,7 @@ export function App() {
       <div className="status-bar" aria-label="9:41">
         <span className="time">9:41</span>
         <span className="dynamic-island" aria-hidden="true" />
-        <img alt="Сеть, Wi-Fi и заряд батареи" className="status-levels" src="/figma-assets/status-levels.svg" />
+        <img alt="Сеть, Wi-Fi и заряд батареи" className="status-levels" src={assetUrl("status-levels.svg")} />
       </div>
       {currentView === "tasks" ? <section
         className={`screen${hasContentScrolled ? " is-content-scrolled" : ""}${isControlsRevealed ? " is-controls-revealed" : ""}`}
@@ -1850,13 +1852,13 @@ export function App() {
       >
         <header className="app-header">
           <div className="navigation-row">
-            <IconButton alt="" label="Назад" src="/figma-assets/back.svg" />
+            <IconButton alt="" label="Назад" src={assetUrl("back.svg")} />
             <div className="navigation-actions">
               <IconButton alt="" label="Настройки расписания" onClick={() => {
                 setIsSettingsOnboardingVisible(false);
                 setCurrentView("settings");
-              }} src="/figma-assets/filter.svg" />
-              <IconButton alt="" label="Помощь" src="/figma-assets/help.svg" />
+              }} src={assetUrl("filter.svg")} />
+              <IconButton alt="" label="Помощь" src={assetUrl("help.svg")} />
             </div>
           </div>
 
@@ -1907,10 +1909,10 @@ export function App() {
                   onClick={() => setIsSortSheetOpen(true)}
                   type="button"
                 >
-                  <img alt="" src="/figma-assets/sort.svg" />
+                  <img alt="" src={assetUrl("sort.svg")} />
                 </button>
                 <button aria-label="Открыть фильтры" className="filter-icon-button" onClick={() => setCurrentView("filters")} type="button">
-                  <img alt="" src="/figma-assets/funnel.svg" />
+                  <img alt="" src={assetUrl("funnel.svg")} />
                 </button>
               </div>
               <label className="toggle-label">
@@ -2076,12 +2078,12 @@ export function App() {
             style={{ "--map-offset": isBottomChromeHidden ? "67px" : "0px" }}
             type="button"
           >
-            <img alt="" className="map-icon" src="/figma-assets/map.svg" />
+            <img alt="" className="map-icon" src={assetUrl("map.svg")} />
             <span>на карте</span>
           </button>
           {isScrollTopVisible && (
             <button aria-label="Наверх" className="scroll-top-button" onClick={scrollToTop} type="button">
-              <img alt="" src="/figma-assets/arrow-up.svg" />
+              <img alt="" src={assetUrl("arrow-up.svg")} />
             </button>
           )}
 
@@ -2091,11 +2093,11 @@ export function App() {
             style={{ "--chrome-offset": isBottomChromeHidden ? "99px" : "0px" }}
           >
             <div className="bottom-navigation-actions">
-              <button aria-label="Главная" className="bottom-navigation-button" type="button"><img alt="" src="/figma-assets/nav-home.svg" /></button>
-              <button aria-current="page" aria-label="Смена X5" className="bottom-navigation-button" type="button"><img alt="" src="/figma-assets/nav-shift.svg" /></button>
-              <button aria-label="Все сервисы" className="bottom-navigation-button" type="button"><img alt="" src="/figma-assets/nav-all.svg" /></button>
-              <button aria-label="Лента" className="bottom-navigation-button" type="button"><img alt="" className="nav-feed-icon" src="/figma-assets/nav-feed.svg" /></button>
-              <button aria-label="Профиль" className="bottom-navigation-button" type="button"><img alt="Профиль" className="bottom-navigation-profile" src="/figma-assets/nav-profile.png" /></button>
+              <button aria-label="Главная" className="bottom-navigation-button" type="button"><img alt="" src={assetUrl("nav-home.svg")} /></button>
+              <button aria-current="page" aria-label="Смена X5" className="bottom-navigation-button" type="button"><img alt="" src={assetUrl("nav-shift.svg")} /></button>
+              <button aria-label="Все сервисы" className="bottom-navigation-button" type="button"><img alt="" src={assetUrl("nav-all.svg")} /></button>
+              <button aria-label="Лента" className="bottom-navigation-button" type="button"><img alt="" className="nav-feed-icon" src={assetUrl("nav-feed.svg")} /></button>
+              <button aria-label="Профиль" className="bottom-navigation-button" type="button"><img alt="Профиль" className="bottom-navigation-profile" src={assetUrl("nav-profile.png")} /></button>
             </div>
             <span aria-hidden="true" className="home-indicator" />
           </nav>
@@ -2157,7 +2159,7 @@ export function App() {
             }}
             type="button"
           >
-            <img alt="" src="/figma-assets/filter.svg" />
+            <img alt="" src={assetUrl("filter.svg")} />
           </button>
         </div>
       )}
