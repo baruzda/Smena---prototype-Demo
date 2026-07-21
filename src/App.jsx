@@ -527,6 +527,20 @@ const dayGroups = days.map((day, dayIndex) => {
   };
 });
 
+const myTaskStatuses = {
+  booked: { label: "записаны", tone: "success" },
+  pending: { label: "на подтверждении", tone: "warning" },
+  completed: { label: "смена завершена", tone: "neutral" },
+  cancelled: { label: "отменена", tone: "danger" },
+};
+
+const demoMyTaskRecords = [
+  { day: dayGroups[1], id: "demo-my-task-booked", status: "booked", task: dayGroups[1].tasks[0] },
+  { day: dayGroups[3], id: "demo-my-task-pending", status: "pending", task: dayGroups[3].tasks[1] },
+  { day: dayGroups[8], id: "demo-my-task-completed", status: "completed", task: dayGroups[8].tasks[0] },
+  { day: dayGroups[10], id: "demo-my-task-cancelled", status: "cancelled", task: dayGroups[10].tasks[2] },
+];
+
 const sortOptions = [
   { id: "nearby", label: "сначала ближайшие" },
   { id: "recommended", label: "рекомендуемые" },
@@ -592,7 +606,9 @@ function getShortLocationLabel(label) {
 }
 
 function getSortedTasks(tasks, sortBy) {
-  if (sortBy === "recommended") return tasks;
+  if (sortBy === "recommended") {
+    return [...tasks].sort((first, second) => (second.recommendation ?? 0) - (first.recommendation ?? 0));
+  }
 
   return [...tasks].sort((first, second) => {
     if (sortBy === "nearby") {
@@ -601,6 +617,16 @@ function getSortedTasks(tasks, sortBy) {
 
     return getPaymentValue(second.payment) - getPaymentValue(first.payment);
   });
+}
+
+function getOrderedTasks(tasks, sortBy, hasAppliedSort) {
+  if (hasAppliedSort) return getSortedTasks(tasks, sortBy);
+
+  // Personal offers stay first until the employee explicitly chooses a sort order.
+  return [
+    ...tasks.filter((task) => task.variant === "special"),
+    ...tasks.filter((task) => task.variant !== "special"),
+  ];
 }
 
 function BrandMark({ brand }) {
@@ -636,15 +662,16 @@ function TaskCard({ task, onOpen }) {
   return (
     <article
       aria-label={onOpen ? `Подробнее: ${task.title}` : undefined}
-      className={onOpen ? "task-card task-card-clickable" : "task-card"}
+      className={`${onOpen ? "task-card task-card-clickable" : "task-card"}${task.variant === "special" ? " task-card-special" : ""}`}
       onClick={onOpen}
       onKeyDown={handleKeyDown}
       role={onOpen ? "button" : undefined}
       tabIndex={onOpen ? 0 : undefined}
     >
-      <div className="task-card-top">
+      <div className={task.variant === "special" ? "task-card-top task-card-top-special" : "task-card-top"}>
         <div className="task-card-copy">
           {task.badge && <span className="match-badge">{task.badge}</span>}
+          {task.variant === "special" && <span className="special-card-badge">специально для вас <b>05:32:16</b></span>}
           <h2>{task.title}</h2>
           <p className={task.metro ? "task-address task-address-with-metro" : "task-address"}>
             {task.metro && <MetroIcon metro={task.metro} />}
@@ -667,6 +694,56 @@ function TaskCard({ task, onOpen }) {
           <p>{task.breakInfo}</p>
         </div>
       </div>
+      {task.restrictionTags?.length > 0 && (
+        <div className="task-restrictions">
+          {task.restrictionTags.map((tag) => <span key={tag}>{tag}</span>)}
+        </div>
+      )}
+      {task.variant === "special" && <button className="special-task-action" onClick={(event) => { event.stopPropagation(); onOpen?.(); }} type="button">принять задание</button>}
+    </article>
+  );
+}
+
+function TaskSkeletonCard() {
+  return (
+    <article aria-label="Загрузка заданий" className="task-skeleton-card">
+      <div className="task-skeleton-top"><span /><i /></div>
+      <span className="task-skeleton-title" />
+      <span className="task-skeleton-address" />
+      <div className="task-skeleton-divider" />
+      <div className="task-skeleton-bottom"><span /><span /></div>
+    </article>
+  );
+}
+
+function TimelineLoadingState() {
+  return (
+    <section aria-label="Загрузка заданий" className="timeline-loading-state" role="status">
+      <TaskSkeletonCard />
+      <TaskSkeletonCard />
+    </section>
+  );
+}
+
+function NoMoreTasksCard() {
+  return (
+    <article className="task-message-card">
+      <h3>подходящих услуг больше нет</h3>
+      <p>ещё 6 услуг скрыты из-за фильтров<br />или выбранного времени</p>
+      <div className="task-message-actions">
+        <button type="button">показать остальные <span aria-hidden="true">⌄</span></button>
+        <img alt="Фильтры" src={assetUrl("funnel.svg")} />
+        <img alt="Настройки расписания" src={assetUrl("filter.svg")} />
+      </div>
+    </article>
+  );
+}
+
+function NoTasksForDayCard() {
+  return (
+    <article className="task-message-card task-message-card-empty">
+      <h3>в этот день услуг нет</h3>
+      <button type="button">подписаться на задания в этот день</button>
     </article>
   );
 }
@@ -711,14 +788,51 @@ function BookingSuccessScreen({ task, day, onGoToMyTasks, onBackToTasks }) {
 }
 
 function MyTasksView({ bookedTasks }) {
-  if (!bookedTasks.length) return <p className="task-empty-state my-tasks-empty">Записей пока нет</p>;
+  const records = [
+    ...bookedTasks.map((booking) => ({ ...booking, status: "booked" })),
+    ...demoMyTaskRecords,
+  ];
 
   return <section className="my-tasks-list">
-    {bookedTasks.map((booking) => <section className="task-day-section" key={booking.id}>
-      <h2 className="day-heading">{booking.day.label}, <span>{booking.day.secondaryLabel}</span></h2>
-      <EmployeeShiftCard day={booking.day} shift={{ ...booking.task, type: "gig" }} />
-    </section>)}
+    {records.map((booking) => <MyTaskCard booking={booking} key={booking.id} />)}
   </section>;
+}
+
+function MyTaskCard({ booking }) {
+  const { day, task } = booking;
+  const dateFragment = `${day.label}, ${day.secondaryLabel}`.match(/\d+ июня/)?.[0];
+  const date = dateFragment ? `${dateFragment}, 2025` : `${day.label}, ${day.secondaryLabel}`;
+  const status = myTaskStatuses[booking.status] ?? myTaskStatuses.booked;
+
+  return (
+    <article className="my-task-card">
+      <div className="my-task-card-top">
+        <div className="my-task-card-copy">
+          <p className={`my-task-status my-task-status-${status.tone}`}><span aria-hidden="true" />{status.label}</p>
+          <h2>{task.title}</h2>
+          <p className={task.metro ? "my-task-address my-task-address-with-metro" : "my-task-address"}>
+            {task.metro && <MetroIcon metro={task.metro} />}
+            <span>
+              {task.metro && <>{task.metro.station} · </>}
+              {task.address} · <img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />{task.distance}
+            </span>
+          </p>
+        </div>
+        <BrandMark brand={task.brand} />
+      </div>
+      <div className="my-task-divider" />
+      <div className="my-task-card-bottom">
+        <div>
+          <p className="my-task-payment">{task.payment}</p>
+          <p className="my-task-rate">{task.rate}</p>
+        </div>
+        <div className="my-task-date">
+          <p>{date}</p>
+          <p>{task.hours}</p>
+        </div>
+      </div>
+    </article>
+  );
 }
 
 function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollection, onRemoveCollection }) {
@@ -1572,6 +1686,7 @@ export function App() {
   const [isScrollTopVisible, setIsScrollTopVisible] = useState(false);
   const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
   const [sortBy, setSortBy] = useState(persistedState.sortBy || "recommended");
+  const [hasAppliedSort, setHasAppliedSort] = useState(Boolean(persistedState.hasAppliedSort));
   const [searchRadius, setSearchRadius] = useState(persistedState.searchRadius || 1);
   const [searchLocation, setSearchLocation] = useState(persistedState.searchLocation || defaultSearchLocation);
   const [appliedFilters, setAppliedFilters] = useState(persistedState.appliedFilters || { brands: [], minimumPayment: "", service: "" });
@@ -1591,11 +1706,13 @@ export function App() {
   const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(() => persistedState.settingsOnboardingVersion !== 2);
   const [selectedTask, setSelectedTask] = useState(null);
   const [scrollTargetDay, setScrollTargetDay] = useState(null);
+  const [isTimelineLoading, setIsTimelineLoading] = useState(false);
   const screenRef = useRef(null);
   const daySectionRefs = useRef({});
   const timelineDayRefs = useRef({});
   const programmaticDayRef = useRef(null);
   const lastScrollTopRef = useRef(0);
+  const timelineLoadTimerRef = useRef(null);
 
   useEffect(() => {
     window.localStorage.setItem(prototypeStorageKey, JSON.stringify({
@@ -1604,6 +1721,7 @@ export function App() {
       bookedTasks,
       catalogVersion,
       favoriteCollections,
+      hasAppliedSort,
       searchLocation,
       searchRadius,
       selectedAvailabilityDates,
@@ -1612,7 +1730,7 @@ export function App() {
       settingsOnboardingVersion: isSettingsOnboardingVisible ? 1 : 2,
       sortBy,
     }));
-  }, [appliedFilters, availabilityTime, bookedTasks, catalogVersion, favoriteCollections, isSettingsOnboardingVisible, searchLocation, searchRadius, selectedAvailabilityDates, selectedAvailabilityDuration, selectedAvailabilityWeekdays, sortBy]);
+  }, [appliedFilters, availabilityTime, bookedTasks, catalogVersion, favoriteCollections, hasAppliedSort, isSettingsOnboardingVisible, searchLocation, searchRadius, selectedAvailabilityDates, selectedAvailabilityDuration, selectedAvailabilityWeekdays, sortBy]);
 
   useEffect(() => {
     const timeline = document.querySelector(".date-timeline");
@@ -1644,6 +1762,8 @@ export function App() {
     }
     setScrollTargetDay(null);
   }, [isControlsRevealed, scrollTargetDay]);
+
+  useEffect(() => () => window.clearTimeout(timelineLoadTimerRef.current), []);
 
   useEffect(() => {
     const screen = screenRef.current;
@@ -1717,8 +1837,20 @@ export function App() {
   }
 
   function scrollToDay(date) {
+    const distance = Math.abs(Number(date) - Number(activeDay));
     programmaticDayRef.current = date;
     setActiveDay(date);
+
+    if (distance > 4) {
+      window.clearTimeout(timelineLoadTimerRef.current);
+      setIsTimelineLoading(true);
+      timelineLoadTimerRef.current = window.setTimeout(() => {
+        setIsTimelineLoading(false);
+        setScrollTargetDay(date);
+      }, 100);
+      return;
+    }
+
     setScrollTargetDay(date);
   }
 
@@ -1750,6 +1882,7 @@ export function App() {
 
   function selectSortOption(nextSortBy) {
     setSortBy(nextSortBy);
+    setHasAppliedSort(true);
     setIsSortSheetOpen(false);
   }
 
@@ -1788,9 +1921,9 @@ export function App() {
     const locationKey = `${searchLocation.coords.join(",")}-${catalogVersion}-${dayIndex}`;
     const distanceBands = [
       [180, 720],
+      [760, 980],
       [1200, 1900],
-      [3100, 4900],
-      [7200, 9800],
+      [320, 880],
       [15000, 47000],
     ];
     const locationAddress = searchLocation.label.replace(/, Россия$/, "");
@@ -1810,33 +1943,56 @@ export function App() {
         ...source,
         title: DEMO_SERVICE_TITLES[(dayIndex * distanceBands.length + taskIndex) % DEMO_SERVICE_TITLES.length],
         address: `${locationAddress}, д. ${1 + Math.floor(seededValue(`${seed}-building`) * 96)}`,
-        badge: "подходит вам",
+        badge: taskIndex === 0 ? "подходит вам" : undefined,
         breakInfo: hasBreak ? `${duration - 1} ч + 1 ч перерыв` : `${duration} ч без перерыва`,
         distance: distanceInMeters >= 1000 ? `${(distanceInMeters / 1000).toFixed(1).replace(".", ",")} км` : `${distanceInMeters} м`,
         hours: `${String(startHour).padStart(2, "0")}:00 – ${String(endHour).padStart(2, "0")}:00`,
         id: `${day.date}-${catalogVersion}-${taskIndex}-${source.id}`,
         metro: undefined,
         payment: formatPayment(payment),
+        recommendation: Math.floor(seededValue(`${seed}-recommendation`) * 100),
         rate: `${rate} ₽/час`,
+        mismatchHints: taskIndex === 2 ? ["Пересекается со сменой"] : [],
+        variant: taskIndex === 3 ? "special" : undefined,
       };
     });
   }
 
-  function getVisibleTasks(tasks, date) {
+  function getTaskMismatchReasons(task, date) {
     const maximumDistance = searchRadius * 1000;
     const minimumPayment = Number.parseInt(appliedFilters.minimumPayment.replace(/\D/g, ""), 10) || 0;
     const selectedService = appliedFilters.service.trim().toLocaleLowerCase("ru-RU");
+    const isSuggested = Boolean(task.badge || task.variant === "special");
+    const reasons = [];
+    const hasFilterMismatch = (appliedFilters.brands.length > 0 && !appliedFilters.brands.includes(task.brand))
+      || (selectedService && !task.title.toLocaleLowerCase("ru-RU").includes(selectedService))
+      || getPaymentValue(task.payment) < minimumPayment
+      || !matchesDurationPreference(task, selectedAvailabilityDuration);
 
-    return tasks.filter((task) => (
-      (!onlyMatching || task.badge)
-      && getDistanceInMeters(task.distance) <= maximumDistance
-      && (!onlyMatching || isAvailableForMatching(date))
-      && (!onlyMatching || isTaskWithinAvailability(task, availabilityTime))
-      && (!onlyMatching || matchesDurationPreference(task, selectedAvailabilityDuration))
-      && (appliedFilters.brands.length === 0 || appliedFilters.brands.includes(task.brand))
-      && (!selectedService || task.title.toLocaleLowerCase("ru-RU").includes(selectedService))
-      && getPaymentValue(task.payment) >= minimumPayment
-    ));
+    if (!isAvailableForMatching(date)) reasons.push("Вне доступности");
+    if (!isTaskWithinAvailability(task, availabilityTime)) reasons.push("Пересекается со сменой");
+    if (getDistanceInMeters(task.distance) > maximumDistance) reasons.push("Вне радиуса");
+    if (hasFilterMismatch || (!isSuggested && reasons.length === 0)) reasons.push("Не совпадает с фильтрами");
+    reasons.push(...task.mismatchHints);
+
+    return [...new Set(reasons)];
+  }
+
+  function getTasksForFeed(tasks, date) {
+    const decoratedTasks = tasks.map((task) => ({
+      ...task,
+      restrictionTags: getTaskMismatchReasons(task, date),
+    }));
+    const suitableTasks = decoratedTasks.filter((task) => task.restrictionTags.length === 0);
+    const suggestedTasks = suitableTasks.filter((task) => task.badge || task.variant === "special");
+    const restrictedTasks = decoratedTasks.filter((task) => task.restrictionTags.length > 0);
+
+    if (onlyMatching) return getOrderedTasks(suggestedTasks, sortBy, hasAppliedSort);
+
+    return [
+      ...getOrderedTasks(suitableTasks, sortBy, hasAppliedSort),
+      ...getSortedTasks(restrictedTasks, sortBy),
+    ];
   }
 
   return (
@@ -1945,7 +2101,7 @@ export function App() {
           </div>
         </section>}
 
-        <section aria-label={activeTab === 2 ? "Мои задания" : activeTab === 1 ? "Избранное" : "Список заданий"} className="task-list">
+        <section aria-label={activeTab === 2 ? "Мои задания" : activeTab === 1 ? "Избранное" : "Список заданий"} className={isTimelineLoading ? "task-list task-list-loading" : "task-list"}>
           {activeTab === 1 ? <FavoriteCollectionsView
             collections={favoriteCollections}
             onApplyCollection={(collection) => {
@@ -1963,9 +2119,12 @@ export function App() {
               setCurrentView("filters");
             }}
             onRemoveCollection={(id) => setFavoriteCollections((collections) => collections.filter((collection) => collection.id !== id))}
-          /> : activeTab === 2 ? <MyTasksView bookedTasks={bookedTasks} /> : activeTab === 3 ? <p className="task-empty-state my-tasks-empty">Заданий на подписание нет</p> : dayGroups.map((day, dayIndex) => {
+          /> : activeTab === 2 ? <MyTasksView bookedTasks={bookedTasks} /> : activeTab === 3 ? <p className="task-empty-state my-tasks-empty">Заданий на подписание нет</p> : isTimelineLoading ? <TimelineLoadingState /> : dayGroups.map((day, dayIndex) => {
             const employeeShifts = getEmployeeShifts(day);
-            const visibleTasks = getSortedTasks(getVisibleTasks(getLocationTasks(day, dayIndex), day.date), sortBy);
+            const hasDemoEmptyDay = day.date === "14";
+            const visibleTasks = hasDemoEmptyDay
+              ? []
+              : getTasksForFeed(getLocationTasks(day, dayIndex), day.date);
 
             return (
               <section
@@ -1977,7 +2136,10 @@ export function App() {
                 <h2 className="day-heading">{day.label}, <span>{day.secondaryLabel}</span></h2>
                 {employeeShifts.map((shift, index) => <EmployeeShiftCard day={day} key={`${day.date}-${shift.type}-${shift.hours}-${index}`} shift={shift} />)}
                 {visibleTasks.map((task) => <TaskCard key={task.id} onOpen={() => openTaskDetails(task, day)} task={task} />)}
-                {visibleTasks.length === 0 && employeeShifts.length === 0 && (
+                {day.date === "8" && <TaskSkeletonCard />}
+                {day.date === "10" && <NoMoreTasksCard />}
+                {hasDemoEmptyDay && <NoTasksForDayCard />}
+                {visibleTasks.length === 0 && employeeShifts.length === 0 && !hasDemoEmptyDay && (
                   <p className="task-empty-state">Нет подходящих смен</p>
                 )}
               </section>

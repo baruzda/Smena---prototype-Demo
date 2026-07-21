@@ -4,7 +4,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => {
     localStorage.clear();
-    localStorage.setItem("x5-shift-prototype-state", JSON.stringify({ settingsOnboardingSeen: true }));
+    localStorage.setItem("x5-shift-prototype-state", JSON.stringify({ settingsOnboardingVersion: 2 }));
   });
   await page.reload();
 });
@@ -41,6 +41,64 @@ test("выбор даты, сортировка и плавающий возвр
   await expect(page.getByRole("button", { name: "Наверх", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Наверх", exact: true }).click();
   await expect.poll(() => page.locator(".screen").evaluate((element) => element.scrollTop)).toBeLessThan(2);
+});
+
+test("специальное для вас приоритетно без сортировки и участвует в сортировке", async ({ page }) => {
+  const firstDay = page.locator('[data-day="1"]');
+
+  await expect(firstDay.locator(".task-card").first()).toHaveClass(/task-card-special/);
+  await expect(firstDay.getByText("специально для вас", { exact: false })).toBeVisible();
+
+  await page.getByRole("button", { name: "Сортировка", exact: true }).click();
+  await page.getByRole("radio", { name: "сначала ближайшие", exact: true }).click();
+
+  const distances = await firstDay.locator(".task-card .task-address-text").evaluateAll((nodes) => nodes.map((node) => {
+    const match = node.textContent?.match(/([\d,.]+)\s*(км|м)\s*$/);
+    if (!match) return Number.POSITIVE_INFINITY;
+    const value = Number.parseFloat(match[1].replace(",", "."));
+    return match[2] === "км" ? value * 1000 : value;
+  }));
+
+  expect(distances[0]).toBe(Math.min(...distances));
+  await expect(firstDay.getByText("специально для вас", { exact: false })).toBeVisible();
+});
+
+test("неподходящие задания раскрываются после подходящих с причинами", async ({ page }) => {
+  const firstDay = page.locator('[data-day="1"]');
+
+  await page.locator(".toggle-label input").uncheck();
+  const cards = firstDay.locator(".task-card");
+  const restrictedCards = firstDay.locator(".task-card:has(.task-restrictions)");
+
+  await expect(restrictedCards).toHaveCount(3);
+  await expect(restrictedCards.first()).toContainText("Не совпадает с фильтрами");
+  await expect(restrictedCards.nth(1)).toContainText("Вне радиуса");
+  await expect(restrictedCards.nth(1)).toContainText("Пересекается со сменой");
+
+  const firstRestrictedIndex = await restrictedCards.first().evaluate((card) => Array.from(card.parentElement?.children || []).indexOf(card));
+  const suitableCards = await cards.evaluateAll((nodes) => nodes.filter((card) => !card.querySelector(".task-restrictions")).length);
+  expect(firstRestrictedIndex).toBeGreaterThanOrEqual(suitableCards);
+});
+
+test("в моих заданиях показаны демо-записи с разными статусами", async ({ page }) => {
+  await page.getByRole("button", { name: "мои задания", exact: true }).click();
+  const records = page.locator(".my-task-card");
+
+  await expect(records).toHaveCount(4);
+  await expect(records).toContainText(["записаны", "на подтверждении", "смена завершена", "отменена"]);
+});
+
+test("дальний переход по таймлайну показывает skeleton перед прокруткой", async ({ page }) => {
+  const loadingState = page.getByRole("status", { name: "Загрузка заданий", exact: true });
+
+  await page.getByRole("button", { name: "7 вс", exact: true }).click();
+  await expect(loadingState).toBeVisible();
+  await expect(loadingState).toBeHidden({ timeout: 1_000 });
+  await expect.poll(() => page.locator(".screen").evaluate((element) => element.scrollTop)).toBeGreaterThan(10);
+
+  await page.getByRole("button", { name: "1 пн", exact: true }).click();
+  await expect(loadingState).toBeVisible();
+  await expect(loadingState).toBeHidden({ timeout: 1_000 });
 });
 
 test("сохранённая подборка открывает выдачу и удаляется из избранного", async ({ page }) => {
@@ -158,14 +216,17 @@ test("настройки доступности блокируют заняты�
 });
 
 test("запись на смену появляется в истории и не дублируется", async ({ page }) => {
-  await page.getByRole("button", { name: "Подробнее: приёмщик товара", exact: true }).click();
+  const taskCard = page.locator(".task-card[role='button']").first();
+  const taskName = await taskCard.locator("h2").textContent();
+  await taskCard.click();
   await page.getByRole("button", { name: "записаться", exact: true }).click();
   await expect(page.getByText("вы записаны", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "мои задания", exact: true }).click();
-  await expect(page.getByRole("region", { name: "Мои задания", exact: true })).toContainText("приёмщик товара");
+  await expect(page.getByRole("region", { name: "Мои задания", exact: true })).toContainText(taskName || "");
+  await expect(page.locator(".my-task-card").filter({ hasText: "записаны" })).toHaveCount(2);
 
   await page.reload();
-  await page.getByRole("button", { name: "Подробнее: приёмщик товара", exact: true }).click();
+  await page.getByRole("button", { name: `Подробнее: ${taskName}`, exact: true }).click();
   await expect(page.getByRole("button", { name: "вы уже записаны", exact: true })).toBeDisabled();
 });
 
