@@ -2140,7 +2140,7 @@ export function App() {
                 {day.date === "10" && <NoMoreTasksCard />}
                 {hasDemoEmptyDay && <NoTasksForDayCard />}
                 {visibleTasks.length === 0 && employeeShifts.length === 0 && !hasDemoEmptyDay && (
-                  <p className="task-empty-state">Нет подходящих смен</p>
+                  <NoTasksForDayCard />
                 )}
               </section>
             );
