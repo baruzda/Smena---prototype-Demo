@@ -77,6 +77,7 @@ npm run build
 
 ## Дополнительная документация
 
+- [Матрица правил каталога, фильтров и доступности](docs/catalog-rules-matrix.md)
 - [Матрица правил доступности, смен и территории](docs/availability-rules.md)
 - [Отчёт E2E-проверки](docs/e2e-report.md)
 
