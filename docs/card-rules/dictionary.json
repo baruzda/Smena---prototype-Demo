@@ -19,6 +19,11 @@
       "id": "saved_collection",
       "name": "Сохранённая подборка",
       "description": "Набор фильтров, территории и радиуса, сохранённый пользователем."
+    },
+    {
+      "id": "favorite_store",
+      "name": "Избранный магазин",
+      "description": "Магазин с сохранёнными условиями показа услуг."
     }
   ],
   "states": [
@@ -76,7 +81,8 @@
     "place",
     "remove_from_surface",
     "set_order",
-    "replace"
+    "replace",
+    "no_op"
   ],
   "operators": [
     "equals",
@@ -95,7 +101,7 @@
     "overlaps",
     "not_overlaps"
   ],
-  "ruleStatuses": ["draft", "active", "superseded", "deprecated"],
+  "ruleStatuses": ["draft", "active", "provisional", "superseded", "deprecated"],
   "targetTypes": [
     "content_element",
     "card_variant",

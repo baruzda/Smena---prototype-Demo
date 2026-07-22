@@ -2,7 +2,8 @@
 
 Применяй эти инструкции при любом изменении карточек, их контента, статусов, CTA, порядка или размещения по табам.
 
-1. Источник истины находится в `docs/card-rules/*.json`.
+1. Перед изменением прочитай `.codex/rules/card-rules.md`, `docs/card-rules/README.md`, `component-bindings.json` и `migration-map.json`; scope задачи объявляется как LOCAL, SHARED или GLOBAL (по умолчанию LOCAL).
+2. approved rule отличается от implementation observation: наблюдение не является product truth. Marker не меняет анатомию; structural variant меняет крупные блоки или поведение. Business state не является UI-state.
 2. Не редактируй `docs/card-rules/generated/*.md` вручную.
 3. Перед добавлением сущности найди существующий ID в `dictionary.json`.
 4. Не создавай новый тип бизнес-сущности для маркера, состояния или таба.
@@ -16,4 +17,5 @@
 12. После изменения запускай `npm run validate:card-rules`.
 13. Изменение не завершено, пока валидатор не завершился успешно.
 14. Термины `задание`, `работа`, `подработка` имеют открытый юридический конфликт. Не расширяй их использование без отдельного решения.
-15. При запросе вида `измени карточку X в табе Y` сначала определи entity, surface, template, variant, target и действующее rule ID.
+15. При запросе вида `измени карточку X в табе Y` сначала определи entity, state dimensions, surface, template, structural variant, markers, content, rule ID, exception и scenario.
+16. Обновляй migration map; не удаляй legacy-реализацию без статуса `verified`.

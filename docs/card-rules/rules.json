@@ -55,13 +55,13 @@
     {
       "id": "RULE-VARIANT-001",
       "name": "Вариант карточки Подходит вам",
-      "status": "active",
+      "status": "provisional",
       "scope": {
         "entity": "service_offer",
         "surfaces": ["tasks", "favorites"],
         "templates": ["service_offer_card"]
       },
-      "target": { "type": "card_variant", "template": "service_offer_card", "id": "match" },
+      "target": { "type": "content_element", "id": "marker.suitable_for_you" },
       "when": {
         "all": [
           { "path": "computed.marker.suitable_for_you", "operator": "equals", "value": true },
@@ -69,12 +69,13 @@
           { "path": "service.isSpecialOffer", "operator": "equals", "value": false }
         ]
       },
-      "effect": { "action": "set_variant", "value": "match" },
-      "otherwise": { "action": "set_variant", "value": "default" },
+      "effect": { "action": "show" },
+      "otherwise": { "action": "no_op" },
       "priority": 600,
       "exceptions": [],
       "supersedes": [],
-      "source": { "code": "src/App.jsx#getGigTaskCardVariant", "decision": "DEC-001" },
+      "source": { "code": "src/App.jsx#getGigTaskCardVariant", "observation": "OBS-CARD-VARIANT-001" },
+      "relatedQuestion": "OPEN-QUESTION-008",
       "tests": ["SCN-MATCH-001", "SCN-MATCH-002"]
     },
     {

@@ -18,19 +18,13 @@
       ],
       "supportedSurfaces": [
         "tasks",
-        "favorites",
-        "my_tasks"
+        "favorites"
       ],
       "variants": [
         {
           "id": "default",
           "name": "Базовая",
           "description": "Услуга без персонального маркера и без ограничений."
-        },
-        {
-          "id": "match",
-          "name": "Подходит вам",
-          "description": "Базовая карточка с маркером совпадения доступности."
         },
         {
           "id": "restriction_status",
@@ -51,11 +45,6 @@
           "id": "special",
           "name": "Специально для вас",
           "description": "Персональное предложение с таймером и самостоятельным CTA."
-        },
-        {
-          "id": "favorite_unavailable",
-          "name": "Недоступна в избранном",
-          "description": "Сохранённая услуга остаётся видимой, но действие недоступно."
         }
       ]
     },
@@ -72,8 +61,7 @@
         "schedule"
       ],
       "supportedSurfaces": [
-        "tasks",
-        "my_tasks"
+        "tasks"
       ],
       "variants": [
         {
@@ -140,8 +128,7 @@
         "actions"
       ],
       "supportedSurfaces": [
-        "signing",
-        "my_tasks"
+        "signing"
       ],
       "variants": [
         {
@@ -157,6 +144,15 @@
           "name": "Подписано"
         }
       ]
+    },
+    {
+      "id": "favorite_store_card",
+      "entity": "favorite_store",
+      "name": "Карточка избранного магазина",
+      "description": "Существующая демонстрационная карточка магазина.",
+      "slots": ["title", "location", "filters_summary", "actions"],
+      "supportedSurfaces": ["favorites"],
+      "variants": [{ "id": "default", "name": "Базовая" }]
     },
     {
       "id": "saved_collection_card",

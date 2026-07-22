@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "observations": [
+    {
+      "id": "OBS-CARD-VARIANT-001",
+      "name": "Выбор варианта по количеству ограничений",
+      "source": "src/App.jsx#getGigTaskCardVariant",
+      "observedBehavior": { "oneRestriction": "restriction_status", "twoRestrictions": "restriction_status_plus", "threeOrMoreRestrictions": "restriction_tags" },
+      "approvalStatus": "unresolved",
+      "relatedQuestion": "OPEN-QUESTION-008",
+      "mustNotBeUsedAsProductTruth": true
+    },
+    {
+      "id": "OBS-CARD-PLACEMENT-001",
+      "name": "Карточки услуг отображаются только в ленте заданий",
+      "source": "src/App.jsx#TaskCard",
+      "observedBehavior": { "surface": "tasks" },
+      "approvalStatus": "unresolved",
+      "relatedQuestion": "OPEN-QUESTION-011",
+      "mustNotBeUsedAsProductTruth": true
+    }
+  ]
+}

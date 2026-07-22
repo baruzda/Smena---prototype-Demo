@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "templates": {
+    "service_offer_card": { "currentComponent": "TaskCard", "currentSource": "src/App.jsx", "targetComponent": "ServiceOfferCard", "migrationStatus": "legacy" },
+    "employee_shift_card": { "currentComponent": "EmployeeShiftCard", "currentSource": "src/App.jsx", "targetComponent": "EmployeeShiftCard", "migrationStatus": "migrated" },
+    "my_service_card": { "currentComponent": "MyTaskCard", "currentSource": "src/App.jsx", "targetComponent": "MyTaskCard", "migrationStatus": "migrated" },
+    "signing_card": { "currentComponent": null, "currentSource": "src/App.jsx", "targetComponent": "SigningCard", "migrationStatus": "planned" },
+    "saved_collection_card": { "currentComponent": "FavoriteCollectionsView", "currentSource": "src/App.jsx", "targetComponent": "FavoriteCollectionCard", "migrationStatus": "legacy" },
+    "favorite_store_card": { "currentComponent": "FavoriteCollectionsView", "currentSource": "src/App.jsx", "targetComponent": "FavoriteStoreCard", "migrationStatus": "legacy" }
+  },
+  "contentElements": { "marker.suitable_for_you": { "currentImplementation": "gig-task-badge", "targetComponent": "Badge" }, "marker.specially_for_you": { "currentImplementation": "special-card-badges", "targetComponent": "Badge" } },
+  "uiStates": { "catalog.filtered_empty": { "currentComponent": "TaskMessageCard", "targetComponent": "FilteredServicesState" }, "service_offer.skeleton": { "currentComponent": "TaskSkeletonCard", "targetComponent": "ServiceCardSkeleton" } }
+}

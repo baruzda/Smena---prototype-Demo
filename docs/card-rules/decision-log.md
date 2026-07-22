@@ -1,5 +1,29 @@
 # Журнал решений по карточкам
 
+## DEC-002 — product rules и implementation observations
+
+Контекст: поведение `App.jsx` не равно утверждённому продуктовым решению. Решение: хранить code-only поведение в `implementation-observations.json`; причина — избежать ложного источника истины. Последствие: такие правила provisional или unresolved. Не входит: изменение UI. Связанные файлы: observations и rules.
+
+## DEC-003 — независимые оси состояний
+
+Контекст: один список смешивал доступность, участие и подписание. Решение: `state-dimensions.json` с legacy mapping. Причина: независимые жизненные циклы. Не входит: переименование runtime state.
+
+## DEC-004 — markers и structural variants
+
+Контекст: marker `suitable_for_you` был вариантом `match`. Решение: marker не выбирает structural variant; code-derived выбор provisional. Причина: один badge не меняет анатомию. Не входит: утверждение правила ограничений.
+
+## DEC-005 — UI-states не являются карточками услуги
+
+Контекст: skeleton и сообщения имели общий радиус с карточками. Решение: отдельный registry UI states. Причина: они не содержат service entity. Не входит: новый UI.
+
+## DEC-006 — component bindings и migration map
+
+Контекст: модель правил не была связана с legacy implementation. Решение: технические bindings и карта сохранности. Причина: локальная безопасная миграция. Не входит: компонентная миграция.
+
+## DEC-007 — declarative acceptance scenarios
+
+Контекст: scenarios не исполняют resolver. Решение: обозначать их declarative до отдельного `resolveCardPresentation(input)`. Причина: не заявлять несуществующую проверку. Не входит: production resolver.
+
 ## DEC-001
 
 Дата: 2026-07-22

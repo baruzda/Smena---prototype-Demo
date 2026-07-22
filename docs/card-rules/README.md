@@ -2,7 +2,7 @@
 
 ## Статус документа
 
-Этот каталог является источником истины для правил карточек услуг, их контента, вариантов, размещения и исключений.
+Этот каталог разделяет источник истины по типу данных: утверждённые product rules, Figma contracts, observed implementation и unresolved assumptions. Текущий `src/App.jsx` является наблюдением реализации, пока решение не отмечено явно.
 
 Старые документы `docs/catalog-rules-matrix.md` и `docs/availability-rules.md` остаются источниками контекста и продуктовых решений, но при расхождении приоритет имеют данные из `docs/card-rules/*.json` и записи в `decision-log.md`.
 
@@ -18,6 +18,10 @@
 - `exceptions.json` хранит только переопределения базовых правил.
 - `precedence.json` задаёт приоритеты и порядок разрешения конфликтов.
 - `scenarios.json` содержит проверяемые продуктовые сценарии.
+- `state-dimensions.json` разделяет availability, participation и signing без удаления legacy ID.
+- `implementation-observations.json` хранит неподтверждённое поведение прототипа.
+- `ui-states.json` хранит состояния интерфейса и списка, не варианты услуги.
+- `component-bindings.json` и `migration-map.json` связывают UX-модель с текущей миграцией.
 - `open-questions.md` фиксирует решения, которых пока не хватает.
 - `decision-log.md` хранит историю замен и изменений правил.
 - `generated/` содержит автоматически собранные матрицы для чтения командой.
@@ -37,12 +41,16 @@ service_offer
 + available
 + tasks
 + service_offer_card
-+ match
++ marker.suitable_for_you
 + marker.suitable_for_you
 + отсутствие блокирующих исключений
 ```
 
-`Подходит вам`, `Специально для вас`, `В избранном` и ограничения не являются отдельными бизнес-сущностями. Это маркеры или варианты отображения базовой карточки.
+`Подходит вам` — marker: он не меняет анатомию и не выбирает structural variant. Structural variant меняет крупные блоки, действия или самостоятельный визуальный контракт. UI-state (skeleton, empty, message, error) не является business state услуги.
+
+## Acceptance scenarios
+
+`scenarios.json` пока является декларативным реестром приёмочных сценариев (`executionStatus: declarative`), а не production resolver. Следующий этап — документировать и реализовать отдельно `resolveCardPresentation(input)`.
 
 ## Правило атомарности
 
