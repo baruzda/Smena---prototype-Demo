@@ -3604,7 +3604,7 @@ button.filter-field {
 
 .my-tasks-list {
   display: grid;
-  gap: 20px;
+  gap: 8px;
 }
 
 .favorites-view {
