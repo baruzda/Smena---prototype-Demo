@@ -31,13 +31,29 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate registries and fixtures
-        run: npm run test:ci
+      - name: Validate card rules
+        run: npm run validate:card-rules
+
+      - name: Verify committed generated reports
+        run: |
+          npm run check:card-rules-generated
+          git diff --exit-code -- docs/card-rules/generated
+
+      - name: Run isolated validator fixtures
+        run: npm run test:card-rules
+
+      - name: Check deterministic generation
+        run: npm run test:card-rules-validator
+
+      - name: Build production bundle
+        run: npm run build
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
       - name: Run E2E
+        env:
+          E2E_PORT: 4187
         run: |
           set -o pipefail
           npm run test:e2e 2>&1 | tee e2e-output.txt

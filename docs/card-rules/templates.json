@@ -27,11 +27,6 @@
           "description": "Услуга без персонального маркера и без ограничений."
         },
         {
-          "id": "match",
-          "name": "Подходит вам (legacy presentation)",
-          "description": "Legacy-совместимость сценария; семантика задаётся marker.suitable_for_you."
-        },
-        {
           "id": "favorite_unavailable",
           "name": "Недоступная избранная услуга (legacy presentation)",
           "description": "Legacy-совместимость исключения избранного до отдельного решения о варианте."
@@ -161,7 +156,7 @@
       "name": "Карточка избранного магазина",
       "description": "Существующая демонстрационная карточка магазина.",
       "slots": ["title", "location", "filters_summary", "actions"],
-      "supportedSurfaces": ["favorites"],
+      "supportedSurfaces": [],
       "variants": [{ "id": "default", "name": "Базовая" }]
     },
     {
@@ -175,9 +170,7 @@
         "location",
         "actions"
       ],
-      "supportedSurfaces": [
-        "favorites"
-      ],
+      "supportedSurfaces": ["favorites"],
       "variants": [
         {
           "id": "active_collection",

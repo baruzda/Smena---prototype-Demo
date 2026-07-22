@@ -1,5 +1,9 @@
 # Журнал решений по карточкам
 
+## DEC-008 — code-only правила остаются provisional
+
+Контекст: часть поведения, перенесённого из `src/App.jsx`, была помечена `active`, хотя DEC-002 запрещает считать implementation product truth. Решение: code-only выбор вариантов, порядок специальных предложений, runtime mapping Моих заданий и условие метро переведены в `provisional`, связаны с observations и unresolved questions. Эта запись уточняет и заменяет только утверждение DEC-001 о подтверждённости code-derived поведения; реестры и UI не удаляются и не меняются.
+
 ## DEC-002 — product rules и implementation observations
 
 Контекст: поведение `App.jsx` не равно утверждённому продуктовым решению. Решение: хранить code-only поведение в `implementation-observations.json`; причина — избежать ложного источника истины. Последствие: такие правила provisional или unresolved. Не входит: изменение UI. Связанные файлы: observations и rules.

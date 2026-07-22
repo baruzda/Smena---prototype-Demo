@@ -54,7 +54,7 @@
     },
     {
       "id": "RULE-VARIANT-001",
-      "name": "Вариант карточки Подходит вам",
+      "name": "Observed-условие маркера Подходит вам",
       "status": "provisional",
       "scope": {
         "entity": "service_offer",
@@ -81,7 +81,7 @@
     {
       "id": "RULE-SPECIAL-001",
       "name": "Вариант Специально для вас",
-      "status": "active",
+      "status": "provisional",
       "scope": {
         "entity": "service_offer",
         "surfaces": ["tasks"],
@@ -100,13 +100,14 @@
       "priority": 500,
       "exceptions": ["EXC-SPECIAL-001"],
       "supersedes": [],
-      "source": { "code": "src/App.jsx#getGigTaskCardVariant", "decision": "DEC-001" },
+      "source": { "code": "src/App.jsx#getGigTaskCardVariant", "observation": "OBS-CARD-VARIANT-001" },
+      "relatedQuestion": "OPEN-QUESTION-008",
       "tests": ["SCN-SPECIAL-001", "SCN-SPECIAL-002"]
     },
     {
       "id": "RULE-SPECIAL-002",
       "name": "Специальные предложения идут первыми до явной сортировки",
-      "status": "active",
+      "status": "provisional",
       "scope": {
         "entity": "service_offer",
         "surfaces": ["tasks"],
@@ -124,13 +125,14 @@
       "priority": 500,
       "exceptions": [],
       "supersedes": [],
-      "source": { "code": "src/App.jsx#getOrderedTasks", "decision": "DEC-001" },
+      "source": { "code": "src/App.jsx#getOrderedTasks", "observation": "OBS-CARD-ORDER-001" },
+      "relatedQuestion": "OPEN-QUESTION-024",
       "tests": ["SCN-SPECIAL-001", "SCN-SPECIAL-003"]
     },
     {
       "id": "RULE-RESTRICTION-001",
       "name": "Одно ограничение показывает статус Не подходит",
-      "status": "active",
+      "status": "provisional",
       "scope": {
         "entity": "service_offer",
         "surfaces": ["tasks", "favorites"],
@@ -143,13 +145,14 @@
       "priority": 600,
       "exceptions": [],
       "supersedes": [],
-      "source": { "code": "src/App.jsx#getGigTaskCardVariant", "decision": "DEC-001" },
+      "source": { "code": "src/App.jsx#getGigTaskCardVariant", "observation": "OBS-CARD-VARIANT-001" },
+      "relatedQuestion": "OPEN-QUESTION-008",
       "tests": ["SCN-RESTRICTION-001", "SCN-RESTRICTION-002"]
     },
     {
       "id": "RULE-RESTRICTION-002",
       "name": "Два ограничения показывают общий статус",
-      "status": "active",
+      "status": "provisional",
       "scope": {
         "entity": "service_offer",
         "surfaces": ["tasks", "favorites"],
@@ -162,13 +165,14 @@
       "priority": 600,
       "exceptions": [],
       "supersedes": [],
-      "source": { "code": "src/App.jsx#getGigTaskCardVariant", "decision": "DEC-001" },
+      "source": { "code": "src/App.jsx#getGigTaskCardVariant", "observation": "OBS-CARD-VARIANT-001" },
+      "relatedQuestion": "OPEN-QUESTION-008",
       "tests": ["SCN-RESTRICTION-002", "SCN-RESTRICTION-003"]
     },
     {
       "id": "RULE-RESTRICTION-003",
       "name": "Три и более ограничения показываются тегами",
-      "status": "active",
+      "status": "provisional",
       "scope": {
         "entity": "service_offer",
         "surfaces": ["tasks", "favorites"],
@@ -181,7 +185,8 @@
       "priority": 600,
       "exceptions": [],
       "supersedes": [],
-      "source": { "code": "src/App.jsx#getGigTaskCardVariant", "decision": "DEC-001" },
+      "source": { "code": "src/App.jsx#getGigTaskCardVariant", "observation": "OBS-CARD-VARIANT-001" },
+      "relatedQuestion": "OPEN-QUESTION-008",
       "tests": ["SCN-RESTRICTION-003", "SCN-RESTRICTION-004"]
     },
     {
@@ -230,7 +235,7 @@
     {
       "id": "RULE-MYTASKS-002",
       "name": "Статус определяет секцию в Моих заданиях",
-      "status": "active",
+      "status": "provisional",
       "scope": {
         "entity": "service_offer",
         "surfaces": ["my_tasks"],
@@ -259,7 +264,8 @@
       "priority": 800,
       "exceptions": [],
       "supersedes": [],
-      "source": { "code": "src/App.jsx#myTaskStatuses", "decision": "DEC-001" },
+      "source": { "code": "src/App.jsx#myTaskStatuses", "observation": "OBS-MYTASKS-STATUS-001" },
+      "relatedQuestion": "OPEN-QUESTION-025",
       "tests": ["SCN-MYTASKS-002", "SCN-MYTASKS-003"]
     },
     {
@@ -308,7 +314,7 @@
     {
       "id": "RULE-SIGNING-001",
       "name": "Документы пользователя показываются в табе На подписание",
-      "status": "active",
+      "status": "provisional",
       "scope": {
         "entity": "service_offer",
         "surfaces": ["signing"],
@@ -327,12 +333,13 @@
       "exceptions": ["EXC-SIGNING-001"],
       "supersedes": [],
       "source": { "documents": ["README.md"], "decision": "DEC-001" },
+      "relatedQuestion": "OPEN-QUESTION-011",
       "tests": ["SCN-SIGNING-001", "SCN-SIGNING-002"]
     },
     {
       "id": "RULE-CONTENT-001",
       "name": "Метро показывается только при наличии данных",
-      "status": "active",
+      "status": "provisional",
       "scope": {
         "entity": "service_offer",
         "surfaces": ["tasks", "favorites"],
@@ -345,7 +352,8 @@
       "priority": 100,
       "exceptions": [],
       "supersedes": [],
-      "source": { "code": "src/App.jsx#TaskCard", "decision": "DEC-001" },
+      "source": { "code": "src/App.jsx#TaskCard", "observation": "OBS-CONTENT-METRO-001" },
+      "relatedQuestion": "OPEN-QUESTION-026",
       "tests": ["SCN-CONTENT-001", "SCN-CONTENT-002"]
     },
     {

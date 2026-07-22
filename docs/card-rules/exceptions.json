@@ -69,7 +69,8 @@
     {
       "id": "EXC-SIGNING-001",
       "name": "Документ без действия пользователя не показывается как ожидающий",
-      "status": "active",
+      "status": "provisional",
+      "relatedQuestion": "OPEN-QUESTION-011",
       "baseRule": "RULE-SIGNING-001",
       "when": { "any": [
         { "path": "signing.actor", "operator": "not_equals", "value": "user" },

@@ -1,21 +1,19 @@
 # Работа с правилами карточек
 
-Применяй эти инструкции при любом изменении карточек, их контента, статусов, CTA, порядка или размещения по табам.
+Применяй эти инструкции при любом изменении карточек, их контента, CTA, порядка, list/UI states или размещения.
 
-1. Перед изменением прочитай `.codex/rules/card-rules.md`, `docs/card-rules/README.md`, `component-bindings.json` и `migration-map.json`; scope задачи объявляется как LOCAL, SHARED или GLOBAL (по умолчанию LOCAL).
-2. approved rule отличается от implementation observation: наблюдение не является product truth. Marker не меняет анатомию; structural variant меняет крупные блоки или поведение. Business state не является UI-state.
-2. Не редактируй `docs/card-rules/generated/*.md` вручную.
-3. Перед добавлением сущности найди существующий ID в `dictionary.json`.
-4. Не создавай новый тип бизнес-сущности для маркера, состояния или таба.
-5. Одно правило должно менять только одну цель.
-6. Каждое исключение обязано ссылаться на `baseRule`.
-7. Не меняй смысл активного правила без `supersedes` и записи в `decision-log.md`.
-8. Не удаляй старые правила и решения без прямой команды.
-9. При изменении карточки проверь все поверхности из `supportedSurfaces`.
-10. Добавляй минимум один положительный и один отрицательный сценарий.
-11. Не разрешай конфликт правил предположением. Зафиксируй его в `open-questions.md`.
-12. После изменения запускай `npm run validate:card-rules`.
-13. Изменение не завершено, пока валидатор не завершился успешно.
-14. Термины `задание`, `работа`, `подработка` имеют открытый юридический конфликт. Не расширяй их использование без отдельного решения.
-15. При запросе вида `измени карточку X в табе Y` сначала определи entity, state dimensions, surface, template, structural variant, markers, content, rule ID, exception и scenario.
-16. Обновляй migration map; не удаляй legacy-реализацию без статуса `verified`.
+1. Прочитай `docs/card-rules/README.md`, `component-bindings.json` и `migration-map.json`.
+2. Объяви scope: `LOCAL`, `SHARED` или `GLOBAL`; по умолчанию — `LOCAL`.
+3. Определи entity, state dimensions, surface, template, structural variant, markers, content, rule IDs, exceptions и scenarios до изменения React/CSS.
+4. `active` rule — approved product truth. `provisional` rule требует unresolved question. Implementation observation никогда не является product truth.
+5. Marker не меняет анатомию; structural variant меняет крупные блоки или поведение. Business state не является UI state.
+6. Одно правило изменяет одну цель. Исключение всегда ссылается на `baseRule`.
+7. Не меняй смысл active rule без `supersedes` и записи в `decision-log.md`.
+8. Не разрешай конфликт предположением: создай или свяжи unresolved question.
+9. При изменении карточки проверь все `supportedSurfaces` и placement rules.
+10. Обновляй scenarios, component bindings и migration map вместе с исходным реестром.
+11. Declarative scenario не называй исполняемым тестом.
+12. Не редактируй `docs/card-rules/generated/*.md` вручную.
+13. Не удаляй legacy implementation до статуса `verified` с evidence.
+14. Не расширяй конфликтующие термины `задание`, `работа`, `подработка` без продуктового решения.
+15. Обязательные проверки: `npm run validate:card-rules`, `npm run test:card-rules`, `npm run test:card-rules-validator`, `npm run build`, `npm run test:e2e`.

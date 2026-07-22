@@ -5,7 +5,7 @@
       "id": "OBS-CARD-VARIANT-001",
       "name": "Выбор варианта по количеству ограничений",
       "source": "src/App.jsx#getGigTaskCardVariant",
-      "observedBehavior": { "oneRestriction": "restriction_status", "twoRestrictions": "restriction_status_plus", "threeOrMoreRestrictions": "restriction_tags" },
+      "observedBehavior": { "specialWithoutRestrictions": "special", "oneRestriction": "restriction_status", "twoRestrictions": "restriction_status_plus", "threeOrMoreRestrictions": "restriction_tags" },
       "approvalStatus": "unresolved",
       "relatedQuestion": "OPEN-QUESTION-008",
       "mustNotBeUsedAsProductTruth": true
@@ -17,6 +17,33 @@
       "observedBehavior": { "surface": "tasks" },
       "approvalStatus": "unresolved",
       "relatedQuestion": "OPEN-QUESTION-011",
+      "mustNotBeUsedAsProductTruth": true
+    },
+    {
+      "id": "OBS-CARD-ORDER-001",
+      "name": "Специальные предложения идут первыми без выбранной сортировки",
+      "source": "src/App.jsx#getOrderedTasks",
+      "observedBehavior": { "defaultOrder": "special_before_regular", "withExplicitSort": "selected_sort" },
+      "approvalStatus": "unresolved",
+      "relatedQuestion": "OPEN-QUESTION-024",
+      "mustNotBeUsedAsProductTruth": true
+    },
+    {
+      "id": "OBS-MYTASKS-STATUS-001",
+      "name": "Runtime-статусы определяют секцию Моих заданий",
+      "source": "src/App.jsx#myTaskStatuses",
+      "observedBehavior": { "mapping": "pending_confirmation/booked/active/completed/cancelled" },
+      "approvalStatus": "unresolved",
+      "relatedQuestion": "OPEN-QUESTION-025",
+      "mustNotBeUsedAsProductTruth": true
+    },
+    {
+      "id": "OBS-CONTENT-METRO-001",
+      "name": "Метро отображается при наличии runtime-данных",
+      "source": "src/App.jsx#TaskCard",
+      "observedBehavior": { "condition": "task.metro is present" },
+      "approvalStatus": "unresolved",
+      "relatedQuestion": "OPEN-QUESTION-026",
       "mustNotBeUsedAsProductTruth": true
     }
   ]

@@ -9,5 +9,14 @@
     "favorite_store_card": { "currentComponent": "FavoriteCollectionsView", "currentSource": "src/App.jsx", "targetComponent": "FavoriteStoreCard", "migrationStatus": "legacy" }
   },
   "contentElements": { "marker.suitable_for_you": { "currentImplementation": "gig-task-badge", "targetComponent": "Badge" }, "marker.specially_for_you": { "currentImplementation": "special-card-badges", "targetComponent": "Badge" } },
-  "uiStates": { "catalog.filtered_empty": { "currentComponent": "TaskMessageCard", "targetComponent": "FilteredServicesState" }, "service_offer.skeleton": { "currentComponent": "TaskSkeletonCard", "targetComponent": "ServiceCardSkeleton" } }
+  "uiStates": {
+    "catalog.loading": { "currentComponent": "TimelineLoadingState", "targetComponent": "CatalogLoadingState", "migrationStatus": "legacy" },
+    "catalog.filtered_empty": { "currentComponent": "TaskMessageCard", "targetComponent": "FilteredServicesState", "migrationStatus": "legacy" },
+    "catalog.empty_day": { "currentComponent": "NoTasksForDayCard", "targetComponent": "EmptyDayState", "migrationStatus": "legacy" },
+    "catalog.partially_hidden": { "currentComponent": "TaskMessageCard", "targetComponent": "PartiallyHiddenState", "migrationStatus": "legacy" },
+    "catalog.error": { "currentComponent": null, "targetComponent": "CatalogErrorState", "migrationStatus": "planned" },
+    "catalog.stale": { "currentComponent": null, "targetComponent": "CatalogStaleState", "migrationStatus": "planned" },
+    "service_offer.skeleton": { "currentComponent": "TaskSkeletonCard", "targetComponent": "ServiceCardSkeleton", "migrationStatus": "legacy" },
+    "hidden_services.message": { "currentComponent": "TaskMessageCard", "targetComponent": "HiddenServicesState", "migrationStatus": "legacy" }
+  }
 }

@@ -43,7 +43,12 @@ GitHub Actions workflow `Card rules validation`, запуск `29933323005`:
 
 Отдельный Vite runtime из `/private/tmp/smena-card-rules` на `http://127.0.0.1:4187/` подтвердил текущий bundle: `document.title === "Prototype"`, URL — `http://127.0.0.1:4187/`, в каталоге найдено 65 `.gig-task-card`. Затем Playwright создал собственный сервер на том же порту и успешно выполнил три ранее падавших теста: **3/3 passed**.
 
-Полный запуск `E2E_PORT=4187 npm run test:e2e` завершился финальной сводкой **16 passed, 0 failed, 0 skipped, 17.7s**. Результат классифицирован как **E2E_SERVER_CONTAMINATION**, а не stale selector, state drift или UI-регрессия.
+Финальный аудит повторил полный gate дважды на чистом Playwright-сервере:
+
+- цикл 1: **16 passed, 0 failed, 0 skipped, 0 flaky, 18.7s**;
+- цикл 2: **16 passed, 0 failed, 0 skipped, 0 flaky, 21.1s**.
+
+Результат классифицирован как **E2E_SERVER_CONTAMINATION**, а не stale selector, state drift или UI-регрессия.
 
 ## Статус
 

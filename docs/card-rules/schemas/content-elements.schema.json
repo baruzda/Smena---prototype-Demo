@@ -1,16 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://smena-x5.local/card-rules/content-elements.schema.json",
-  "title": "content-elements",
-  "type": "object",
-  "required": [
-    "version"
-  ],
-  "properties": {
-    "version": {
-      "type": "integer",
-      "minimum": 1
-    }
+  "$id": "https://smena-x5.local/card-rules/schemas/content-elements.schema.json",
+  "$defs": {
+    "document": { "$ref": "registry-definitions.schema.json#/$defs/contentElements" }
   },
-  "additionalProperties": true
+  "$ref": "#/$defs/document"
 }

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import Ajv2020 from "ajv/dist/2020.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const rootArg = process.argv.indexOf("--rules-dir");
@@ -40,12 +41,39 @@ const migrationDoc = readJson("migration-map.json");
 const observationsDoc = readJson("implementation-observations.json");
 const uiStatesDoc = readJson("ui-states.json");
 const resolutionDoc = readJson("variant-resolution.json");
+const stateDimensionsDoc = readJson("state-dimensions.json");
+const precedenceDoc = readJson("precedence.json");
 const decisionLog = fs.readFileSync(path.join(rulesDir, "decision-log.md"), "utf8");
 
-const docs = [dictionary, templatesDoc, contentDoc, surfacesDoc, rulesDoc, exceptionsDoc, scenariosDoc, questionsDoc, bindingsDoc, migrationDoc, observationsDoc, uiStatesDoc, resolutionDoc];
+const registryDocuments = new Map([
+  ["dictionary", dictionary], ["state-dimensions", stateDimensionsDoc], ["templates", templatesDoc],
+  ["content-elements", contentDoc], ["surfaces", surfacesDoc], ["rules", rulesDoc],
+  ["exceptions", exceptionsDoc], ["precedence", precedenceDoc], ["variant-resolution", resolutionDoc],
+  ["ui-states", uiStatesDoc], ["implementation-observations", observationsDoc],
+  ["open-questions", questionsDoc], ["scenarios", scenariosDoc],
+  ["component-bindings", bindingsDoc], ["migration-map", migrationDoc],
+]);
+const schemasDir = path.join(rulesDir, "schemas");
+const ajv = new Ajv2020({ allErrors: true, strict: true });
+ajv.addSchema(JSON.parse(fs.readFileSync(path.join(schemasDir, "registry-definitions.schema.json"), "utf8")));
+for (const file of fs.readdirSync(rulesDir).filter((name) => name.endsWith(".json"))) {
+  const registryName = file.slice(0, -".json".length);
+  if (!registryDocuments.has(registryName)) fail("SCHEMA_ERROR", `${file}: registry is not declared in the schema manifest`);
+}
+for (const [name, document] of registryDocuments) {
+  const schema = JSON.parse(fs.readFileSync(path.join(schemasDir, `${name}.schema.json`), "utf8"));
+  const validate = ajv.compile(schema);
+  if (!validate(document)) {
+    for (const error of validate.errors ?? []) {
+      fail("SCHEMA_ERROR", `${name}.json${error.instancePath || "/"}: ${error.message}`);
+    }
+  }
+}
+
+const docs = [...registryDocuments.values()];
 const versions = new Set(docs.map((doc) => doc.version));
 if (versions.size !== 1 || [...versions].some((version) => !Number.isInteger(version))) {
-  fail("versions", `Версии реестров должны совпадать и быть целыми: ${[...versions].join(", ")}`);
+  fail("SCHEMA_ERROR", `registry versions must match and be integers: ${[...versions].join(", ")}`);
 }
 
 const templates = list(templatesDoc.templates);
@@ -76,20 +104,20 @@ for (const [name, items] of [["rules", rules], ["templates", templates], ["scena
 for (const template of templates) {
   const variantIds = list(template.variants).map((variant) => variant.id);
   if (new Set(variantIds).size !== variantIds.length) {
-    fail("template-variants", `${template.id}: variant id повторяется`);
+    fail("SCHEMA_ERROR", `${template.id}: duplicate variant id`);
   }
   for (const variant of list(template.variants)) {
-    if (!variant.name) fail("template-variants", `${template.id}.${variant.id}: отсутствует name`);
+    if (!variant.name) fail("SCHEMA_ERROR", `${template.id}.${variant.id}: missing name`);
   }
 }
 
 for (const element of contentElements) {
   if (element.id.startsWith("marker.")) {
     const markerId = element.id.slice("marker.".length);
-    if (!markerIds.has(markerId)) fail("dictionary-content", `${element.id}: маркер отсутствует в dictionary.json`);
+    if (!markerIds.has(markerId)) fail("REFERENCE_ERROR", `${element.id}: marker is absent from dictionary.json`);
   }
   if (element.required && element.fallback === undefined) {
-    fail("content-contract", `${element.id}: обязательный элемент должен явно задавать fallback, включая null`);
+    fail("SCHEMA_ERROR", `${element.id}: required content must declare fallback, including null`);
   }
 }
 
@@ -145,9 +173,13 @@ for (const rule of rules) {
   }
 
   if (rule.status === "provisional" && !rule.relatedQuestion) fail("APPROVAL_ERROR", `${rule.id}: provisional rule requires relatedQuestion`);
-  if (rule.status === "approved" && rule.relatedQuestion && questionMap.get(rule.relatedQuestion)?.blocking) fail("APPROVAL_ERROR", `${rule.id}: approved rule links blocking question ${rule.relatedQuestion}`);
+  if (rule.status === "provisional" && questionMap.get(rule.relatedQuestion)?.status !== "unresolved") fail("APPROVAL_ERROR", `${rule.id}: provisional rule requires an unresolved question`);
+  if (rule.status === "active" && rule.relatedQuestion && questionMap.get(rule.relatedQuestion)?.blocking) fail("APPROVAL_ERROR", `${rule.id}: approved rule links blocking question ${rule.relatedQuestion}`);
+  if (rule.status === "active" && rule.source?.observation) fail("APPROVAL_ERROR", `${rule.id}: approved rule cannot use an observation as product truth`);
+  if (rule.status === "active" && rule.source?.code && !list(rule.source?.documents).length) fail("APPROVAL_ERROR", `${rule.id}: code-only rule must remain provisional`);
   if (rule.target?.type === "card_variant" && rule.target.id?.startsWith("marker.")) fail("VARIANT_CONFLICT", `${rule.id}: marker cannot be a structural variant`);
   if (rule.target?.type === "card_variant" && rule.otherwise?.action !== "set_variant") fail("VARIANT_CONFLICT", `${rule.id}: structural variant requires otherwise default`);
+  if (rule.target?.type === "card_variant" && rule.otherwise?.action === "set_variant" && rule.otherwise.value !== resolutionDoc.defaultVariant) fail("VARIANT_CONFLICT", `${rule.id}: otherwise must resolve to ${resolutionDoc.defaultVariant}`);
 }
 
 for (const question of list(questionsDoc.questions)) {
@@ -155,10 +187,34 @@ for (const question of list(questionsDoc.questions)) {
     const rule = ruleMap.get(ruleId);
     if (!rule || rule.relatedQuestion !== question.id) fail("QUESTION_LINK_ERROR", `${question.id}: missing backlink from ${ruleId}`);
   }
+  for (const observationId of list(question.relatedObservations)) {
+    const observation = observationMap.get(observationId);
+    if (!observation || observation.relatedQuestion !== question.id) fail("QUESTION_LINK_ERROR", `${question.id}: missing observation backlink from ${observationId}`);
+  }
+  for (const exceptionId of list(question.relatedExceptions)) {
+    const exception = exceptionMap.get(exceptionId);
+    if (!exception) fail("REFERENCE_ERROR", `${question.id}: unknown exception ${exceptionId}`);
+    else if (exception.relatedQuestion !== question.id) fail("QUESTION_LINK_ERROR", `${question.id}: missing exception backlink from ${exceptionId}`);
+  }
+  for (const scenarioId of list(question.relatedScenarios)) if (!scenarioMap.has(scenarioId)) fail("REFERENCE_ERROR", `${question.id}: unknown scenario ${scenarioId}`);
+  for (const templateId of list(question.relatedTemplates)) if (!templateMap.has(templateId)) fail("REFERENCE_ERROR", `${question.id}: unknown template ${templateId}`);
+  for (const decisionId of list(question.relatedDecisions)) if (!decisionLog.includes(`## ${decisionId}`)) fail("REFERENCE_ERROR", `${question.id}: unknown decision ${decisionId}`);
 }
 for (const rule of rules) {
+  if (rule.relatedQuestion && !questionMap.has(rule.relatedQuestion)) fail("REFERENCE_ERROR", `${rule.id}: unknown question ${rule.relatedQuestion}`);
   if (rule.relatedQuestion && !list(questionMap.get(rule.relatedQuestion)?.relatedRules).includes(rule.id)) {
     fail("QUESTION_LINK_ERROR", `${rule.relatedQuestion}: missing backlink for ${rule.id}`);
+  }
+}
+for (const observation of list(observationsDoc.observations)) {
+  if (observation.relatedQuestion && !questionMap.has(observation.relatedQuestion)) fail("REFERENCE_ERROR", `${observation.id}: unknown question ${observation.relatedQuestion}`);
+  if (observation.relatedQuestion && !list(questionMap.get(observation.relatedQuestion)?.relatedObservations).includes(observation.id)) {
+    fail("QUESTION_LINK_ERROR", `${observation.relatedQuestion}: missing backlink for ${observation.id}`);
+  }
+}
+for (const exception of exceptions) {
+  if (exception.relatedQuestion && !list(questionMap.get(exception.relatedQuestion)?.relatedExceptions).includes(exception.id)) {
+    fail("QUESTION_LINK_ERROR", `${exception.relatedQuestion}: missing backlink for ${exception.id}`);
   }
 }
 
@@ -179,15 +235,46 @@ for (const [templateId, entries] of resolutionByTemplate) {
 for (const state of list(dictionary.states)) {
   if (uiStateIds.has(state.id ?? state)) fail("UI_STATE_ERROR", `${state.id ?? state}: UI state cannot be a business state`);
 }
+const stateDimensions = {
+  availability: list(stateDimensionsDoc.availabilityStates),
+  participation: list(stateDimensionsDoc.participationStates),
+  signing: list(stateDimensionsDoc.signingStates),
+};
+const dimensionEntries = Object.entries(stateDimensions);
+for (let index = 0; index < dimensionEntries.length; index += 1) {
+  for (let other = index + 1; other < dimensionEntries.length; other += 1) {
+    const overlap = intersection(dimensionEntries[index][1], dimensionEntries[other][1]);
+    if (overlap.length) fail("STATE_CONFLICT", `${dimensionEntries[index][0]}/${dimensionEntries[other][0]}: overlapping states ${overlap.join(", ")}`);
+  }
+}
+for (const migration of list(stateDimensionsDoc.legacyStateMigration)) {
+  if (!stateDimensions[migration.dimension]?.includes(migration.targetId)) fail("STATE_CONFLICT", `${migration.legacyId}: target ${migration.targetId} is absent from ${migration.dimension}`);
+}
 
 for (const [templateId, binding] of Object.entries(bindingsDoc.templates ?? {})) {
   if (!templateMap.has(templateId)) fail("BINDING_ERROR", `${templateId}: binding references unknown template`);
   if (binding.migrationStatus === "verified" && !binding.currentSource) fail("BINDING_ERROR", `${templateId}: verified binding requires currentSource`);
 }
+for (const template of templates) if (!bindingsDoc.templates?.[template.id]) fail("BINDING_ERROR", `${template.id}: template binding is required`);
+for (const uiState of list(uiStatesDoc.uiStates)) if (!bindingsDoc.uiStates?.[uiState.id]) fail("BINDING_ERROR", `${uiState.id}: UI state binding is required`);
+for (const template of templates) {
+  for (const surfaceId of list(template.supportedSurfaces)) {
+    const hasPlacement = rules.some((rule) => list(rule.scope?.templates).includes(template.id)
+      && list(rule.scope?.surfaces).includes(surfaceId)
+      && ["placement", "surface_visibility"].includes(rule.target?.type));
+    if (!hasPlacement) fail("SURFACE_CONFLICT", `${template.id}: ${surfaceId} lacks a placement rule`);
+  }
+}
 
 for (const source of list(migrationDoc.sources)) {
   if (source.status === "deprecated" && !source.verifiedBeforeDeprecation) fail("MIGRATION_GAP", `${source.legacySource}: deprecated before verified`);
   if (source.status === "verified" && !list(source.evidence).length) fail("MIGRATION_GAP", `${source.legacySource}: verified migration requires evidence`);
+  if (source.status === "partially_mapped" && !list(source.unmappedContent).length) fail("MIGRATION_GAP", `${source.legacySource}: partially mapped source requires unmappedContent`);
+  if (["mapped", "verified"].includes(source.status) && list(source.unmappedContent).length) fail("MIGRATION_GAP", `${source.legacySource}: mapped source cannot retain unmappedContent`);
+  for (const ruleId of list(source.relatedRules)) if (!ruleMap.has(ruleId)) fail("REFERENCE_ERROR", `${source.legacySource}: unknown rule ${ruleId}`);
+  for (const scenarioId of list(source.relatedScenarios)) if (!scenarioMap.has(scenarioId)) fail("REFERENCE_ERROR", `${source.legacySource}: unknown scenario ${scenarioId}`);
+  for (const templateId of list(source.relatedTemplates)) if (!templateMap.has(templateId)) fail("REFERENCE_ERROR", `${source.legacySource}: unknown template ${templateId}`);
+  for (const uiStateId of list(source.relatedUiStates)) if (!uiStateIds.has(uiStateId)) fail("REFERENCE_ERROR", `${source.legacySource}: unknown UI state ${uiStateId}`);
 }
 
 for (const observation of list(observationsDoc.observations)) {
@@ -198,20 +285,20 @@ for (const exception of exceptions) {
   const baseRule = ruleMap.get(exception.baseRule);
   if (!baseRule) continue;
   if (exception.priority < baseRule.priority) {
-    fail("rule-exception", `${exception.id}: priority ${exception.priority} ниже базового ${baseRule.priority}`);
+    fail("REFERENCE_ERROR", `${exception.id}: priority ${exception.priority} is lower than base ${baseRule.priority}`);
   }
   if (!list(baseRule.exceptions).includes(exception.id)) {
-    fail("rule-exception", `${exception.id}: отсутствует обратная ссылка из ${baseRule.id}`);
+    fail("REFERENCE_ERROR", `${exception.id}: missing backlink from ${baseRule.id}`);
   }
   if (exception.override?.variant) {
     const valid = list(baseRule.scope?.templates).some((templateId) => variantsFor(templateMap.get(templateId)).has(exception.override.variant));
-    if (!valid) fail("exception-variant", `${exception.id}: неизвестный override.variant ${exception.override.variant}`);
+    if (!valid) fail("VARIANT_CONFLICT", `${exception.id}: unknown override.variant ${exception.override.variant}`);
   }
   if (exception.override?.surface) {
     const surface = surfaceMap.get(exception.override.surface);
     const sections = idSet(surface?.sections);
     if (!surface || (exception.override.section && !sections.has(exception.override.section))) {
-      fail("exception-placement", `${exception.id}: неизвестное размещение ${exception.override.surface}.${exception.override.section ?? ""}`);
+      fail("SURFACE_CONFLICT", `${exception.id}: unknown placement ${exception.override.surface}.${exception.override.section ?? ""}`);
     }
   }
 }
@@ -237,24 +324,23 @@ for (const scenario of scenarios) {
   if (expected.template && expected.variant) {
     const template = templateMap.get(expected.template);
     if (template && !variantsFor(template).has(expected.variant)) {
-      fail("scenario-variant", `${scenario.id}: ${expected.variant} отсутствует в ${expected.template}`);
+      fail("VARIANT_CONFLICT", `${scenario.id}: ${expected.variant} is absent from ${expected.template}`);
     }
   } else if (expected.variant) {
     const variantCovered = list(expected.appliedRules).some((ruleId) => ruleMap.get(ruleId)?.target?.type === "card_variant" && ruleMap.get(ruleId).target.id === expected.variant)
-      || (expected.variant === "match" && list(expected.appliedRules).some((ruleId) => ruleMap.get(ruleId)?.target?.id === "marker.suitable_for_you"))
       || list(expected.appliedExceptions).some((exceptionId) => exceptionMap.get(exceptionId)?.override?.variant === expected.variant);
-    if (!variantCovered) fail("scenario-variant", `${scenario.id}: вариант ${expected.variant} не связан с применённым правилом`);
+    if (!variantCovered) fail("VARIANT_CONFLICT", `${scenario.id}: variant ${expected.variant} is not linked to an applied rule`);
   }
 
   for (const exceptionId of list(expected.appliedExceptions)) {
     const exception = exceptionMap.get(exceptionId);
     if (exception && !ruleMap.get(exception.baseRule)?.tests?.includes(scenario.id)) {
-      fail("scenario-exception", `${scenario.id}: не указан в tests базового правила ${exception.baseRule}`);
+      fail("REFERENCE_ERROR", `${scenario.id}: missing from tests of base rule ${exception.baseRule}`);
     }
   }
 
   for (const elementId of [...list(expected.visibleContent), ...list(expected.hiddenContent), ...list(expected.enabledActions), ...list(expected.disabledActions)]) {
-    if (!contentMap.has(elementId)) fail("scenario-content", `${scenario.id}: неизвестный content element ${elementId}`);
+    if (!contentMap.has(elementId)) fail("REFERENCE_ERROR", `${scenario.id}: unknown content element ${elementId}`);
   }
 }
 

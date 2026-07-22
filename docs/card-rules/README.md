@@ -22,6 +22,7 @@
 - `implementation-observations.json` хранит неподтверждённое поведение прототипа.
 - `ui-states.json` хранит состояния интерфейса и списка, не варианты услуги.
 - `component-bindings.json` и `migration-map.json` связывают UX-модель с текущей миграцией.
+- `schemas/` содержит исполняемые JSON Schemas для каждого source registry; `registry-definitions.schema.json` хранит общие `$defs`.
 - `open-questions.md` фиксирует решения, которых пока не хватает.
 - `decision-log.md` хранит историю замен и изменений правил.
 - `generated/` содержит автоматически собранные матрицы для чтения командой.
@@ -41,16 +42,18 @@ service_offer
 + available
 + tasks
 + service_offer_card
-+ marker.suitable_for_you
++ default
 + marker.suitable_for_you
 + отсутствие блокирующих исключений
 ```
 
 `Подходит вам` — marker: он не меняет анатомию и не выбирает structural variant. Structural variant меняет крупные блоки, действия или самостоятельный визуальный контракт. UI-state (skeleton, empty, message, error) не является business state услуги.
 
+Статус `active` означает approved product rule. Статус `provisional` означает технически формализованное, но не утверждённое поведение; такое правило обязано ссылаться на unresolved question. Code-only behavior хранится в `implementation-observations.json` и не может становиться `active` без отдельного решения.
+
 ## Acceptance scenarios
 
-`scenarios.json` пока является декларативным реестром приёмочных сценариев (`executionStatus: declarative`), а не production resolver. Следующий этап — документировать и реализовать отдельно `resolveCardPresentation(input)`.
+Все 26 записей `scenarios.json` являются декларативным реестром приёмочных сценариев (`executionStatus: declarative`), а не исполняемыми тестами и не production resolver.
 
 ## Правило атомарности
 
@@ -130,20 +133,26 @@ ID никогда не переиспользуются. Устаревшее п
 
 ```bash
 npm run validate:card-rules
+npm run check:card-rules-generated
+npm run test:card-rules
+npm run test:card-rules-validator
 ```
 
 Проверка контролирует:
 
 - уникальность ID;
 - существование всех ссылок;
-- обязательные поля;
+- JSON Schema каждого source registry и обязательные поля;
 - наличие тестов у активных правил;
 - корректность секций и поверхностей;
 - корректность элементов контента;
 - связь исключения с базовым правилом;
 - конфликты одинакового приоритета;
 - корректность `supersedes`;
+- cross-registry связи, questions/backlinks, bindings и migration safety;
 - генерацию человекочитаемых матриц.
+
+`test:card-rules` выполняет 5 valid и 18 invalid isolated fixtures через alternate rules directory. Это фактическое число всех обязательных именованных negative cases (их перечень содержит 18 пунктов). `test:card-rules-validator` проверяет повторную генерацию и побайтовую детерминированность generated reports.
 
 ## Сгенерированные документы
 
@@ -153,6 +162,16 @@ npm run validate:card-rules
 - `generated/content-matrix.md`;
 - `generated/placement-matrix.md`;
 - `generated/rules-matrix.md`;
-- `generated/conflicts-report.md`.
+- `generated/conflicts-report.md`;
+- `generated/approved-rules-matrix.md`;
+- `generated/provisional-rules-matrix.md`;
+- `generated/implementation-observations.md`;
+- `generated/ui-states-matrix.md`;
+- `generated/component-bindings-matrix.md`;
+- `generated/migration-status.md`;
+- `generated/scenarios-matrix.md`;
+- `generated/state-dimensions-matrix.md`;
+- `generated/variant-resolution-matrix.md`;
+- `generated/open-blockers.md`.
 
 Сгенерированные файлы не редактируются вручную.

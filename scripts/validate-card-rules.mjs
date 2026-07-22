@@ -4,8 +4,10 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const rulesDir = path.join(root, "docs", "card-rules");
+const rulesDirArg = process.argv.indexOf("--rules-dir");
+const rulesDir = rulesDirArg >= 0 ? path.resolve(process.argv[rulesDirArg + 1]) : path.join(root, "docs", "card-rules");
 const generatedDir = path.join(rulesDir, "generated");
+const checkGenerated = process.argv.includes("--check-generated");
 const errors = [];
 const warnings = [];
 const conflicts = [];
@@ -58,8 +60,15 @@ function table(headers, rows) {
 }
 
 function write(name, body) {
+  const file = path.join(generatedDir, name);
+  const next = `${body.trim()}\n`;
+  if (checkGenerated) {
+    const current = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null;
+    if (current !== next) fail(`[GENERATED_ERROR] generated/${name}: report is missing or stale`);
+    return;
+  }
   fs.mkdirSync(generatedDir, { recursive: true });
-  fs.writeFileSync(path.join(generatedDir, name), `${body.trim()}\n`, "utf8");
+  fs.writeFileSync(file, next, "utf8");
 }
 
 const dictionary = read("dictionary.json");
@@ -70,6 +79,8 @@ const precedence = read("precedence.json");
 const rulesDoc = read("rules.json");
 const exceptionsDoc = read("exceptions.json");
 const scenariosDoc = read("scenarios.json");
+const stateDimensionsDoc = read("state-dimensions.json");
+const variantResolutionDoc = read("variant-resolution.json");
 const observationsDoc = read("implementation-observations.json");
 const uiStatesDoc = read("ui-states.json");
 const bindingsDoc = read("component-bindings.json");
@@ -291,12 +302,22 @@ write("rules-matrix.md", `# Матрица правил\n\n${table(
 )}`);
 
 write("approved-rules-matrix.md", `# Approved rules\n\n${table(["Rule ID", "Name"], rules.filter((rule) => rule.status === "active").sort((a, b) => a.id.localeCompare(b.id)).map((rule) => [rule.id, rule.name]))}`);
-write("provisional-rules-matrix.md", `# Provisional rules\n\n${table(["Rule ID", "Question", "Source"], rules.filter((rule) => rule.status === "provisional").sort((a, b) => a.id.localeCompare(b.id)).map((rule) => [rule.id, rule.relatedQuestion, rule.source?.observation ?? rule.source?.code]))}`);
+write("provisional-rules-matrix.md", `# Provisional rules\n\n${table(["Rule ID", "Question", "Source"], rules.filter((rule) => rule.status === "provisional").sort((a, b) => a.id.localeCompare(b.id)).map((rule) => [rule.id, rule.relatedQuestion, rule.source?.observation ?? rule.source?.code ?? list(rule.source?.documents).join(", ")]))}`);
 write("implementation-observations.md", `# Implementation observations\n\n${table(["ID", "Source", "Approval", "Question"], observations.sort((a, b) => a.id.localeCompare(b.id)).map((item) => [item.id, item.source, item.approvalStatus, item.relatedQuestion]))}`);
 write("ui-states-matrix.md", `# UI states\n\n${table(["ID", "Surface", "Implementation", "Status"], uiStates.sort((a, b) => a.id.localeCompare(b.id)).map((item) => [item.id, list(item.usedOn).join(', '), item.currentImplementation, item.implementationStatus]))}`);
-write("component-bindings-matrix.md", `# Component bindings\n\n${table(["Template", "Current", "Target", "Status"], Object.entries(bindingsDoc.templates ?? {}).sort(([a], [b]) => a.localeCompare(b)).map(([id, item]) => [id, item.currentComponent, item.targetComponent, item.migrationStatus]))}`);
-write("migration-status.md", `# Migration status\n\n${table(["Source", "Status"], list(migrationDoc.sources).sort((a, b) => a.legacySource.localeCompare(b.legacySource)).map((item) => [item.legacySource, item.status]))}`);
+const bindingRows = [
+  ...Object.entries(bindingsDoc.templates ?? {}).map(([id, item]) => ["template", id, item.currentComponent, item.targetComponent, item.migrationStatus]),
+  ...Object.entries(bindingsDoc.uiStates ?? {}).map(([id, item]) => ["ui_state", id, item.currentComponent, item.targetComponent, item.migrationStatus]),
+].sort((a, b) => a[1].localeCompare(b[1]));
+write("component-bindings-matrix.md", `# Component bindings\n\n${table(["Kind", "ID", "Current", "Target", "Status"], bindingRows)}`);
+write("migration-status.md", `# Migration status\n\n${table(["Source", "Status", "Unmapped content"], list(migrationDoc.sources).sort((a, b) => a.legacySource.localeCompare(b.legacySource)).map((item) => [item.legacySource, item.status, list(item.unmappedContent).join("; ")]))}`);
 write("scenarios-matrix.md", `# Scenarios\n\n${table(["ID", "Execution"], scenarios.sort((a, b) => a.id.localeCompare(b.id)).map((item) => [item.id, item.executionStatus]))}`);
+write("state-dimensions-matrix.md", `# State dimensions\n\n${table(["Dimension", "State"], [
+  ...list(stateDimensionsDoc.availabilityStates).map((state) => ["availability", state]),
+  ...list(stateDimensionsDoc.participationStates).map((state) => ["participation", state]),
+  ...list(stateDimensionsDoc.signingStates).map((state) => ["signing", state]),
+].sort((a, b) => `${a[0]}.${a[1]}`.localeCompare(`${b[0]}.${b[1]}`)))}`);
+write("variant-resolution-matrix.md", `# Variant resolution\n\nDefault: \`${variantResolutionDoc.defaultVariant}\`\n\n${table(["Template", "Variant", "Priority", "Source", "Question"], list(variantResolutionDoc.variants).sort((a, b) => a.template.localeCompare(b.template) || b.priority - a.priority || a.id.localeCompare(b.id)).map((item) => [item.template, item.id, item.priority, item.sourceType, item.relatedQuestion]))}`);
 write("open-blockers.md", `# Open blockers\n\n${table(["ID", "Title"], questions.filter((item) => item.blocking && item.status === "unresolved").sort((a, b) => a.id.localeCompare(b.id)).map((item) => [item.id, item.title]))}`);
 
 const conflictText = conflicts.length

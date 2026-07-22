@@ -1,16 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://smena-x5.local/card-rules/templates.schema.json",
-  "title": "templates",
-  "type": "object",
-  "required": [
-    "version"
-  ],
-  "properties": {
-    "version": {
-      "type": "integer",
-      "minimum": 1
-    }
+  "$id": "https://smena-x5.local/card-rules/schemas/templates.schema.json",
+  "$defs": {
+    "document": { "$ref": "registry-definitions.schema.json#/$defs/templates" }
   },
-  "additionalProperties": true
+  "$ref": "#/$defs/document"
 }

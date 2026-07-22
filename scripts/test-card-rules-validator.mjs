@@ -41,8 +41,30 @@ function fail(name, category, id, callback) {
   } finally { fs.rmSync(fixture.root, { recursive: true, force: true }); }
 }
 
+function prepareMinimal(dir) {
+  mutate(dir, "dictionary.json", (doc) => Object.assign(doc, {
+    entities: [{ id: "service_offer" }], states: [{ id: "available" }], markers: [{ id: "suitable_for_you" }],
+    actions: ["place", "remove_from_surface"], surfaces: [{ id: "tasks" }], operators: ["equals"],
+    ruleStatuses: ["active", "provisional"], targetTypes: ["placement"],
+  }));
+  mutate(dir, "state-dimensions.json", (doc) => Object.assign(doc, { availabilityStates: ["available"], participationStates: ["not_started"], signingStates: ["not_required"], legacyStateMigration: [] }));
+  mutate(dir, "templates.json", (doc) => { doc.templates = [{ id: "service_offer_card", entity: "service_offer", name: "Service", slots: ["title"], supportedSurfaces: ["tasks"], variants: [{ id: "default", name: "Default" }] }]; });
+  mutate(dir, "content-elements.json", (doc) => { doc.contentElements = [{ id: "service.title", name: "Title", slot: "title", source: "service.title", required: true, fallback: null, templates: ["service_offer_card"] }]; });
+  mutate(dir, "surfaces.json", (doc) => { doc.surfaces = [{ id: "tasks", name: "Tasks", sections: [{ id: "available", name: "Available", order: 100 }] }]; });
+  mutate(dir, "rules.json", (doc) => { doc.rules = [{ id: "RULE-MINIMAL-001", name: "Minimal placement", status: "active", scope: { entity: "service_offer", surfaces: ["tasks"], templates: ["service_offer_card"] }, target: { type: "placement", surface: "tasks", section: "available" }, when: { all: [{ path: "service.state", operator: "equals", value: "available" }] }, effect: { action: "place" }, otherwise: { action: "remove_from_surface" }, priority: 700, exceptions: [], supersedes: [], source: { documents: ["minimal.md"] }, tests: ["SCN-MINIMAL-001"] }]; });
+  mutate(dir, "exceptions.json", (doc) => { doc.exceptions = []; });
+  mutate(dir, "precedence.json", (doc) => Object.assign(doc, { levels: [{ priority: 700, id: "surface", name: "Surface" }], resolutionPolicy: ["Higher priority first"] }));
+  mutate(dir, "variant-resolution.json", (doc) => Object.assign(doc, { defaultVariant: "default", variants: [] }));
+  mutate(dir, "ui-states.json", (doc) => { doc.uiStates = []; });
+  mutate(dir, "implementation-observations.json", (doc) => { doc.observations = []; });
+  mutate(dir, "open-questions.json", (doc) => { doc.questions = []; });
+  mutate(dir, "scenarios.json", (doc) => { doc.scenarios = [{ id: "SCN-MINIMAL-001", name: "Minimal", given: { surface: "tasks" }, expected: { template: "service_offer_card", variant: "default", section: "available", appliedRules: ["RULE-MINIMAL-001"] }, executionStatus: "declarative" }]; });
+  mutate(dir, "component-bindings.json", (doc) => Object.assign(doc, { templates: { service_offer_card: { currentComponent: "TaskCard", currentSource: "src/App.jsx", targetComponent: "ServiceOfferCard", migrationStatus: "legacy" } }, contentElements: {}, uiStates: {} }));
+  mutate(dir, "migration-map.json", (doc) => { doc.sources = [{ legacySource: "minimal.md", relatedRules: ["RULE-MINIMAL-001"], relatedScenarios: ["SCN-MINIMAL-001"], relatedTemplates: ["service_offer_card"], relatedUiStates: [], currentImplementation: ["src/App.jsx"], status: "mapped", unmappedContent: [], notes: [] }]; });
+}
+
 pass("valid-current-registry");
-pass("valid-minimal", (dir) => mutate(dir, "rules.json", (doc) => { doc.rules[0].name = "Минимально проверяемое правило"; }));
+pass("valid-minimal", prepareMinimal);
 pass("valid-provisional-rule", (dir) => mutate(dir, "rules.json", (doc) => { doc.rules.find((item) => item.id === "RULE-VARIANT-001").name = "Проверяемое provisional правило"; }));
 pass("valid-marker-with-structural-variant", (dir) => mutate(dir, "rules.json", (doc) => { doc.rules.find((item) => item.id === "RULE-SPECIAL-001").otherwise = { action: "set_variant", value: "default" }; }));
 pass("valid-legacy-migration", (dir) => mutate(dir, "migration-map.json", (doc) => { doc.sources[0].status = "partially_mapped"; }));
@@ -50,7 +72,7 @@ pass("valid-legacy-migration", (dir) => mutate(dir, "migration-map.json", (doc) 
 fail("duplicate-id", "SCHEMA_ERROR", "RULE-PLACEMENT-001", (dir) => mutate(dir, "rules.json", (doc) => doc.rules.push({ ...doc.rules[0] })));
 fail("unknown-reference", "REFERENCE_ERROR", "RULE-PLACEMENT-001", (dir) => mutate(dir, "rules.json", (doc) => { doc.rules[0].scope.templates = ["ghost_template"]; }));
 fail("provisional-without-question", "APPROVAL_ERROR", "RULE-VARIANT-001", (dir) => mutate(dir, "rules.json", (doc) => { delete doc.rules.find((rule) => rule.id === "RULE-VARIANT-001").relatedQuestion; }));
-fail("approved-with-blocking-question", "APPROVAL_ERROR", "RULE-VARIANT-001", (dir) => mutate(dir, "rules.json", (doc) => { const rule = doc.rules.find((item) => item.id === "RULE-VARIANT-001"); rule.status = "approved"; }));
+fail("approved-with-blocking-question", "APPROVAL_ERROR", "RULE-PLACEMENT-001", (dir) => mutate(dir, "rules.json", (doc) => { const rule = doc.rules.find((item) => item.id === "RULE-PLACEMENT-001"); rule.relatedQuestion = "OPEN-QUESTION-008"; }));
 fail("question-missing-backlink", "QUESTION_LINK_ERROR", "OPEN-QUESTION-008", (dir) => mutate(dir, "open-questions.json", (doc) => { doc.questions.find((item) => item.id === "OPEN-QUESTION-008").relatedRules = []; }));
 fail("marker-as-structural-variant", "VARIANT_CONFLICT", "RULE-VARIANT-001", (dir) => mutate(dir, "rules.json", (doc) => { const rule = doc.rules.find((item) => item.id === "RULE-VARIANT-001"); rule.target = { type: "card_variant", template: "service_offer_card", id: "marker.suitable_for_you" }; rule.effect = { action: "set_variant", value: "marker.suitable_for_you" }; rule.otherwise = { action: "set_variant", value: "default" }; }));
 fail("variant-otherwise-default", "VARIANT_CONFLICT", "RULE-SPECIAL-001", (dir) => mutate(dir, "rules.json", (doc) => { doc.rules.find((item) => item.id === "RULE-SPECIAL-001").otherwise = { action: "no_op" }; }));
@@ -66,4 +88,4 @@ fail("scenario-without-execution-status", "SCENARIO_ERROR", "SCN-CATALOG-001", (
 fail("scenario-verified-without-test", "SCENARIO_ERROR", "SCN-CATALOG-001", (dir) => mutate(dir, "scenarios.json", (doc) => { doc.scenarios.find((item) => item.id === "SCN-CATALOG-001").executionStatus = "verified"; }));
 fail("observation-without-question", "OBSERVATION_ERROR", "OBS-CARD-VARIANT-001", (dir) => mutate(dir, "implementation-observations.json", (doc) => { delete doc.observations[0].relatedQuestion; }));
 
-console.log("Validator fixtures passed: 5 valid, 17 invalid.");
+console.log("Validator fixtures passed: 5 valid, 18 invalid.");

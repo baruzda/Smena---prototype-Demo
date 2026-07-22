@@ -59,7 +59,8 @@
         }
       },
       "expected": {
-        "variant": "match",
+        "template": "service_offer_card",
+        "variant": "default",
         "visibleContent": [
           "marker.suitable_for_you"
         ],
@@ -86,7 +87,8 @@
         "hiddenContent": [
           "marker.suitable_for_you"
         ],
-        "notVariant": "match",
+        "template": "service_offer_card",
+        "variant": "default",
         "appliedRules": [
           "RULE-MARKER-001",
           "RULE-VARIANT-001"
