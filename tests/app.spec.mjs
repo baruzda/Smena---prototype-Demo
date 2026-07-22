@@ -46,15 +46,15 @@ test("выбор даты, сортировка и плавающий возвр
 test("специальное для вас приоритетно без сортировки и участвует в сортировке", async ({ page }) => {
   const firstDay = page.locator('[data-day="1"]');
 
-  await expect(firstDay.locator(".task-card").first()).toHaveClass(/task-card-special/);
+  await expect(firstDay.locator(".gig-task-card").first()).toHaveClass(/gig-task-card-special/);
   await expect(firstDay.getByText("специально для вас", { exact: false })).toBeVisible();
-  await expect(firstDay.locator(".match-badge")).toHaveCount(2);
+  await expect(firstDay.locator(".gig-task-badge")).toHaveCount(2);
   await expect(firstDay.locator(".special-card-timer")).toHaveText(/^\d{2}:\d{2}:\d{2}$/);
 
   await page.getByRole("button", { name: "Сортировка", exact: true }).click();
   await page.getByRole("radio", { name: "сначала ближайшие", exact: true }).click();
 
-  const distances = await firstDay.locator(".task-card .task-address-text").evaluateAll((nodes) => nodes.map((node) => {
+  const distances = await firstDay.locator(".gig-task-card .gig-task-address-text").evaluateAll((nodes) => nodes.map((node) => {
     const match = node.textContent?.match(/([\d,.]+)\s*(км|м)\s*$/);
     if (!match) return Number.POSITIVE_INFINITY;
     const value = Number.parseFloat(match[1].replace(",", "."));
@@ -69,16 +69,16 @@ test("неподходящие задания раскрываются посл�
   const firstDay = page.locator('[data-day="1"]');
 
   await page.locator(".toggle-label input").uncheck();
-  const cards = firstDay.locator(".task-card");
-  const restrictedCards = firstDay.locator(".task-card:has(.task-restrictions)");
+  const cards = firstDay.locator(".gig-task-card");
+  const restrictedCards = firstDay.locator(".gig-task-card:has(.gig-task-restrictions)");
 
   await expect(restrictedCards).toHaveCount(2);
   await expect(restrictedCards.filter({ hasText: "Вне радиуса" })).toHaveCount(2);
   await expect(restrictedCards.filter({ hasText: "Пересекается со сменой" })).toHaveCount(1);
-  await expect(restrictedCards.locator(".match-badge, .special-card-badges")).toHaveCount(0);
+  await expect(restrictedCards.locator(".gig-task-badge, .special-card-badges")).toHaveCount(0);
 
   const firstRestrictedIndex = await restrictedCards.first().evaluate((card) => Array.from(card.parentElement?.children || []).indexOf(card));
-  const suitableCards = await cards.evaluateAll((nodes) => nodes.filter((card) => !card.querySelector(".task-restrictions")).length);
+  const suitableCards = await cards.evaluateAll((nodes) => nodes.filter((card) => !card.querySelector(".gig-task-restrictions")).length);
   expect(firstRestrictedIndex).toBeGreaterThanOrEqual(suitableCards);
 });
 
@@ -106,10 +106,10 @@ test("состояния отфильтрованных и отсутствую�
   await expect(filteredDay.getByText("в этот день услуг нет", { exact: true })).toHaveCount(0);
   await expect(filteredDay.getByText("ещё 5 услуг скрыты из-за фильтров", { exact: false })).toBeVisible();
   await filteredDay.getByRole("button", { name: /показать остальные/ }).click();
-  await expect(filteredDay.locator(".task-card")).toHaveCount(5);
+  await expect(filteredDay.locator(".gig-task-card")).toHaveCount(5);
   await expect(filteredDay.getByText("подходящих услуг больше нет", { exact: true })).toHaveCount(0);
   await filteredDay.getByRole("button", { name: "скрыть неподходящие", exact: true }).click();
-  await expect(filteredDay.locator(".task-card")).toHaveCount(0);
+  await expect(filteredDay.locator(".gig-task-card")).toHaveCount(0);
   await expect(filteredDay.getByText("подходящих услуг больше нет", { exact: true })).toBeVisible();
 
   const emptyDay = page.locator('[data-day="14"]');
@@ -276,7 +276,7 @@ test("периоды доступности поддерживают мульт�
 });
 
 test("запись на смену появляется в истории и не дублируется", async ({ page }) => {
-  const taskCard = page.locator(".task-card[role='button']").first();
+  const taskCard = page.locator(".gig-task-card[role='button']").first();
   const taskName = await taskCard.locator("h2").textContent();
   await taskCard.click();
   await page.getByRole("button", { name: "записаться", exact: true }).click();
