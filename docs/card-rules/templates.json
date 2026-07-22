@@ -27,6 +27,16 @@
           "description": "Услуга без персонального маркера и без ограничений."
         },
         {
+          "id": "match",
+          "name": "Подходит вам (legacy presentation)",
+          "description": "Legacy-совместимость сценария; семантика задаётся marker.suitable_for_you."
+        },
+        {
+          "id": "favorite_unavailable",
+          "name": "Недоступная избранная услуга (legacy presentation)",
+          "description": "Legacy-совместимость исключения избранного до отдельного решения о варианте."
+        },
+        {
           "id": "restriction_status",
           "name": "Не подходит",
           "description": "Карточка с одним ограничением и коротким статусом."

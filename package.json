@@ -12,7 +12,7 @@
     "validate:card-rules": "node scripts/validate-card-rules.mjs && node scripts/validate-card-rules-cross-registry.mjs",
     "test:card-rules": "node scripts/test-card-rules-validator.mjs",
     "test:card-rules-validator": "node --test tests/card-rules-validator/validator.spec.mjs",
-    "test:ci": "npm run validate:card-rules && npm run test:card-rules && npm run build"
+    "test:ci": "npm run validate:card-rules && npm run test:card-rules && npm run test:card-rules-validator && npm run build"
   },
   "dependencies": {
     "@vitejs/plugin-react": "5.0.4",

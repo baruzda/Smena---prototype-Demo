@@ -34,9 +34,15 @@ const surfacesDoc = readJson("surfaces.json");
 const rulesDoc = readJson("rules.json");
 const exceptionsDoc = readJson("exceptions.json");
 const scenariosDoc = readJson("scenarios.json");
+const questionsDoc = readJson("open-questions.json");
+const bindingsDoc = readJson("component-bindings.json");
+const migrationDoc = readJson("migration-map.json");
+const observationsDoc = readJson("implementation-observations.json");
+const uiStatesDoc = readJson("ui-states.json");
+const resolutionDoc = readJson("variant-resolution.json");
 const decisionLog = fs.readFileSync(path.join(rulesDir, "decision-log.md"), "utf8");
 
-const docs = [dictionary, templatesDoc, contentDoc, surfacesDoc, rulesDoc, exceptionsDoc, scenariosDoc];
+const docs = [dictionary, templatesDoc, contentDoc, surfacesDoc, rulesDoc, exceptionsDoc, scenariosDoc, questionsDoc, bindingsDoc, migrationDoc, observationsDoc, uiStatesDoc, resolutionDoc];
 const versions = new Set(docs.map((doc) => doc.version));
 if (versions.size !== 1 || [...versions].some((version) => !Number.isInteger(version))) {
   fail("versions", `Версии реестров должны совпадать и быть целыми: ${[...versions].join(", ")}`);
@@ -57,6 +63,15 @@ const exceptionMap = byId(exceptions);
 const scenarioMap = byId(scenarios);
 const markerIds = idSet(dictionary.markers);
 const stateIds = idSet(dictionary.states);
+const questionMap = byId(questionsDoc.questions);
+const uiStateIds = idSet(uiStatesDoc.uiStates);
+const observationMap = byId(observationsDoc.observations);
+
+for (const [name, items] of [["rules", rules], ["templates", templates], ["scenarios", scenarios], ["questions", questionsDoc.questions], ["observations", observationsDoc.observations], ["ui states", uiStatesDoc.uiStates]]) {
+  const ids = list(items).map((item) => item.id);
+  const duplicate = ids.find((id, index) => ids.indexOf(id) !== index);
+  if (duplicate) fail("SCHEMA_ERROR", `${name}: duplicate id ${duplicate}`);
+}
 
 for (const template of templates) {
   const variantIds = list(template.variants).map((variant) => variant.id);
@@ -79,42 +94,45 @@ for (const element of contentElements) {
 }
 
 for (const rule of rules) {
+  for (const templateId of list(rule.scope?.templates)) {
+    if (!templateMap.has(templateId)) fail("REFERENCE_ERROR", `${rule.id}: unknown template ${templateId}`);
+  }
   const scopeTemplates = list(rule.scope?.templates).map((id) => templateMap.get(id)).filter(Boolean);
   const scopeSurfaces = list(rule.scope?.surfaces);
 
   for (const template of scopeTemplates) {
     const unsupported = scopeSurfaces.filter((surface) => !list(template.supportedSurfaces).includes(surface));
-    if (unsupported.length) fail("template-surface", `${rule.id}: ${template.id} не поддерживает ${unsupported.join(", ")}`);
+    if (unsupported.length) fail("SURFACE_CONFLICT", `${rule.id}: ${template.id} не поддерживает ${unsupported.join(", ")}`);
   }
 
   if (["placement", "order", "surface_visibility"].includes(rule.target?.type)) {
     if (!scopeSurfaces.includes(rule.target.surface)) {
-      fail("rule-scope-target", `${rule.id}: target surface ${rule.target.surface} отсутствует в scope.surfaces`);
+      fail("SURFACE_CONFLICT", `${rule.id}: target surface ${rule.target.surface} отсутствует в scope.surfaces`);
     }
   }
 
   if (rule.target?.type === "card_variant") {
     const template = templateMap.get(rule.target.template);
     if (template && !variantsFor(template).has(rule.target.id)) {
-      fail("rule-variant", `${rule.id}: неизвестный вариант ${rule.target.template}.${rule.target.id}`);
+      fail("VARIANT_CONFLICT", `${rule.id}: неизвестный вариант ${rule.target.template}.${rule.target.id}`);
     }
     if (rule.effect?.action === "set_variant" && rule.effect.value !== rule.target.id) {
-      fail("rule-variant", `${rule.id}: effect.value должен совпадать с target.id`);
+      fail("VARIANT_CONFLICT", `${rule.id}: effect.value должен совпадать с target.id`);
     }
   }
 
   for (const condition of [...list(rule.when?.all), ...list(rule.when?.any)]) {
     if (condition.path?.endsWith(".state") && typeof condition.value === "string" && !stateIds.has(condition.value)) {
-      fail("dictionary-rules", `${rule.id}: неизвестное состояние ${condition.value}`);
+      fail("REFERENCE_ERROR", `${rule.id}: неизвестное состояние ${condition.value}`);
     }
     if (condition.path?.endsWith(".state") && Array.isArray(condition.value)) {
-      for (const value of condition.value) if (!stateIds.has(value)) fail("dictionary-rules", `${rule.id}: неизвестное состояние ${value}`);
+      for (const value of condition.value) if (!stateIds.has(value)) fail("REFERENCE_ERROR", `${rule.id}: неизвестное состояние ${value}`);
     }
   }
 
   const decision = rule.source?.decision;
   if (decision && !decisionLog.includes(`## ${decision}`)) {
-    fail("rule-decision", `${rule.id}: решение ${decision} отсутствует в decision-log.md`);
+      fail("REFERENCE_ERROR", `${rule.id}: решение ${decision} отсутствует в decision-log.md`);
   }
 
   for (const scenarioId of list(rule.tests)) {
@@ -122,9 +140,58 @@ for (const rule of rules) {
     if (!scenario) continue;
     const scenarioSurface = scenario.given?.surface;
     if (scenarioSurface && !scopeSurfaces.includes(scenarioSurface)) {
-      fail("rule-scenario", `${rule.id}: сценарий ${scenarioId} использует поверхность ${scenarioSurface} вне scope`);
+      fail("SURFACE_CONFLICT", `${rule.id}: сценарий ${scenarioId} использует поверхность ${scenarioSurface} вне scope`);
     }
   }
+
+  if (rule.status === "provisional" && !rule.relatedQuestion) fail("APPROVAL_ERROR", `${rule.id}: provisional rule requires relatedQuestion`);
+  if (rule.status === "approved" && rule.relatedQuestion && questionMap.get(rule.relatedQuestion)?.blocking) fail("APPROVAL_ERROR", `${rule.id}: approved rule links blocking question ${rule.relatedQuestion}`);
+  if (rule.target?.type === "card_variant" && rule.target.id?.startsWith("marker.")) fail("VARIANT_CONFLICT", `${rule.id}: marker cannot be a structural variant`);
+  if (rule.target?.type === "card_variant" && rule.otherwise?.action !== "set_variant") fail("VARIANT_CONFLICT", `${rule.id}: structural variant requires otherwise default`);
+}
+
+for (const question of list(questionsDoc.questions)) {
+  for (const ruleId of list(question.relatedRules)) {
+    const rule = ruleMap.get(ruleId);
+    if (!rule || rule.relatedQuestion !== question.id) fail("QUESTION_LINK_ERROR", `${question.id}: missing backlink from ${ruleId}`);
+  }
+}
+for (const rule of rules) {
+  if (rule.relatedQuestion && !list(questionMap.get(rule.relatedQuestion)?.relatedRules).includes(rule.id)) {
+    fail("QUESTION_LINK_ERROR", `${rule.relatedQuestion}: missing backlink for ${rule.id}`);
+  }
+}
+
+for (const entry of list(resolutionDoc.variants)) {
+  if (!templateMap.has(entry.template)) fail("REFERENCE_ERROR", `${entry.id ?? entry.template}: unknown variant template`);
+}
+const resolutionByTemplate = new Map();
+for (const entry of list(resolutionDoc.variants)) {
+  const entries = resolutionByTemplate.get(entry.template) ?? [];
+  entries.push(entry);
+  resolutionByTemplate.set(entry.template, entries);
+}
+for (const [templateId, entries] of resolutionByTemplate) {
+  const priorities = entries.map((entry) => entry.priority);
+  if (new Set(priorities).size !== priorities.length) fail("VARIANT_CONFLICT", `${templateId}: variant priorities conflict`);
+}
+
+for (const state of list(dictionary.states)) {
+  if (uiStateIds.has(state.id ?? state)) fail("UI_STATE_ERROR", `${state.id ?? state}: UI state cannot be a business state`);
+}
+
+for (const [templateId, binding] of Object.entries(bindingsDoc.templates ?? {})) {
+  if (!templateMap.has(templateId)) fail("BINDING_ERROR", `${templateId}: binding references unknown template`);
+  if (binding.migrationStatus === "verified" && !binding.currentSource) fail("BINDING_ERROR", `${templateId}: verified binding requires currentSource`);
+}
+
+for (const source of list(migrationDoc.sources)) {
+  if (source.status === "deprecated" && !source.verifiedBeforeDeprecation) fail("MIGRATION_GAP", `${source.legacySource}: deprecated before verified`);
+  if (source.status === "verified" && !list(source.evidence).length) fail("MIGRATION_GAP", `${source.legacySource}: verified migration requires evidence`);
+}
+
+for (const observation of list(observationsDoc.observations)) {
+  if (observation.approvalStatus === "unresolved" && !observation.relatedQuestion) fail("OBSERVATION_ERROR", `${observation.id}: unresolved observation requires relatedQuestion`);
 }
 
 for (const exception of exceptions) {
@@ -156,14 +223,16 @@ for (const scenario of scenarios) {
 
   if (surface) {
     for (const section of [expected.section, ...list(expected.notInSections)].filter(Boolean)) {
-      if (!sectionIds.has(section)) fail("scenario-surface", `${scenario.id}: секция ${scenario.given.surface}.${section} отсутствует`);
+      if (!sectionIds.has(section)) fail("SURFACE_CONFLICT", `${scenario.id}: секция ${scenario.given.surface}.${section} отсутствует`);
     }
   }
 
   const contentOverlap = intersection(expected.visibleContent, expected.hiddenContent);
-  if (contentOverlap.length) fail("scenario-assertions", `${scenario.id}: контент одновременно видим и скрыт: ${contentOverlap.join(", ")}`);
+  if (contentOverlap.length) fail("SCENARIO_ERROR", `${scenario.id}: контент одновременно видим и скрыт: ${contentOverlap.join(", ")}`);
   const actionOverlap = intersection(expected.enabledActions, expected.disabledActions);
-  if (actionOverlap.length) fail("scenario-assertions", `${scenario.id}: действие одновременно enabled и disabled: ${actionOverlap.join(", ")}`);
+  if (actionOverlap.length) fail("SCENARIO_ERROR", `${scenario.id}: действие одновременно enabled и disabled: ${actionOverlap.join(", ")}`);
+  if (!scenario.executionStatus) fail("SCENARIO_ERROR", `${scenario.id}: executionStatus is required`);
+  if (scenario.executionStatus === "verified" && !scenario.testEvidence) fail("SCENARIO_ERROR", `${scenario.id}: verified scenario requires testEvidence`);
 
   if (expected.template && expected.variant) {
     const template = templateMap.get(expected.template);
@@ -172,6 +241,7 @@ for (const scenario of scenarios) {
     }
   } else if (expected.variant) {
     const variantCovered = list(expected.appliedRules).some((ruleId) => ruleMap.get(ruleId)?.target?.type === "card_variant" && ruleMap.get(ruleId).target.id === expected.variant)
+      || (expected.variant === "match" && list(expected.appliedRules).some((ruleId) => ruleMap.get(ruleId)?.target?.id === "marker.suitable_for_you"))
       || list(expected.appliedExceptions).some((exceptionId) => exceptionMap.get(exceptionId)?.override?.variant === expected.variant);
     if (!variantCovered) fail("scenario-variant", `${scenario.id}: вариант ${expected.variant} не связан с применённым правилом`);
   }
