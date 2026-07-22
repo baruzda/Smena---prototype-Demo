@@ -775,7 +775,7 @@ function TaskCard({ day, task, onOpen }) {
           <p>{task.breakInfo}</p>
         </div>
       </div>
-      {(showRestrictionTags || showStatus) && (
+      {showRestrictionTags && (
         <div className="gig-task-restrictions">
           {task.restrictionTags.map((tag) => <span key={tag}>{tag}</span>)}
         </div>
