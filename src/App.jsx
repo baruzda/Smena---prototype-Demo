@@ -76,8 +76,7 @@ const emptyFilters = { brands: [], minimumPayment: "", service: "" };
 
 const emptyAvailabilityTime = { from: "", to: "", preset: null, presets: [] };
 
-const prototypeDefaultStateVersion = 3;
-const settingsOnboardingVersion = 3;
+const prototypeDefaultStateVersion = 4;
 
 const availabilityTimePresets = [
   { id: "all-day", label: "весь день", from: "8:00", to: "22:00" },
@@ -1941,7 +1940,7 @@ export function App() {
   const persistedState = persistedStateRef.current;
   const [activeTab, setActiveTab] = useState(0);
   const [activeDay, setActiveDay] = useState("1");
-  const [onlyMatching, setOnlyMatching] = useState(false);
+  const [onlyMatching, setOnlyMatching] = useState(true);
   const [networkFilter, setNetworkFilter] = useState("торговая сеть");
   const [filterScrollState, setFilterScrollState] = useState("at-start");
   const [isBottomChromeHidden, setIsBottomChromeHidden] = useState(false);
@@ -1950,25 +1949,21 @@ export function App() {
   const [isScrollTopVisible, setIsScrollTopVisible] = useState(false);
   const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
   const [cardSheet, setCardSheet] = useState(null);
-  const [sortBy, setSortBy] = useState(persistedState.sortBy || "recommended");
-  const [hasAppliedSort, setHasAppliedSort] = useState(Boolean(persistedState.hasAppliedSort));
-  const [searchRadius, setSearchRadius] = useState(persistedState.searchRadius ?? null);
-  const [searchLocation, setSearchLocation] = useState(persistedState.searchLocation || emptySearchLocation);
-  const [appliedFilters, setAppliedFilters] = useState(persistedState.appliedFilters || emptyFilters);
+  const [sortBy, setSortBy] = useState("recommended");
+  const [hasAppliedSort, setHasAppliedSort] = useState(false);
+  const [searchRadius, setSearchRadius] = useState(null);
+  const [searchLocation, setSearchLocation] = useState(emptySearchLocation);
+  const [appliedFilters, setAppliedFilters] = useState(emptyFilters);
   const [favoriteCollections, setFavoriteCollections] = useState(persistedState.favoriteCollections || []);
   const [editingCollection, setEditingCollection] = useState(null);
-  const [catalogVersion, setCatalogVersion] = useState(persistedState.catalogVersion || 0);
-  const [selectedAvailabilityDates, setSelectedAvailabilityDates] = useState(persistedState.selectedAvailabilityDates || []);
-  const [selectedAvailabilityWeekdays, setSelectedAvailabilityWeekdays] = useState(persistedState.selectedAvailabilityWeekdays || []);
-  const [availabilityTime, setAvailabilityTime] = useState(persistedState.availabilityTime || emptyAvailabilityTime);
-  const [selectedAvailabilityDuration, setSelectedAvailabilityDuration] = useState(() => (
-    Array.isArray(persistedState.selectedAvailabilityDuration)
-      ? persistedState.selectedAvailabilityDuration
-      : persistedState.selectedAvailabilityDuration ? [persistedState.selectedAvailabilityDuration] : []
-  ));
+  const [catalogVersion, setCatalogVersion] = useState(0);
+  const [selectedAvailabilityDates, setSelectedAvailabilityDates] = useState([]);
+  const [selectedAvailabilityWeekdays, setSelectedAvailabilityWeekdays] = useState([]);
+  const [availabilityTime, setAvailabilityTime] = useState(emptyAvailabilityTime);
+  const [selectedAvailabilityDuration, setSelectedAvailabilityDuration] = useState([]);
   const [bookedTasks, setBookedTasks] = useState(persistedState.bookedTasks || []);
   const [currentView, setCurrentView] = useState("tasks");
-  const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(() => persistedState.settingsOnboardingVersion !== settingsOnboardingVersion);
+  const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
   const [scrollTargetDay, setScrollTargetDay] = useState(null);
   const [isTimelineLoading, setIsTimelineLoading] = useState(false);
@@ -1982,22 +1977,11 @@ export function App() {
 
   useEffect(() => {
     window.localStorage.setItem(prototypeStorageKey, JSON.stringify({
-      appliedFilters,
-      availabilityTime,
       bookedTasks,
-      catalogVersion,
       defaultStateVersion: prototypeDefaultStateVersion,
       favoriteCollections,
-      hasAppliedSort,
-      searchLocation,
-      searchRadius,
-      selectedAvailabilityDates,
-      selectedAvailabilityDuration,
-      selectedAvailabilityWeekdays,
-      settingsOnboardingVersion: isSettingsOnboardingVisible ? settingsOnboardingVersion - 1 : settingsOnboardingVersion,
-      sortBy,
     }));
-  }, [appliedFilters, availabilityTime, bookedTasks, catalogVersion, favoriteCollections, hasAppliedSort, isSettingsOnboardingVisible, searchLocation, searchRadius, selectedAvailabilityDates, selectedAvailabilityDuration, selectedAvailabilityWeekdays, sortBy]);
+  }, [bookedTasks, favoriteCollections]);
 
   useEffect(() => {
     const timeline = document.querySelector(".date-timeline");
