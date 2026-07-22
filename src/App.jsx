@@ -1067,9 +1067,10 @@ function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollect
         <article className="favorite-store-card">
           <div className="favorite-store-details">
             <div className="favorite-store-header">
+              <BrandMark brand="pyaterochka" />
               <div>
                 <h2>название подборки конкретного магазина</h2>
-                <p><BrandMark brand="pyaterochka" /><MetroIcon metro={{ city: "spb", color: "#d6083b", label: "Метро Санкт-Петербурга", station: "Площадь Восстания" }} />Площадь Восстания · Косой переулок 5, к. 8</p>
+                <p><MetroIcon metro={{ city: "spb", color: "#d6083b", label: "Метро Санкт-Петербурга", station: "Площадь Восстания" }} />Площадь Восстания · Косой переулок 5, к. 8</p>
               </div>
               <button aria-label="Настройки подборки магазина" className="card-kebab-button" type="button"><img alt="" src={assetUrl("kebab.svg")} /></button>
             </div>

@@ -3765,7 +3765,7 @@ button.filter-field {
 .favorite-store-header {
   align-items: flex-start;
   display: flex;
-  gap: 16px;
+  gap: 8px;
   width: 100%;
 }
 
@@ -3786,23 +3786,25 @@ button.filter-field {
 .favorite-store-header p {
   align-items: center;
   color: #6c737d;
-  display: flex;
-  flex-wrap: wrap;
+  display: block;
   font-size: 14px;
-  gap: 4px;
   line-height: 18px;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .favorite-store-header .brand-logo {
   height: 32px;
-  margin: 0 4px 0 0;
+  flex: 0 0 auto;
+  margin: 0;
   width: 32px;
 }
 
 .favorite-store-header .metro-icon {
   display: inline-block;
   height: 18px;
+  margin-right: 4px;
+  vertical-align: -4px;
   width: 14px;
 }
 

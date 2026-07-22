@@ -7,3 +7,5 @@ Before making substantial visual changes, use the Product Design plugin's `get-c
 When implementing from a selected generated mock, treat that image as the source of truth for layout, component anatomy, density, spacing, color, typography, visible content, and hierarchy.
 
 Prototype motion preference: use smooth, purposeful animations for state changes where they clarify hierarchy or reduce abruptness. Filter sheets, availability/settings sheets, modal overlays, sticky controls, cards, and floating actions should enter/exit softly while respecting reduced-motion preferences.
+
+Favorite store card rule: the retail brand logo is a standalone leading mark for the store row; the metro icon belongs inline to the address/station text and must not wrap away as a separate symbol beside the brand logo.
