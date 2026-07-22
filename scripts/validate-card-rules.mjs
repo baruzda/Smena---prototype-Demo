@@ -70,6 +70,11 @@ const precedence = read("precedence.json");
 const rulesDoc = read("rules.json");
 const exceptionsDoc = read("exceptions.json");
 const scenariosDoc = read("scenarios.json");
+const observationsDoc = read("implementation-observations.json");
+const uiStatesDoc = read("ui-states.json");
+const bindingsDoc = read("component-bindings.json");
+const migrationDoc = read("migration-map.json");
+const questionsDoc = read("open-questions.json");
 
 const entities = list(dictionary.entities);
 const surfacesDictionary = list(dictionary.surfaces);
@@ -79,6 +84,19 @@ const surfaces = list(surfacesDoc.surfaces);
 const rules = list(rulesDoc.rules);
 const exceptions = list(exceptionsDoc.exceptions);
 const scenarios = list(scenariosDoc.scenarios);
+const observations = list(observationsDoc.observations);
+const uiStates = list(uiStatesDoc.uiStates);
+const questions = list(questionsDoc.questions);
+const questionMap = new Map(questions.map((item) => [item.id, item]));
+
+for (const scenario of scenarios) if (!['declarative', 'executable', 'verified'].includes(scenario.executionStatus)) fail(`scenario ${scenario.id}: executionStatus обязателен`);
+for (const observation of observations) {
+  required(observation, ['id', 'source', 'approvalStatus'], `observation ${observation.id}`);
+  if (!/^OBS-[A-Z-]+-[0-9]{3}$/.test(observation.id)) fail(`observation ${observation.id}: неверный ID`);
+}
+for (const rule of rules.filter((item) => item.status === 'provisional')) if (!rule.relatedQuestion || !questionMap.has(rule.relatedQuestion)) fail(`rule ${rule.id}: provisional rule требует open question`);
+for (const template of templates) if (!bindingsDoc.templates?.[template.id]) fail(`template ${template.id}: отсутствует binding`);
+for (const source of list(migrationDoc.sources)) if (!source.legacySource) fail('migration source без legacySource');
 
 for (const [records, name] of [
   [entities, "entities"],

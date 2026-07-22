@@ -4,158 +4,569 @@
     {
       "id": "SCN-CATALOG-001",
       "name": "Доступная услуга проходит фильтры",
-      "given": { "surface": "tasks", "service": { "state": "available", "matchesFilters": true } },
-      "expected": { "template": "service_offer_card", "section": "available_offers", "appliedRules": ["RULE-PLACEMENT-001"] }
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "matchesFilters": true
+        }
+      },
+      "expected": {
+        "template": "service_offer_card",
+        "section": "available_offers",
+        "appliedRules": [
+          "RULE-PLACEMENT-001"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-CATALOG-002",
       "name": "Услуга скрыта фильтрами",
-      "given": { "surface": "tasks", "service": { "state": "available", "matchesFilters": false }, "catalog": { "otherOffersExpanded": false } },
-      "expected": { "notInSections": ["available_offers"], "appliedExceptions": ["EXC-PLACEMENT-002"] }
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "matchesFilters": false
+        },
+        "catalog": {
+          "otherOffersExpanded": false
+        }
+      },
+      "expected": {
+        "notInSections": [
+          "available_offers"
+        ],
+        "appliedExceptions": [
+          "EXC-PLACEMENT-002"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-MATCH-001",
       "name": "Услуга полностью совпадает с доступностью",
-      "given": { "surface": "tasks", "service": { "state": "available", "matchesFilters": true, "scheduleCompatible": true, "availabilityCompatible": true, "overlapsAccepted": false, "restrictionTags": [], "isSpecialOffer": false } },
-      "expected": { "variant": "match", "visibleContent": ["marker.suitable_for_you"], "appliedRules": ["RULE-MARKER-001", "RULE-VARIANT-001"] }
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "matchesFilters": true,
+          "scheduleCompatible": true,
+          "availabilityCompatible": true,
+          "overlapsAccepted": false,
+          "restrictionTags": [],
+          "isSpecialOffer": false
+        }
+      },
+      "expected": {
+        "variant": "match",
+        "visibleContent": [
+          "marker.suitable_for_you"
+        ],
+        "appliedRules": [
+          "RULE-MARKER-001",
+          "RULE-VARIANT-001"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-MATCH-002",
       "name": "Время услуги не совпадает с доступностью",
-      "given": { "surface": "tasks", "service": { "state": "available", "matchesFilters": true, "scheduleCompatible": true, "availabilityCompatible": false } },
-      "expected": { "hiddenContent": ["marker.suitable_for_you"], "notVariant": "match", "appliedRules": ["RULE-MARKER-001", "RULE-VARIANT-001"] }
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "matchesFilters": true,
+          "scheduleCompatible": true,
+          "availabilityCompatible": false
+        }
+      },
+      "expected": {
+        "hiddenContent": [
+          "marker.suitable_for_you"
+        ],
+        "notVariant": "match",
+        "appliedRules": [
+          "RULE-MARKER-001",
+          "RULE-VARIANT-001"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-SPECIAL-001",
       "name": "Активное специальное предложение без ограничений",
-      "given": { "surface": "tasks", "service": { "state": "available", "isSpecialOffer": true, "specialOfferExpiresAt": "2026-07-23T12:00:00+03:00", "restrictionTags": [] }, "catalog": { "hasAppliedSort": false } },
-      "expected": { "variant": "special", "section": "special_offers", "visibleContent": ["marker.specially_for_you", "special.countdown", "service.primary_action"], "appliedRules": ["RULE-SPECIAL-001", "RULE-SPECIAL-002"] }
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "isSpecialOffer": true,
+          "specialOfferExpiresAt": "2026-07-23T12:00:00+03:00",
+          "restrictionTags": []
+        },
+        "catalog": {
+          "hasAppliedSort": false
+        }
+      },
+      "expected": {
+        "variant": "special",
+        "section": "special_offers",
+        "visibleContent": [
+          "marker.specially_for_you",
+          "special.countdown",
+          "service.primary_action"
+        ],
+        "appliedRules": [
+          "RULE-SPECIAL-001",
+          "RULE-SPECIAL-002"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-SPECIAL-002",
       "name": "Специальное предложение имеет ограничение",
-      "given": { "surface": "tasks", "service": { "state": "available", "isSpecialOffer": true, "specialOfferExpiresAt": "2026-07-23T12:00:00+03:00", "restrictionTags": ["не совпадает время"] } },
-      "expected": { "notVariant": "special", "appliedExceptions": ["EXC-SPECIAL-001"] }
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "isSpecialOffer": true,
+          "specialOfferExpiresAt": "2026-07-23T12:00:00+03:00",
+          "restrictionTags": [
+            "не совпадает время"
+          ]
+        }
+      },
+      "expected": {
+        "notVariant": "special",
+        "appliedExceptions": [
+          "EXC-SPECIAL-001"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-SPECIAL-003",
       "name": "Пользователь выбрал сортировку",
-      "given": { "surface": "tasks", "service": { "state": "available", "isSpecialOffer": true, "restrictionTags": [] }, "catalog": { "hasAppliedSort": true } },
-      "expected": { "order": "according_to_selected_sort", "appliedRules": ["RULE-SPECIAL-002"] }
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "isSpecialOffer": true,
+          "restrictionTags": []
+        },
+        "catalog": {
+          "hasAppliedSort": true
+        }
+      },
+      "expected": {
+        "order": "according_to_selected_sort",
+        "appliedRules": [
+          "RULE-SPECIAL-002"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-RESTRICTION-001",
       "name": "Одно ограничение",
-      "given": { "surface": "tasks", "service": { "state": "available", "restrictionTags": ["не совпадает время"] } },
-      "expected": { "variant": "restriction_status", "visibleContent": ["restrictions.summary"], "appliedRules": ["RULE-RESTRICTION-001"] }
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "restrictionTags": [
+            "не совпадает время"
+          ]
+        }
+      },
+      "expected": {
+        "variant": "restriction_status",
+        "visibleContent": [
+          "restrictions.summary"
+        ],
+        "appliedRules": [
+          "RULE-RESTRICTION-001"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-RESTRICTION-002",
       "name": "Два ограничения",
-      "given": { "surface": "tasks", "service": { "state": "available", "restrictionTags": ["не совпадает время", "слишком далеко"] } },
-      "expected": { "variant": "restriction_status_plus", "visibleContent": ["restrictions.summary", "restrictions.tags"], "appliedRules": ["RULE-RESTRICTION-002"] }
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "restrictionTags": [
+            "не совпадает время",
+            "слишком далеко"
+          ]
+        }
+      },
+      "expected": {
+        "variant": "restriction_status_plus",
+        "visibleContent": [
+          "restrictions.summary",
+          "restrictions.tags"
+        ],
+        "appliedRules": [
+          "RULE-RESTRICTION-002"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-RESTRICTION-003",
       "name": "Три ограничения",
-      "given": { "surface": "tasks", "service": { "state": "available", "restrictionTags": ["не совпадает время", "слишком далеко", "не подходит доступность"] } },
-      "expected": { "variant": "restriction_tags", "visibleContent": ["restrictions.tags"], "appliedRules": ["RULE-RESTRICTION-003"] }
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "restrictionTags": [
+            "не совпадает время",
+            "слишком далеко",
+            "не подходит доступность"
+          ]
+        }
+      },
+      "expected": {
+        "variant": "restriction_tags",
+        "visibleContent": [
+          "restrictions.tags"
+        ],
+        "appliedRules": [
+          "RULE-RESTRICTION-003"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-RESTRICTION-004",
       "name": "Ограничений нет",
-      "given": { "surface": "tasks", "service": { "state": "available", "restrictionTags": [] } },
-      "expected": { "hiddenContent": ["restrictions.summary", "restrictions.tags"], "notVariant": "restriction_tags", "appliedRules": ["RULE-RESTRICTION-003"] }
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "restrictionTags": []
+        }
+      },
+      "expected": {
+        "hiddenContent": [
+          "restrictions.summary",
+          "restrictions.tags"
+        ],
+        "notVariant": "restriction_tags",
+        "appliedRules": [
+          "RULE-RESTRICTION-003"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-SHIFT-001",
       "name": "Основная смена в текущий день",
-      "given": { "surface": "tasks", "shift": { "type": "primary", "dateMatchesCurrentDay": true } },
-      "expected": { "template": "employee_shift_card", "variant": "primary_shift", "section": "employee_schedule", "order": "before_service_offers_of_day", "appliedRules": ["RULE-SHIFT-001"] }
+      "given": {
+        "surface": "tasks",
+        "shift": {
+          "type": "primary",
+          "dateMatchesCurrentDay": true
+        }
+      },
+      "expected": {
+        "template": "employee_shift_card",
+        "variant": "primary_shift",
+        "section": "employee_schedule",
+        "order": "before_service_offers_of_day",
+        "appliedRules": [
+          "RULE-SHIFT-001"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-SHIFT-002",
       "name": "Основная смена относится к другому дню",
-      "given": { "surface": "tasks", "shift": { "type": "primary", "dateMatchesCurrentDay": false } },
-      "expected": { "notInSections": ["employee_schedule"], "appliedRules": ["RULE-SHIFT-001"] }
+      "given": {
+        "surface": "tasks",
+        "shift": {
+          "type": "primary",
+          "dateMatchesCurrentDay": false
+        }
+      },
+      "expected": {
+        "notInSections": [
+          "employee_schedule"
+        ],
+        "appliedRules": [
+          "RULE-SHIFT-001"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-MYTASKS-001",
       "name": "Пользователь записан на услугу",
-      "given": { "surface": "my_tasks", "service": { "state": "booked" } },
-      "expected": { "template": "my_service_card", "variant": "booked", "section": "upcoming", "appliedRules": ["RULE-MYTASKS-001", "RULE-MYTASKS-002"] }
+      "given": {
+        "surface": "my_tasks",
+        "service": {
+          "state": "booked"
+        }
+      },
+      "expected": {
+        "template": "my_service_card",
+        "variant": "booked",
+        "section": "upcoming",
+        "appliedRules": [
+          "RULE-MYTASKS-001",
+          "RULE-MYTASKS-002"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-MYTASKS-002",
       "name": "Услуга ожидает подтверждения",
-      "given": { "surface": "my_tasks", "service": { "state": "pending_confirmation" } },
-      "expected": { "template": "my_service_card", "variant": "pending", "section": "pending_confirmation", "appliedRules": ["RULE-MYTASKS-002"] }
+      "given": {
+        "surface": "my_tasks",
+        "service": {
+          "state": "pending_confirmation"
+        }
+      },
+      "expected": {
+        "template": "my_service_card",
+        "variant": "pending",
+        "section": "pending_confirmation",
+        "appliedRules": [
+          "RULE-MYTASKS-002"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-MYTASKS-003",
       "name": "Услуга завершена",
-      "given": { "surface": "my_tasks", "service": { "state": "completed" } },
-      "expected": { "template": "my_service_card", "variant": "completed", "section": "completed", "appliedRules": ["RULE-MYTASKS-002"] }
+      "given": {
+        "surface": "my_tasks",
+        "service": {
+          "state": "completed"
+        }
+      },
+      "expected": {
+        "template": "my_service_card",
+        "variant": "completed",
+        "section": "completed",
+        "appliedRules": [
+          "RULE-MYTASKS-002"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-FAVORITES-001",
       "name": "Доступная услуга сохранена",
-      "given": { "surface": "favorites", "service": { "state": "available", "isFavorite": true } },
-      "expected": { "template": "service_offer_card", "section": "services_available", "appliedRules": ["RULE-FAVORITES-001"] }
+      "given": {
+        "surface": "favorites",
+        "service": {
+          "state": "available",
+          "isFavorite": true
+        }
+      },
+      "expected": {
+        "template": "service_offer_card",
+        "section": "services_available",
+        "appliedRules": [
+          "RULE-FAVORITES-001"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-FAVORITES-002",
       "name": "Сохранённая услуга стала недоступной",
-      "given": { "surface": "favorites", "service": { "state": "expired", "isFavorite": true } },
-      "expected": { "template": "service_offer_card", "variant": "favorite_unavailable", "section": "services_unavailable", "appliedExceptions": ["EXC-FAVORITES-001"] }
+      "given": {
+        "surface": "favorites",
+        "service": {
+          "state": "expired",
+          "isFavorite": true
+        }
+      },
+      "expected": {
+        "template": "service_offer_card",
+        "variant": "favorite_unavailable",
+        "section": "services_unavailable",
+        "appliedExceptions": [
+          "EXC-FAVORITES-001"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-FAVORITES-003",
       "name": "Подборка сохранена",
-      "given": { "surface": "favorites", "collection": { "isSaved": true } },
-      "expected": { "template": "saved_collection_card", "section": "collections", "appliedRules": ["RULE-FAVORITES-002"] }
+      "given": {
+        "surface": "favorites",
+        "collection": {
+          "isSaved": true
+        }
+      },
+      "expected": {
+        "template": "saved_collection_card",
+        "section": "collections",
+        "appliedRules": [
+          "RULE-FAVORITES-002"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-FAVORITES-004",
       "name": "Подборка не сохранена",
-      "given": { "surface": "favorites", "collection": { "isSaved": false } },
-      "expected": { "notInSections": ["collections"], "appliedRules": ["RULE-FAVORITES-002"] }
+      "given": {
+        "surface": "favorites",
+        "collection": {
+          "isSaved": false
+        }
+      },
+      "expected": {
+        "notInSections": [
+          "collections"
+        ],
+        "appliedRules": [
+          "RULE-FAVORITES-002"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-SIGNING-001",
       "name": "Документы ждут подписи пользователя",
-      "given": { "surface": "signing", "service": { "state": "signing_required" }, "signing": { "actor": "user", "status": "waiting_user" } },
-      "expected": { "template": "signing_card", "variant": "waiting_user", "section": "waiting_user", "appliedRules": ["RULE-SIGNING-001"] }
+      "given": {
+        "surface": "signing",
+        "service": {
+          "state": "signing_required"
+        },
+        "signing": {
+          "actor": "user",
+          "status": "waiting_user"
+        }
+      },
+      "expected": {
+        "template": "signing_card",
+        "variant": "waiting_user",
+        "section": "waiting_user",
+        "appliedRules": [
+          "RULE-SIGNING-001"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-SIGNING-002",
       "name": "Документы находятся на проверке",
-      "given": { "surface": "signing", "service": { "state": "signing_required" }, "signing": { "actor": "system", "status": "processing" } },
-      "expected": { "notInSections": ["waiting_user"], "appliedExceptions": ["EXC-SIGNING-001"] }
+      "given": {
+        "surface": "signing",
+        "service": {
+          "state": "signing_required"
+        },
+        "signing": {
+          "actor": "system",
+          "status": "processing"
+        }
+      },
+      "expected": {
+        "notInSections": [
+          "waiting_user"
+        ],
+        "appliedExceptions": [
+          "EXC-SIGNING-001"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-CONTENT-001",
       "name": "У услуги есть метро",
-      "given": { "surface": "tasks", "service": { "metro": { "station": "Ладожская" } } },
-      "expected": { "visibleContent": ["service.metro"], "appliedRules": ["RULE-CONTENT-001"] }
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "metro": {
+            "station": "Ладожская"
+          }
+        }
+      },
+      "expected": {
+        "visibleContent": [
+          "service.metro"
+        ],
+        "appliedRules": [
+          "RULE-CONTENT-001"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-CONTENT-002",
       "name": "У услуги нет метро",
-      "given": { "surface": "tasks", "service": { "metro": null } },
-      "expected": { "hiddenContent": ["service.metro"], "visibleContent": ["service.address"], "appliedRules": ["RULE-CONTENT-001"] }
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "metro": null
+        }
+      },
+      "expected": {
+        "hiddenContent": [
+          "service.metro"
+        ],
+        "visibleContent": [
+          "service.address"
+        ],
+        "appliedRules": [
+          "RULE-CONTENT-001"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-ACTION-001",
       "name": "Услуга пересекается с основной сменой",
-      "given": { "surface": "tasks", "service": { "state": "available", "overlapsPrimarySchedule": true } },
-      "expected": { "disabledActions": ["service.primary_action"], "appliedRules": ["RULE-ACTION-001"] }
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "overlapsPrimarySchedule": true
+        }
+      },
+      "expected": {
+        "disabledActions": [
+          "service.primary_action"
+        ],
+        "appliedRules": [
+          "RULE-ACTION-001"
+        ]
+      },
+      "executionStatus": "declarative"
     },
     {
       "id": "SCN-ACTION-002",
       "name": "Услуга доступна для принятия",
-      "given": { "surface": "tasks", "service": { "state": "available", "overlapsPrimarySchedule": false, "overlapsAcceptedServices": false } },
-      "expected": { "enabledActions": ["service.primary_action"], "appliedRules": ["RULE-ACTION-001"] }
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "overlapsPrimarySchedule": false,
+          "overlapsAcceptedServices": false
+        }
+      },
+      "expected": {
+        "enabledActions": [
+          "service.primary_action"
+        ],
+        "appliedRules": [
+          "RULE-ACTION-001"
+        ]
+      },
+      "executionStatus": "declarative"
     }
   ]
 }

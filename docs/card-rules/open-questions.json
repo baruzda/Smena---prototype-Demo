@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "questions": [
+    { "id": "OPEN-QUESTION-001", "title": "Терминология табов", "status": "unresolved", "blocking": false, "temporaryBehavior": "Сохраняются текущие подписи", "relatedRules": [], "relatedExceptions": [], "relatedScenarios": [], "relatedTemplates": [], "relatedObservations": [], "relatedDecisions": [], "owner": "product", "resolution": null },
+    { "id": "OPEN-QUESTION-008", "title": "Как выбирать отображение ограничений", "status": "unresolved", "blocking": true, "temporaryBehavior": "Количество restrictionTags определяет текущий mode прототипа", "relatedRules": ["RULE-VARIANT-001"], "relatedExceptions": [], "relatedScenarios": ["SCN-RESTRICTION-001", "SCN-RESTRICTION-002", "SCN-RESTRICTION-003"], "relatedTemplates": ["service_offer_card"], "relatedObservations": ["OBS-CARD-VARIANT-001"], "relatedDecisions": ["DEC-004"], "owner": "product", "resolution": null },
+    { "id": "OPEN-QUESTION-011", "title": "Размещение карточек на подписании", "status": "unresolved", "blocking": true, "temporaryBehavior": "signing_card поддерживает только signing", "relatedRules": [], "relatedExceptions": [], "relatedScenarios": ["SCN-SIGNING-001"], "relatedTemplates": ["signing_card"], "relatedObservations": ["OBS-CARD-PLACEMENT-001"], "relatedDecisions": [], "owner": "product", "resolution": null },
+    { "id": "OPEN-QUESTION-020", "title": "Статусы документов интеграции", "status": "unresolved", "blocking": true, "temporaryBehavior": "Ось signing использует provisional legacy mapping", "relatedRules": [], "relatedExceptions": [], "relatedScenarios": ["SCN-SIGNING-001", "SCN-SIGNING-002"], "relatedTemplates": ["signing_card"], "relatedObservations": [], "relatedDecisions": ["DEC-003"], "owner": "product", "resolution": null }
+  ]
+}
