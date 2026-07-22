@@ -1,0 +1,376 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "RULE-PLACEMENT-001",
+      "name": "Доступная услуга показывается в каталоге",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["tasks"],
+        "templates": ["service_offer_card"]
+      },
+      "target": { "type": "placement", "surface": "tasks", "section": "available_offers" },
+      "when": {
+        "all": [
+          { "path": "service.state", "operator": "equals", "value": "available" },
+          { "path": "service", "operator": "matches_filters", "reference": "catalog.appliedFilters" }
+        ]
+      },
+      "effect": { "action": "place" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 700,
+      "exceptions": ["EXC-PLACEMENT-001", "EXC-PLACEMENT-002"],
+      "supersedes": [],
+      "source": { "documents": ["docs/catalog-rules-matrix.md"], "decision": "DEC-001" },
+      "tests": ["SCN-CATALOG-001", "SCN-CATALOG-002"]
+    },
+    {
+      "id": "RULE-MARKER-001",
+      "name": "Маркер Подходит вам",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["tasks", "favorites"],
+        "templates": ["service_offer_card"]
+      },
+      "target": { "type": "content_element", "id": "marker.suitable_for_you" },
+      "when": {
+        "all": [
+          { "path": "service.state", "operator": "equals", "value": "available" },
+          { "path": "service", "operator": "matches_filters", "reference": "catalog.appliedFilters" },
+          { "path": "service.date", "operator": "compatible_with", "reference": "user.primarySchedule" },
+          { "path": "service.dateTime", "operator": "compatible_with", "reference": "user.savedAvailability" },
+          { "path": "service.dateTime", "operator": "not_overlaps", "reference": "user.acceptedServices" }
+        ]
+      },
+      "effect": { "action": "show" },
+      "otherwise": { "action": "hide" },
+      "priority": 600,
+      "exceptions": ["EXC-MARKER-001"],
+      "supersedes": [],
+      "source": { "documents": ["docs/catalog-rules-matrix.md", "docs/availability-rules.md"], "decision": "DEC-001" },
+      "tests": ["SCN-MATCH-001", "SCN-MATCH-002"]
+    },
+    {
+      "id": "RULE-VARIANT-001",
+      "name": "Вариант карточки Подходит вам",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["tasks", "favorites"],
+        "templates": ["service_offer_card"]
+      },
+      "target": { "type": "card_variant", "template": "service_offer_card", "id": "match" },
+      "when": {
+        "all": [
+          { "path": "computed.marker.suitable_for_you", "operator": "equals", "value": true },
+          { "path": "service.restrictionTags.length", "operator": "equals", "value": 0 },
+          { "path": "service.isSpecialOffer", "operator": "equals", "value": false }
+        ]
+      },
+      "effect": { "action": "set_variant", "value": "match" },
+      "otherwise": { "action": "set_variant", "value": "default" },
+      "priority": 600,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "code": "src/App.jsx#getGigTaskCardVariant", "decision": "DEC-001" },
+      "tests": ["SCN-MATCH-001", "SCN-MATCH-002"]
+    },
+    {
+      "id": "RULE-SPECIAL-001",
+      "name": "Вариант Специально для вас",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["tasks"],
+        "templates": ["service_offer_card"]
+      },
+      "target": { "type": "card_variant", "template": "service_offer_card", "id": "special" },
+      "when": {
+        "all": [
+          { "path": "service.isSpecialOffer", "operator": "equals", "value": true },
+          { "path": "service.specialOfferExpiresAt", "operator": "exists" },
+          { "path": "service.restrictionTags.length", "operator": "equals", "value": 0 }
+        ]
+      },
+      "effect": { "action": "set_variant", "value": "special" },
+      "otherwise": { "action": "set_variant", "value": "default" },
+      "priority": 500,
+      "exceptions": ["EXC-SPECIAL-001"],
+      "supersedes": [],
+      "source": { "code": "src/App.jsx#getGigTaskCardVariant", "decision": "DEC-001" },
+      "tests": ["SCN-SPECIAL-001", "SCN-SPECIAL-002"]
+    },
+    {
+      "id": "RULE-SPECIAL-002",
+      "name": "Специальные предложения идут первыми до явной сортировки",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["tasks"],
+        "templates": ["service_offer_card"]
+      },
+      "target": { "type": "order", "surface": "tasks", "section": "special_offers" },
+      "when": {
+        "all": [
+          { "path": "service.isSpecialOffer", "operator": "equals", "value": true },
+          { "path": "catalog.hasAppliedSort", "operator": "equals", "value": false }
+        ]
+      },
+      "effect": { "action": "set_order", "value": "before_regular_offers" },
+      "otherwise": { "action": "set_order", "value": "according_to_selected_sort" },
+      "priority": 500,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "code": "src/App.jsx#getOrderedTasks", "decision": "DEC-001" },
+      "tests": ["SCN-SPECIAL-001", "SCN-SPECIAL-003"]
+    },
+    {
+      "id": "RULE-RESTRICTION-001",
+      "name": "Одно ограничение показывает статус Не подходит",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["tasks", "favorites"],
+        "templates": ["service_offer_card"]
+      },
+      "target": { "type": "card_variant", "template": "service_offer_card", "id": "restriction_status" },
+      "when": { "all": [{ "path": "service.restrictionTags.length", "operator": "equals", "value": 1 }] },
+      "effect": { "action": "set_variant", "value": "restriction_status" },
+      "otherwise": { "action": "set_variant", "value": "default" },
+      "priority": 600,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "code": "src/App.jsx#getGigTaskCardVariant", "decision": "DEC-001" },
+      "tests": ["SCN-RESTRICTION-001", "SCN-RESTRICTION-002"]
+    },
+    {
+      "id": "RULE-RESTRICTION-002",
+      "name": "Два ограничения показывают общий статус",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["tasks", "favorites"],
+        "templates": ["service_offer_card"]
+      },
+      "target": { "type": "card_variant", "template": "service_offer_card", "id": "restriction_status_plus" },
+      "when": { "all": [{ "path": "service.restrictionTags.length", "operator": "equals", "value": 2 }] },
+      "effect": { "action": "set_variant", "value": "restriction_status_plus" },
+      "otherwise": { "action": "set_variant", "value": "default" },
+      "priority": 600,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "code": "src/App.jsx#getGigTaskCardVariant", "decision": "DEC-001" },
+      "tests": ["SCN-RESTRICTION-002", "SCN-RESTRICTION-003"]
+    },
+    {
+      "id": "RULE-RESTRICTION-003",
+      "name": "Три и более ограничения показываются тегами",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["tasks", "favorites"],
+        "templates": ["service_offer_card"]
+      },
+      "target": { "type": "card_variant", "template": "service_offer_card", "id": "restriction_tags" },
+      "when": { "all": [{ "path": "service.restrictionTags.length", "operator": "greater_or_equal", "value": 3 }] },
+      "effect": { "action": "set_variant", "value": "restriction_tags" },
+      "otherwise": { "action": "set_variant", "value": "default" },
+      "priority": 600,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "code": "src/App.jsx#getGigTaskCardVariant", "decision": "DEC-001" },
+      "tests": ["SCN-RESTRICTION-003", "SCN-RESTRICTION-004"]
+    },
+    {
+      "id": "RULE-SHIFT-001",
+      "name": "Основная смена показывается перед услугами дня",
+      "status": "active",
+      "scope": {
+        "entity": "employee_shift",
+        "surfaces": ["tasks"],
+        "templates": ["employee_shift_card"]
+      },
+      "target": { "type": "placement", "surface": "tasks", "section": "employee_schedule" },
+      "when": {
+        "all": [
+          { "path": "shift.type", "operator": "equals", "value": "primary" },
+          { "path": "shift.date", "operator": "equals", "reference": "catalog.currentDay" }
+        ]
+      },
+      "effect": { "action": "place", "value": "before_service_offers_of_day" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 800,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["docs/availability-rules.md"], "code": "src/App.jsx#EmployeeShiftCard", "decision": "DEC-001" },
+      "tests": ["SCN-SHIFT-001", "SCN-SHIFT-002"]
+    },
+    {
+      "id": "RULE-MYTASKS-001",
+      "name": "Принятая услуга появляется в Моих заданиях",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["my_tasks"],
+        "templates": ["my_service_card"]
+      },
+      "target": { "type": "placement", "surface": "my_tasks", "section": "upcoming" },
+      "when": { "all": [{ "path": "service.state", "operator": "equals", "value": "booked" }] },
+      "effect": { "action": "place" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 800,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["README.md"], "decision": "DEC-001" },
+      "tests": ["SCN-MYTASKS-001", "SCN-MYTASKS-002"]
+    },
+    {
+      "id": "RULE-MYTASKS-002",
+      "name": "Статус определяет секцию в Моих заданиях",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["my_tasks"],
+        "templates": ["my_service_card"]
+      },
+      "target": {
+        "type": "placement",
+        "surface": "my_tasks",
+        "sectionMap": {
+          "pending_confirmation": "pending_confirmation",
+          "booked": "upcoming",
+          "active": "active",
+          "completed": "completed",
+          "cancelled": "cancelled"
+        }
+      },
+      "when": {
+        "all": [{
+          "path": "service.state",
+          "operator": "in",
+          "value": ["pending_confirmation", "booked", "active", "completed", "cancelled"]
+        }]
+      },
+      "effect": { "action": "place", "value": "section_by_state" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 800,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "code": "src/App.jsx#myTaskStatuses", "decision": "DEC-001" },
+      "tests": ["SCN-MYTASKS-002", "SCN-MYTASKS-003"]
+    },
+    {
+      "id": "RULE-FAVORITES-001",
+      "name": "Сохранённая услуга показывается в Избранном",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["favorites"],
+        "templates": ["service_offer_card"]
+      },
+      "target": { "type": "placement", "surface": "favorites", "section": "services_available" },
+      "when": {
+        "all": [
+          { "path": "service.isFavorite", "operator": "equals", "value": true },
+          { "path": "service.state", "operator": "equals", "value": "available" }
+        ]
+      },
+      "effect": { "action": "place" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 700,
+      "exceptions": ["EXC-FAVORITES-001"],
+      "supersedes": [],
+      "source": { "documents": ["README.md"], "decision": "DEC-001" },
+      "tests": ["SCN-FAVORITES-001", "SCN-FAVORITES-002"]
+    },
+    {
+      "id": "RULE-FAVORITES-002",
+      "name": "Сохранённая подборка показывается в Избранном",
+      "status": "active",
+      "scope": {
+        "entity": "saved_collection",
+        "surfaces": ["favorites"],
+        "templates": ["saved_collection_card"]
+      },
+      "target": { "type": "placement", "surface": "favorites", "section": "collections" },
+      "when": { "all": [{ "path": "collection.isSaved", "operator": "equals", "value": true }] },
+      "effect": { "action": "place" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 700,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["README.md"], "decision": "DEC-001" },
+      "tests": ["SCN-FAVORITES-003", "SCN-FAVORITES-004"]
+    },
+    {
+      "id": "RULE-SIGNING-001",
+      "name": "Документы пользователя показываются в табе На подписание",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["signing"],
+        "templates": ["signing_card"]
+      },
+      "target": { "type": "placement", "surface": "signing", "section": "waiting_user" },
+      "when": {
+        "all": [
+          { "path": "service.state", "operator": "equals", "value": "signing_required" },
+          { "path": "signing.actor", "operator": "equals", "value": "user" }
+        ]
+      },
+      "effect": { "action": "place" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 800,
+      "exceptions": ["EXC-SIGNING-001"],
+      "supersedes": [],
+      "source": { "documents": ["README.md"], "decision": "DEC-001" },
+      "tests": ["SCN-SIGNING-001", "SCN-SIGNING-002"]
+    },
+    {
+      "id": "RULE-CONTENT-001",
+      "name": "Метро показывается только при наличии данных",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["tasks", "favorites"],
+        "templates": ["service_offer_card"]
+      },
+      "target": { "type": "content_element", "id": "service.metro" },
+      "when": { "all": [{ "path": "service.metro", "operator": "exists" }] },
+      "effect": { "action": "show" },
+      "otherwise": { "action": "hide" },
+      "priority": 100,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "code": "src/App.jsx#TaskCard", "decision": "DEC-001" },
+      "tests": ["SCN-CONTENT-001", "SCN-CONTENT-002"]
+    },
+    {
+      "id": "RULE-ACTION-001",
+      "name": "Недоступную услугу нельзя принять",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["tasks", "favorites"],
+        "templates": ["service_offer_card"]
+      },
+      "target": { "type": "action", "id": "service.primary_action" },
+      "when": {
+        "any": [
+          { "path": "service.state", "operator": "in", "value": ["unavailable", "booked", "completed", "cancelled", "expired"] },
+          { "path": "service.dateTime", "operator": "overlaps", "reference": "user.primarySchedule" },
+          { "path": "service.dateTime", "operator": "overlaps", "reference": "user.acceptedServices" }
+        ]
+      },
+      "effect": { "action": "disable" },
+      "otherwise": { "action": "enable" },
+      "priority": 900,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["docs/catalog-rules-matrix.md", "docs/availability-rules.md"], "decision": "DEC-001" },
+      "tests": ["SCN-ACTION-001", "SCN-ACTION-002"]
+    }
+  ]
+}
