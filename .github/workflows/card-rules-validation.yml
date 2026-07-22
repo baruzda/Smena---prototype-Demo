@@ -40,7 +40,7 @@ jobs:
       - name: Run E2E
         run: |
           set -o pipefail
-          npm run test:e2e -- --max-failures=1 2>&1 | tee e2e-output.txt
+          npm run test:e2e 2>&1 | tee e2e-output.txt
 
       - name: Upload E2E diagnostics
         if: always()
