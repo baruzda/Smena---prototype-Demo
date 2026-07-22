@@ -719,7 +719,7 @@ h1 {
   color: #6c737d;
 }
 
-.task-card {
+.gig-task-card {
   background: #f4f4f5;
   border: 0;
   border-radius: 18px;
@@ -729,7 +729,7 @@ h1 {
   transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
-.task-card-special {
+.gig-task-card-special {
   box-shadow: inset 0 0 0 1px #c9bffa;
 }
 
@@ -821,7 +821,7 @@ h1 {
 }
 
 .my-task-address-with-metro .metro-icon,
-.task-address-with-metro .metro-icon {
+.gig-task-address-with-metro .metro-icon {
   display: inline-block;
   height: 18px;
   margin-right: 4px;
@@ -937,13 +937,13 @@ h1 {
 }
 
 @media (hover: hover) {
-  .task-card:hover {
+  .gig-task-card:hover {
     box-shadow: 0 4px 12px rgb(0 0 0 / 0.06);
     transform: translateY(-1px);
   }
 }
 
-.task-card-top {
+.gig-task-card-top {
   align-items: start;
   display: grid;
   gap: 12px;
@@ -977,11 +977,12 @@ h1 {
   padding: 2px 6px;
 }
 
-.task-card-copy {
+.gig-task-card-copy {
   min-width: 0;
 }
 
-.match-badge {
+.gig-task-badge,
+.employee-shift-badge {
   background: #7b8490;
   border-radius: 8px;
   color: #fff;
@@ -992,7 +993,18 @@ h1 {
   padding: 2px 8px;
 }
 
-.task-card h2 {
+.details-match-badge {
+  background: #f0ecff;
+  border-radius: 7px;
+  color: #624eff;
+  display: inline-flex;
+  font-size: 12px;
+  line-height: 14px;
+  margin-bottom: 8px;
+  padding: 3px 6px 2px;
+}
+
+.gig-task-card h2 {
   font-family: "X5 Sans", Arial, sans-serif;
   font-size: 20px;
   font-weight: 400;
@@ -1001,20 +1013,21 @@ h1 {
   margin: 0;
 }
 
-.task-address,
+.gig-task-address,
 .task-rate,
-.task-hours p {
+.gig-task-hours p,
+.employee-shift-hours p {
   color: #6c737d;
   font-size: 16px;
   line-height: 20px;
   margin: 4px 0 0;
 }
 
-.task-address {
+.gig-task-address {
   overflow-wrap: anywhere;
 }
 
-.task-address-with-metro {
+.gig-task-address-with-metro {
   display: block;
 }
 
@@ -1043,40 +1056,43 @@ h1 {
   width: 32px;
 }
 
-.task-divider {
+.gig-task-divider {
   background: rgba(0, 0, 0, 0.12);
   height: 1px;
   margin: 12px 0;
 }
 
-.task-card-bottom {
+.gig-task-card-bottom,
+.employee-shift-details {
   align-items: flex-start;
   display: flex;
   justify-content: space-between;
 }
 
-.task-card-date p {
+.gig-task-date p,
+.employee-shift-date p {
   color: #000;
   font-size: 20px;
   line-height: 24px;
   margin: 0;
 }
 
-.task-card-date p + p {
+.gig-task-date p + p,
+.employee-shift-date p + p {
   color: #6c737d;
   font-size: 16px;
   line-height: 20px;
   margin-top: 2px;
 }
 
-.task-restrictions {
+.gig-task-restrictions {
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
   margin-top: 2px;
 }
 
-.task-restrictions span {
+.gig-task-restrictions span {
   background: #fff0e8;
   border-radius: 6px;
   color: #ff7a32;
@@ -1231,7 +1247,8 @@ h1 {
 }
 
 .task-payment,
-.task-hours > p:first-child {
+.gig-task-hours > p:first-child,
+.employee-shift-hours > p:first-child {
   color: #000;
   font-size: 20px;
   letter-spacing: 0;
@@ -1243,12 +1260,14 @@ h1 {
   margin-top: 2px;
 }
 
-.task-hours {
+.gig-task-hours,
+.employee-shift-hours {
   flex: 0 0 auto;
   text-align: right;
 }
 
-.task-hours p {
+.gig-task-hours p,
+.employee-shift-hours p {
   white-space: nowrap;
 }
 
@@ -3304,11 +3323,11 @@ button.filter-field {
   width: 144px;
 }
 
-.task-card-clickable {
+.gig-task-card-clickable {
   cursor: pointer;
 }
 
-.task-card-clickable:focus-visible {
+.gig-task-card-clickable:focus-visible {
   border-color: #6646ff;
   box-shadow: 0 0 0 2px rgb(102 70 255 / 0.2);
   outline: 0;

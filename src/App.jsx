@@ -720,20 +720,20 @@ function TaskCard({ day, task, onOpen }) {
   return (
     <article
       aria-label={onOpen ? `Подробнее: ${task.title}` : undefined}
-      className={`${onOpen ? "task-card task-card-clickable" : "task-card"}${isPersonalOffer ? " task-card-special" : ""}`}
+      className={`${onOpen ? "gig-task-card gig-task-card-clickable" : "gig-task-card"}${isPersonalOffer ? " gig-task-card-special" : ""}`}
       onClick={onOpen}
       onKeyDown={handleKeyDown}
       role={onOpen ? "button" : undefined}
       tabIndex={onOpen ? 0 : undefined}
     >
-      <div className={isPersonalOffer ? "task-card-top task-card-top-special" : "task-card-top"}>
-        <div className="task-card-copy">
-          {!isRestricted && <span className="match-badge">{shiftBadge}</span>}
+      <div className={isPersonalOffer ? "gig-task-card-top gig-task-card-top-special" : "gig-task-card-top"}>
+        <div className="gig-task-card-copy">
+          {!isRestricted && <span className="gig-task-badge">{shiftBadge}</span>}
           {isPersonalOffer && <span className="special-card-badges"><span className="special-card-badge">специально для вас</span><OfferCountdown /></span>}
           <h2>{task.title}</h2>
-          <p className={task.metro ? "task-address task-address-with-metro" : "task-address"}>
+          <p className={task.metro ? "gig-task-address gig-task-address-with-metro" : "gig-task-address"}>
             {task.metro && <MetroIcon metro={task.metro} />}
-            <span className="task-address-text">
+            <span className="gig-task-address-text">
               {task.metro && <>{task.metro.station} · </>}
               {task.address} · <img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />{task.distance}
             </span>
@@ -741,19 +741,19 @@ function TaskCard({ day, task, onOpen }) {
         </div>
         <BrandMark brand={task.brand} />
       </div>
-      <div className="task-divider" />
-      <div className="task-card-bottom">
-        <div className="task-card-date">
+      <div className="gig-task-divider" />
+      <div className="gig-task-card-bottom">
+        <div className="gig-task-date">
           <p>{getShortDayLabel(day)}</p>
           <p>{day?.secondaryLabel ?? "понедельник"}</p>
         </div>
-        <div className="task-hours">
+        <div className="gig-task-hours">
           <p>{task.hours}</p>
           <p>{task.breakInfo}</p>
         </div>
       </div>
       {isRestricted && (
-        <div className="task-restrictions">
+        <div className="gig-task-restrictions">
           {task.restrictionTags.map((tag) => <span key={tag}>{tag}</span>)}
         </div>
       )}
@@ -916,7 +916,7 @@ function TaskDetailsScreen({ task, day, onBack, onBook, bookingState }) {
       </header>
       <main className="details-content">
         <div className="details-brand"><BrandMark brand={task.brand} /></div>
-        {!task.restrictionTags?.length && task.badge && <span className="match-badge">{task.badge}</span>}
+        {!task.restrictionTags?.length && task.badge && <span className="details-match-badge">{task.badge}</span>}
         <h2>{task.title}</h2>
         <p className="details-payment">{task.payment}</p>
         <p className="details-rate">{task.rate}</p>
@@ -1060,7 +1060,7 @@ function EmployeeShiftCard({ day, shift }) {
     <article className="employee-shift-card">
       <div className="employee-shift-heading">
         <div>
-          <span className="match-badge">{shiftTitle}</span>
+          <span className="employee-shift-badge">{shiftTitle}</span>
           <h3>{shift.title}</h3>
           <p>
             {shift.metro && <span className="employee-shift-metro"><MetroIcon metro={shift.metro} />{shift.metro.station} ·</span>}
@@ -1070,12 +1070,12 @@ function EmployeeShiftCard({ day, shift }) {
         <BrandMark brand={shift.brand} />
       </div>
       <div className="employee-shift-divider" />
-      <div className="employee-shift-details task-card-bottom">
-        <div className="task-card-date">
+      <div className="employee-shift-details">
+        <div className="employee-shift-date">
           <p>{getShortDayLabel(day)}</p>
           <p>{day.secondaryLabel}</p>
         </div>
-        <div className="task-hours">
+        <div className="employee-shift-hours">
           <p>{shift.hours}</p>
           <p>{shift.breakInfo ?? "11 ч + 1 ч перерыв"}</p>
         </div>
