@@ -3800,11 +3800,12 @@ button.filter-field {
   width: 32px;
 }
 
-.favorite-store-header .metro-icon {
+.favorite-store-metro-icon {
   display: inline-block;
-  height: 18px;
-  margin-right: 4px;
-  vertical-align: -4px;
+  flex: 0 0 14px;
+  height: 9px;
+  margin: 0 2px 0 0;
+  object-fit: contain;
   width: 14px;
 }
 
