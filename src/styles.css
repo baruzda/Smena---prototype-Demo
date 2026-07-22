@@ -597,15 +597,6 @@ h1 {
   width: 24px;
 }
 
-.filter-icon-button-availability img {
-  height: 36px;
-  width: 36px;
-}
-
-.filter-icon-button-availability {
-  padding: 6px;
-}
-
 .toggle-label {
   align-items: center;
   cursor: pointer;
