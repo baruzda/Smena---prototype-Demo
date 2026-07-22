@@ -61,6 +61,18 @@ const defaultSearchLocation = {
   label: "улица Лефортовский Вал",
 };
 
+const emptySearchLocation = {
+  coords: defaultSearchLocation.coords,
+  label: "",
+};
+
+const emptyFilters = { brands: [], minimumPayment: "", service: "" };
+
+const emptyAvailabilityTime = { from: "", to: "", preset: null, presets: [] };
+
+const prototypeDefaultStateVersion = 3;
+const settingsOnboardingVersion = 3;
+
 const availabilityTimePresets = [
   { id: "all-day", label: "весь день", from: "8:00", to: "22:00" },
   { id: "morning", label: "утро", from: "8:00", to: "12:00" },
@@ -73,7 +85,8 @@ const prototypeStorageKey = "x5-shift-prototype-state";
 
 function readPrototypeState() {
   try {
-    return JSON.parse(window.localStorage.getItem(prototypeStorageKey) || "{}");
+    const state = JSON.parse(window.localStorage.getItem(prototypeStorageKey) || "{}");
+    return state.defaultStateVersion === prototypeDefaultStateVersion ? state : {};
   } catch {
     return {};
   }
@@ -690,9 +703,14 @@ function OfferCountdown({ initialSeconds = 19936 }) {
   return <span aria-label={`До окончания предложения ${formatCountdown(secondsLeft)}`} className="special-card-timer">{formatCountdown(secondsLeft)}</span>;
 }
 
-function TaskCard({ task, onOpen }) {
+function getShortDayLabel(day) {
+  return day?.label?.replace(/^сегодня,\s*/i, "") ?? "1 июня";
+}
+
+function TaskCard({ day, task, onOpen }) {
   const isRestricted = task.restrictionTags?.length > 0;
   const isPersonalOffer = task.variant === "special" && !isRestricted;
+  const shiftBadge = "сверхурочная смена";
   const handleKeyDown = (event) => {
     if (!onOpen || (event.key !== "Enter" && event.key !== " ")) return;
     event.preventDefault();
@@ -710,7 +728,7 @@ function TaskCard({ task, onOpen }) {
     >
       <div className={isPersonalOffer ? "task-card-top task-card-top-special" : "task-card-top"}>
         <div className="task-card-copy">
-          {!isRestricted && task.badge && <span className="match-badge">{task.badge}</span>}
+          {!isRestricted && <span className="match-badge">{shiftBadge}</span>}
           {isPersonalOffer && <span className="special-card-badges"><span className="special-card-badge">специально для вас</span><OfferCountdown /></span>}
           <h2>{task.title}</h2>
           <p className={task.metro ? "task-address task-address-with-metro" : "task-address"}>
@@ -725,9 +743,9 @@ function TaskCard({ task, onOpen }) {
       </div>
       <div className="task-divider" />
       <div className="task-card-bottom">
-        <div>
-          <p className="task-payment">{task.payment}</p>
-          <p className="task-rate">{task.rate}</p>
+        <div className="task-card-date">
+          <p>{getShortDayLabel(day)}</p>
+          <p>{day?.secondaryLabel ?? "понедельник"}</p>
         </div>
         <div className="task-hours">
           <p>{task.hours}</p>
@@ -774,7 +792,7 @@ function getRussianPlural(count, forms) {
   return forms[2];
 }
 
-function NoMoreTasksCard({ hiddenCount, onOpenAvailability, onOpenFilters, onShowAll }) {
+function NoMoreTasksCard({ hiddenCount, onOpenFilters, onShowAll }) {
   return (
     <article className="task-message-card">
       <h3>подходящих услуг больше нет</h3>
@@ -783,9 +801,6 @@ function NoMoreTasksCard({ hiddenCount, onOpenAvailability, onOpenFilters, onSho
         <button onClick={onShowAll} type="button">показать остальные <span aria-hidden="true">⌄</span></button>
         <button aria-label="Открыть фильтры для этого дня" className="task-message-icon-button" onClick={onOpenFilters} type="button">
           <img alt="" src={assetUrl("funnel.svg")} />
-        </button>
-        <button aria-label="Открыть настройки доступности для этого дня" className="task-message-icon-button" onClick={onOpenAvailability} type="button">
-          <img alt="" src={assetUrl("filter.svg")} />
         </button>
       </div>
     </article>
@@ -1039,25 +1054,31 @@ function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollect
 
 function EmployeeShiftCard({ day, shift }) {
   const isPrimaryShift = shift.type === "primary";
-  const dateLabel = day.label.startsWith("сегодня") ? "сегодня" : `${day.label}, ${day.secondaryLabel}`;
   const shiftTitle = isPrimaryShift ? "основная смена" : "сверхурочная смена";
 
   return (
     <article className="employee-shift-card">
       <div className="employee-shift-heading">
-        <h3>
-          <span>{shiftTitle}</span>
-          <small>{dateLabel}, {shift.hours}</small>
-        </h3>
+        <div>
+          <span className="match-badge">{shiftTitle}</span>
+          <h3>{shift.title}</h3>
+          <p>
+            {shift.metro && <span className="employee-shift-metro"><MetroIcon metro={shift.metro} />{shift.metro.station} ·</span>}
+            {shift.address} · <img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />{shift.distance}
+          </p>
+        </div>
         <BrandMark brand={shift.brand} />
       </div>
       <div className="employee-shift-divider" />
-      <div className="employee-shift-details">
-        <p>{shift.title}</p>
-        <p>
-          {shift.metro && <span className="employee-shift-metro"><MetroIcon metro={shift.metro} />{shift.metro.station} ·</span>}
-          {shift.address} · <img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />{shift.distance}
-        </p>
+      <div className="employee-shift-details task-card-bottom">
+        <div className="task-card-date">
+          <p>{getShortDayLabel(day)}</p>
+          <p>{day.secondaryLabel}</p>
+        </div>
+        <div className="task-hours">
+          <p>{shift.hours}</p>
+          <p>{shift.breakInfo ?? "11 ч + 1 ч перерыв"}</p>
+        </div>
       </div>
     </article>
   );
@@ -1313,9 +1334,9 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
       <footer className="settings-actions">
         <button className="availability-reset" onClick={() => {
           resetSelection();
-          setAvailableFrom("8:00");
-          setAvailableTo("22:00");
-          setSelectedTimePresets(["all-day"]);
+          setAvailableFrom("");
+          setAvailableTo("");
+          setSelectedTimePresets([]);
           setSelectedDuration([]);
         }} type="button">сбросить</button>
         <button className="availability-save" onClick={() => onSave({
@@ -1335,10 +1356,10 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
 }
 
 function LocationPicker({ initialLocation, initialRadius, onApply, onBack }) {
-  const [location, setLocation] = useState(initialLocation);
-  const [coords, setCoords] = useState(initialLocation.coords);
+  const [location, setLocation] = useState(initialLocation.label ? initialLocation : defaultSearchLocation);
+  const [coords, setCoords] = useState(initialLocation.coords || defaultSearchLocation.coords);
   const [query, setQuery] = useState(initialLocation.label);
-  const [radius, setRadius] = useState(initialRadius);
+  const [radius, setRadius] = useState(initialRadius || 1);
   const [isMapReady, setIsMapReady] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
@@ -1639,11 +1660,12 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
     setSelectedBrands([]);
     setService("");
     setMinimumPayment("");
-    setRadius(1);
-    setLocation(defaultSearchLocation);
+    setRadius(null);
+    setLocation(emptySearchLocation);
   }
 
   function getDefaultCollectionName() {
+    if (!location.label) return "новая подборка";
     return `${getShortLocationLabel(location.label).replace(/^улица\s+/iu, "")} · до ${radius} км`;
   }
 
@@ -1748,11 +1770,17 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
 
         <section className="filter-section search-area-section">
           <h2>где искать</h2>
-          <button className="filter-field filter-field-filled" onClick={() => setIsLocationPickerOpen(true)} type="button">
-            <span className="filter-field-content">
-              <small>территория</small>
-              <strong>{location.label}</strong>
-            </span>
+          <button
+            className={location.label ? "filter-field filter-field-filled" : "filter-field filter-field-placeholder"}
+            onClick={() => setIsLocationPickerOpen(true)}
+            type="button"
+          >
+            {location.label ? (
+              <span className="filter-field-content">
+                <small>территория</small>
+                <strong>{location.label}</strong>
+              </span>
+            ) : <span>территория</span>}
             <img alt="" src={assetUrl("chevron-down.svg")} />
           </button>
           <div aria-label="Радиус поиска" className="radius-options">
@@ -1845,7 +1873,7 @@ export function App() {
   const persistedState = persistedStateRef.current;
   const [activeTab, setActiveTab] = useState(0);
   const [activeDay, setActiveDay] = useState("1");
-  const [onlyMatching, setOnlyMatching] = useState(true);
+  const [onlyMatching, setOnlyMatching] = useState(false);
   const [networkFilter, setNetworkFilter] = useState("торговая сеть");
   const [filterScrollState, setFilterScrollState] = useState("at-start");
   const [isBottomChromeHidden, setIsBottomChromeHidden] = useState(false);
@@ -1856,15 +1884,15 @@ export function App() {
   const [cardSheet, setCardSheet] = useState(null);
   const [sortBy, setSortBy] = useState(persistedState.sortBy || "recommended");
   const [hasAppliedSort, setHasAppliedSort] = useState(Boolean(persistedState.hasAppliedSort));
-  const [searchRadius, setSearchRadius] = useState(persistedState.searchRadius || 1);
-  const [searchLocation, setSearchLocation] = useState(persistedState.searchLocation || defaultSearchLocation);
-  const [appliedFilters, setAppliedFilters] = useState(persistedState.appliedFilters || { brands: [], minimumPayment: "", service: "" });
+  const [searchRadius, setSearchRadius] = useState(persistedState.searchRadius ?? null);
+  const [searchLocation, setSearchLocation] = useState(persistedState.searchLocation || emptySearchLocation);
+  const [appliedFilters, setAppliedFilters] = useState(persistedState.appliedFilters || emptyFilters);
   const [favoriteCollections, setFavoriteCollections] = useState(persistedState.favoriteCollections || []);
   const [editingCollection, setEditingCollection] = useState(null);
   const [catalogVersion, setCatalogVersion] = useState(persistedState.catalogVersion || 0);
   const [selectedAvailabilityDates, setSelectedAvailabilityDates] = useState(persistedState.selectedAvailabilityDates || []);
   const [selectedAvailabilityWeekdays, setSelectedAvailabilityWeekdays] = useState(persistedState.selectedAvailabilityWeekdays || []);
-  const [availabilityTime, setAvailabilityTime] = useState(persistedState.availabilityTime || { from: "8:00", to: "22:00", preset: "all-day" });
+  const [availabilityTime, setAvailabilityTime] = useState(persistedState.availabilityTime || emptyAvailabilityTime);
   const [selectedAvailabilityDuration, setSelectedAvailabilityDuration] = useState(() => (
     Array.isArray(persistedState.selectedAvailabilityDuration)
       ? persistedState.selectedAvailabilityDuration
@@ -1872,7 +1900,7 @@ export function App() {
   ));
   const [bookedTasks, setBookedTasks] = useState(persistedState.bookedTasks || []);
   const [currentView, setCurrentView] = useState("tasks");
-  const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(() => persistedState.settingsOnboardingVersion !== 2);
+  const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(() => persistedState.settingsOnboardingVersion !== settingsOnboardingVersion);
   const [selectedTask, setSelectedTask] = useState(null);
   const [scrollTargetDay, setScrollTargetDay] = useState(null);
   const [isTimelineLoading, setIsTimelineLoading] = useState(false);
@@ -1890,6 +1918,7 @@ export function App() {
       availabilityTime,
       bookedTasks,
       catalogVersion,
+      defaultStateVersion: prototypeDefaultStateVersion,
       favoriteCollections,
       hasAppliedSort,
       searchLocation,
@@ -1897,7 +1926,7 @@ export function App() {
       selectedAvailabilityDates,
       selectedAvailabilityDuration,
       selectedAvailabilityWeekdays,
-      settingsOnboardingVersion: isSettingsOnboardingVisible ? 1 : 2,
+      settingsOnboardingVersion: isSettingsOnboardingVisible ? settingsOnboardingVersion - 1 : settingsOnboardingVersion,
       sortBy,
     }));
   }, [appliedFilters, availabilityTime, bookedTasks, catalogVersion, favoriteCollections, hasAppliedSort, isSettingsOnboardingVisible, searchLocation, searchRadius, selectedAvailabilityDates, selectedAvailabilityDuration, selectedAvailabilityWeekdays, sortBy]);
@@ -2088,7 +2117,8 @@ export function App() {
   }
 
   function getLocationTasks(day, dayIndex) {
-    const locationKey = `${searchLocation.coords.join(",")}-${catalogVersion}-${dayIndex}`;
+    const effectiveSearchLocation = searchLocation.label ? searchLocation : defaultSearchLocation;
+    const locationKey = `${effectiveSearchLocation.coords.join(",")}-${catalogVersion}-${dayIndex}`;
     const distanceBands = [
       [180, 720],
       [760, 980],
@@ -2096,7 +2126,7 @@ export function App() {
       [320, 880],
       [15000, 47000],
     ];
-    const locationAddress = searchLocation.label.replace(/, Россия$/, "");
+    const locationAddress = effectiveSearchLocation.label.replace(/, Россия$/, "");
 
     return distanceBands.map(([minDistance, maxDistance], taskIndex) => {
       const seed = `${locationKey}-${day.date}-${taskIndex}`;
@@ -2129,7 +2159,7 @@ export function App() {
   }
 
   function getTaskMismatchReasons(task, date) {
-    const maximumDistance = searchRadius * 1000;
+    const maximumDistance = Number.isFinite(searchRadius) ? searchRadius * 1000 : Infinity;
     const minimumPayment = Number.parseInt(appliedFilters.minimumPayment.replace(/\D/g, ""), 10) || 0;
     const selectedService = appliedFilters.service.trim().toLocaleLowerCase("ru-RU");
     const isSuggested = Boolean(task.badge || task.variant === "special");
@@ -2141,7 +2171,7 @@ export function App() {
 
     if (!isAvailableForMatching(date)) reasons.push("Вне доступности");
     if (!isTaskWithinAvailability(task, availabilityTime)) reasons.push("Пересекается со сменой");
-    if (getDistanceInMeters(task.distance) > maximumDistance) reasons.push("Вне радиуса");
+    if (Number.isFinite(maximumDistance) && getDistanceInMeters(task.distance) > maximumDistance) reasons.push("Вне радиуса");
     if (hasFilterMismatch || (!isSuggested && reasons.length === 0)) reasons.push("Не совпадает с фильтрами");
     reasons.push(...task.mismatchHints);
 
@@ -2186,10 +2216,6 @@ export function App() {
           <div className="navigation-row">
             <IconButton alt="" label="Назад" src={assetUrl("back.svg")} />
             <div className="navigation-actions">
-              <IconButton alt="" label="Настройки расписания" onClick={() => {
-                setIsSettingsOnboardingVisible(false);
-                setCurrentView("settings");
-              }} src={assetUrl("filter.svg")} />
               <IconButton alt="" label="Помощь" src={assetUrl("help.svg")} />
             </div>
           </div>
@@ -2245,6 +2271,17 @@ export function App() {
                 </button>
                 <button aria-label="Открыть фильтры" className="filter-icon-button" onClick={() => setCurrentView("filters")} type="button">
                   <img alt="" src={assetUrl("funnel.svg")} />
+                </button>
+                <button
+                  aria-label="Открыть настройки доступности"
+                  className="filter-icon-button"
+                  onClick={() => {
+                    setIsSettingsOnboardingVisible(false);
+                    setCurrentView("settings");
+                  }}
+                  type="button"
+                >
+                  <img alt="" src={assetUrl("calendar-sync.svg")} />
                 </button>
               </div>
               <label className="toggle-label">
@@ -2314,7 +2351,7 @@ export function App() {
               >
                 <h2 className="day-heading">{day.label}, <span>{day.secondaryLabel}</span></h2>
                 {employeeShifts.map((shift, index) => <EmployeeShiftCard day={day} key={`${day.date}-${shift.type}-${shift.hours}-${index}`} shift={shift} />)}
-                {visibleTasks.map((task) => <TaskCard key={task.id} onOpen={() => openTaskDetails(task, day)} task={task} />)}
+                {visibleTasks.map((task) => <TaskCard day={day} key={task.id} onOpen={() => openTaskDetails(task, day)} task={task} />)}
                 {isFilteredDayExpanded && taskFeed.hiddenTasks.length > 0 && <button
                   className="hide-incompatible-button"
                   onClick={() => setExpandedFilteredDays((current) => current.filter((date) => date !== day.date))}
@@ -2322,12 +2359,9 @@ export function App() {
                 >
                   скрыть неподходящие <img alt="" src={assetUrl("chevron-down.svg")} />
                 </button>}
-                {isFilteredDayExpanded && taskFeed.hiddenTasks.map((task) => <TaskCard key={task.id} onOpen={() => openTaskDetails(task, day)} task={task} />)}
+                {isFilteredDayExpanded && taskFeed.hiddenTasks.map((task) => <TaskCard day={day} key={task.id} onOpen={() => openTaskDetails(task, day)} task={task} />)}
                 {hasFilteredOutTasks && <NoMoreTasksCard
                   hiddenCount={taskFeed.hiddenTasks.length}
-                  onOpenAvailability={() => {
-                    setCardSheet("availability");
-                  }}
                   onOpenFilters={() => setCardSheet("filters")}
                   onShowAll={() => setExpandedFilteredDays((current) => [...current, day.date])}
                 />}
@@ -2538,7 +2572,7 @@ export function App() {
             }}
             type="button"
           >
-            <img alt="" src={assetUrl("filter.svg")} />
+            <img alt="" src={assetUrl("calendar-sync.svg")} />
           </button>
         </div>
       )}

@@ -193,8 +193,9 @@ body {
   justify-content: center;
   padding: 8px;
   position: absolute;
-  right: 52px;
-  top: 60px;
+  left: 100px;
+  right: auto;
+  top: 246px;
   transition: transform 180ms ease;
   width: 40px;
   z-index: 2;
@@ -223,12 +224,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  left: auto;
+  left: 24px;
   padding: 12px 16px;
   pointer-events: none;
   position: absolute;
-  right: 32px;
-  top: 112px;
+  right: auto;
+  top: 298px;
   width: 272px;
   z-index: 1;
 }
@@ -238,7 +239,8 @@ body {
   content: "";
   height: 16px;
   position: absolute;
-  right: 32px;
+  left: 88px;
+  right: auto;
   top: -7px;
   transform: rotate(45deg);
   width: 16px;
@@ -573,7 +575,7 @@ h1 {
 .filter-tools {
   align-items: center;
   display: flex;
-  flex: 0 0 96px;
+  flex: 0 0 144px;
   height: 48px;
 }
 
@@ -718,16 +720,17 @@ h1 {
 }
 
 .task-card {
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #f4f4f5;
+  border: 0;
   border-radius: 18px;
   margin-bottom: 8px;
-  padding: 8px 12px 12px;
+  padding: 12px;
   position: relative;
   transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
 .task-card-special {
-  border-color: #c9bffa;
+  box-shadow: inset 0 0 0 1px #c9bffa;
 }
 
 .task-empty-state {
@@ -880,27 +883,27 @@ h1 {
 }
 
 .employee-shift-heading h3 {
-  display: flex;
+  color: #000;
   font-family: "X5 Sans", Arial, sans-serif;
-  font-size: 24px;
-  flex-direction: column;
+  font-size: 28px;
   font-weight: 400;
   letter-spacing: 0;
-  line-height: 26px;
-  margin: 0;
+  line-height: 32px;
+  margin: 6px 0 8px;
 }
 
-.employee-shift-heading h3 small {
+.employee-shift-heading p {
   color: #6c737d;
-  font-size: 16px;
+  font-size: 22px;
   font-weight: 400;
-  line-height: 20px;
-  margin-top: 2px;
+  line-height: 26px;
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .employee-shift-heading .brand-logo {
-  height: 28px;
-  width: 28px;
+  height: 44px;
+  width: 44px;
 }
 
 .employee-shift-divider {
@@ -910,16 +913,15 @@ h1 {
 }
 
 .employee-shift-details p {
-  color: #000;
-  font-size: 18px;
-  line-height: 21px;
+  font-size: 28px;
+  line-height: 32px;
   margin: 0;
 }
 
 .employee-shift-details p + p {
   color: #6c737d;
-  font-size: 14px;
-  line-height: 18px;
+  font-size: 22px;
+  line-height: 26px;
   margin-top: 2px;
 }
 
@@ -936,7 +938,6 @@ h1 {
 
 @media (hover: hover) {
   .task-card:hover {
-    border-color: rgb(0 0 0 / 0.2);
     box-shadow: 0 4px 12px rgb(0 0 0 / 0.06);
     transform: translateY(-1px);
   }
@@ -981,22 +982,22 @@ h1 {
 }
 
 .match-badge {
-  background: #f0ecff;
-  border-radius: 7px;
-  color: #624eff;
+  background: #7b8490;
+  border-radius: 8px;
+  color: #fff;
   display: inline-flex;
-  font-size: 12px;
-  line-height: 14px;
-  margin-bottom: 2px;
-  padding: 3px 6px 2px;
+  font-size: 21px;
+  line-height: 24px;
+  margin-bottom: 8px;
+  padding: 4px 12px;
 }
 
 .task-card h2 {
   font-family: "X5 Sans", Arial, sans-serif;
-  font-size: 18px;
+  font-size: 28px;
   font-weight: 400;
   letter-spacing: 0;
-  line-height: 21px;
+  line-height: 32px;
   margin: 0;
 }
 
@@ -1004,9 +1005,9 @@ h1 {
 .task-rate,
 .task-hours p {
   color: #6c737d;
-  font-size: 14px;
-  line-height: 18px;
-  margin: 2px 0 0;
+  font-size: 22px;
+  line-height: 26px;
+  margin: 8px 0 0;
 }
 
 .task-address {
@@ -1037,21 +1038,35 @@ h1 {
 
 .brand-logo {
   display: block;
-  height: 28px;
+  height: 44px;
   margin-top: 4px;
-  width: 28px;
+  width: 44px;
 }
 
 .task-divider {
   background: rgba(0, 0, 0, 0.12);
   height: 1px;
-  margin: 10px 0;
+  margin: 18px 0;
 }
 
 .task-card-bottom {
   align-items: flex-start;
   display: flex;
   justify-content: space-between;
+}
+
+.task-card-date p {
+  color: #000;
+  font-size: 28px;
+  line-height: 32px;
+  margin: 0;
+}
+
+.task-card-date p + p {
+  color: #6c737d;
+  font-size: 22px;
+  line-height: 26px;
+  margin-top: 2px;
 }
 
 .task-restrictions {
@@ -1218,9 +1233,9 @@ h1 {
 .task-payment,
 .task-hours > p:first-child {
   color: #000;
-  font-size: 18px;
+  font-size: 28px;
   letter-spacing: 0;
-  line-height: 21px;
+  line-height: 32px;
   margin: 0;
 }
 
