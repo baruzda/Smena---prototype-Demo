@@ -2,12 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { getTaskHours, shiftsOverlap } from "./schedule-utils.js";
 
 const assetUrl = (name) => `${import.meta.env.BASE_URL}figma-assets/${name}`;
+const cssAssetUrl = (name) => {
+  const href = typeof window === "undefined" ? assetUrl(name) : new URL(assetUrl(name), window.location.href).href;
+  return `url("${href}")`;
+};
 
 const tabs = ["задания", "избранное", "мои задания", "задания на подписание"];
 const metroIconAssets = {
-  msk: assetUrl("metro-msk.svg"),
-  spb: assetUrl("metro-spb.svg"),
-  nino: assetUrl("metro-nino.svg"),
+  msk: "metro-msk.svg",
+  spb: "metro-spb.svg",
+  nino: "metro-nino.svg",
 };
 
 const defaultCollectionBrands = ["pyaterochka", "perekrestok", "vprok", "chizhik"];
@@ -687,7 +691,7 @@ function MetroIcon({ metro }) {
     <span
       aria-label={metro.label}
       className="metro-icon"
-      style={{ "--metro-color": metro.color, "--metro-icon": `url(${metroIconAssets[metro.city]})` }}
+      style={{ "--metro-color": metro.color, "--metro-icon": cssAssetUrl(metroIconAssets[metro.city]) }}
     />
   );
 }
