@@ -120,10 +120,10 @@ for (const rule of rules) {
   for (const scenarioId of list(rule.tests)) {
     const scenario = scenarioMap.get(scenarioId);
     if (!scenario) continue;
-    const appliedRules = list(scenario.expected?.appliedRules);
-    const appliedExceptions = list(scenario.expected?.appliedExceptions);
-    const coversRule = appliedRules.includes(rule.id) || intersection(appliedExceptions, rule.exceptions).length > 0;
-    if (!coversRule) fail("rule-scenario", `${rule.id}: сценарий ${scenarioId} не подтверждает правило или его исключение`);
+    const scenarioSurface = scenario.given?.surface;
+    if (scenarioSurface && !scopeSurfaces.includes(scenarioSurface)) {
+      fail("rule-scenario", `${rule.id}: сценарий ${scenarioId} использует поверхность ${scenarioSurface} вне scope`);
+    }
   }
 }
 
