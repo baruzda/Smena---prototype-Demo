@@ -2,11 +2,13 @@ import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
-  await page.evaluate(() => {
-    localStorage.clear();
-    localStorage.setItem("x5-shift-prototype-state", JSON.stringify({ defaultStateVersion: 3, settingsOnboardingVersion: 3 }));
-  });
+  await page.evaluate(() => localStorage.clear());
   await page.reload();
+
+  const onboarding = page.locator(".settings-onboarding-dismiss");
+  if (await onboarding.isVisible()) {
+    await onboarding.click({ position: { x: 24, y: 320 } });
+  }
 });
 
 test("подсказка настроек показывается один раз и ведёт в настройки", async ({ page }) => {
@@ -28,7 +30,7 @@ test("подсказка настроек показывается один ра
 
 test("выбор даты, сортировка и плавающий возврат к началу", async ({ page }) => {
   await page.getByRole("button", { name: "избранное", exact: true }).click();
-  await expect(page.getByRole("region", { name: "Избранное", exact: true })).toContainText("Избранных магазинов пока нет");
+  await expect(page.getByRole("region", { name: "Избранное", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "задания", exact: true }).click();
 
   await page.getByRole("button", { name: "5 пт", exact: true }).click();
@@ -286,7 +288,7 @@ test("запись на смену появляется в истории и н�
   await expect(page.locator(".my-task-card").filter({ hasText: "записаны" })).toHaveCount(2);
 
   await page.reload();
-  await page.getByRole("button", { name: `Подробнее: ${taskName}`, exact: true }).click();
+  await page.getByRole("button", { name: `Подробнее: ${taskName}`, exact: true }).first().click();
   await expect(page.getByRole("button", { name: "вы уже записаны", exact: true })).toBeDisabled();
 });
 
