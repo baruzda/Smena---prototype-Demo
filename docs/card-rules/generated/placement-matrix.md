@@ -1,0 +1,22 @@
+# Матрица размещения
+
+| Surface | Таб | Section | Секция | Порядок | Правила |
+| --- | --- | --- | --- | --- | --- |
+| tasks | Задания | employee_schedule | Смены сотрудника | 50 | RULE-SHIFT-001 |
+| tasks | Задания | special_offers | Специально для вас | 100 | RULE-SPECIAL-002 |
+| tasks | Задания | suitable_offers | Подходит вам | 200 | - |
+| tasks | Задания | available_offers | Другие доступные услуги | 300 | RULE-PLACEMENT-001 |
+| tasks | Задания | other_offers | Другие услуги | 400 | - |
+| my_tasks | Мои задания | pending_confirmation | На подтверждении | 100 | RULE-MYTASKS-002 |
+| my_tasks | Мои задания | signing_required | Нужно подписать | 150 | - |
+| my_tasks | Мои задания | upcoming | Предстоящие | 200 | RULE-MYTASKS-001, RULE-MYTASKS-002 |
+| my_tasks | Мои задания | active | Выполняются | 300 | RULE-MYTASKS-002 |
+| my_tasks | Мои задания | completed | Завершённые | 400 | RULE-MYTASKS-002 |
+| my_tasks | Мои задания | cancelled | Отменённые | 500 | RULE-MYTASKS-002 |
+| favorites | Избранное | services_available | Доступные услуги | 100 | RULE-FAVORITES-001 |
+| favorites | Избранное | services_unavailable | Больше недоступны | 200 | - |
+| favorites | Избранное | stores | Магазины | 300 | - |
+| favorites | Избранное | collections | Подборки | 400 | RULE-FAVORITES-002 |
+| signing | Задания на подписание | waiting_user | Ожидают подписания | 100 | RULE-SIGNING-001 |
+| signing | Задания на подписание | processing | На проверке | 200 | - |
+| signing | Задания на подписание | signed | Подписано | 300 | - |
