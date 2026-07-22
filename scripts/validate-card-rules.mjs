@@ -290,6 +290,15 @@ write("rules-matrix.md", `# Матрица правил\n\n${table(
   rules.map((rule) => [rule.id, rule.name, rule.status, rule.scope?.entity, list(rule.scope?.surfaces).join(", "), `${rule.target?.type}:${rule.target?.id ?? rule.target?.section ?? "map"}`, rule.effect?.action, rule.priority, list(rule.exceptions).join(", ")])
 )}`);
 
+write("approved-rules-matrix.md", `# Approved rules\n\n${table(["Rule ID", "Name"], rules.filter((rule) => rule.status === "active").sort((a, b) => a.id.localeCompare(b.id)).map((rule) => [rule.id, rule.name]))}`);
+write("provisional-rules-matrix.md", `# Provisional rules\n\n${table(["Rule ID", "Question", "Source"], rules.filter((rule) => rule.status === "provisional").sort((a, b) => a.id.localeCompare(b.id)).map((rule) => [rule.id, rule.relatedQuestion, rule.source?.observation ?? rule.source?.code]))}`);
+write("implementation-observations.md", `# Implementation observations\n\n${table(["ID", "Source", "Approval", "Question"], observations.sort((a, b) => a.id.localeCompare(b.id)).map((item) => [item.id, item.source, item.approvalStatus, item.relatedQuestion]))}`);
+write("ui-states-matrix.md", `# UI states\n\n${table(["ID", "Surface", "Implementation", "Status"], uiStates.sort((a, b) => a.id.localeCompare(b.id)).map((item) => [item.id, list(item.usedOn).join(', '), item.currentImplementation, item.implementationStatus]))}`);
+write("component-bindings-matrix.md", `# Component bindings\n\n${table(["Template", "Current", "Target", "Status"], Object.entries(bindingsDoc.templates ?? {}).sort(([a], [b]) => a.localeCompare(b)).map(([id, item]) => [id, item.currentComponent, item.targetComponent, item.migrationStatus]))}`);
+write("migration-status.md", `# Migration status\n\n${table(["Source", "Status"], list(migrationDoc.sources).sort((a, b) => a.legacySource.localeCompare(b.legacySource)).map((item) => [item.legacySource, item.status]))}`);
+write("scenarios-matrix.md", `# Scenarios\n\n${table(["ID", "Execution"], scenarios.sort((a, b) => a.id.localeCompare(b.id)).map((item) => [item.id, item.executionStatus]))}`);
+write("open-blockers.md", `# Open blockers\n\n${table(["ID", "Title"], questions.filter((item) => item.blocking && item.status === "unresolved").sort((a, b) => a.id.localeCompare(b.id)).map((item) => [item.id, item.title]))}`);
+
 const conflictText = conflicts.length
   ? table(["Правила", "Priority", "Цель"], conflicts.map(([a, b, priority, target]) => [`${a} / ${b}`, priority, target]))
   : "Активных неразрешённых конфликтов не найдено.";
