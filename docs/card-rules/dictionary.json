@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-22",
+  "entities": [
+    {
+      "id": "service_offer",
+      "name": "Услуга",
+      "description": "Предложение услуги, которое пользователь может выбрать или принять.",
+      "uiAliases": ["задание", "смена", "подработка"],
+      "canonicalUiTerm": "услуга"
+    },
+    {
+      "id": "employee_shift",
+      "name": "Смена сотрудника",
+      "description": "Основная или уже принятая смена, влияющая на доступность пользователя.",
+      "uiAliases": ["основная смена", "сверхурочная смена"]
+    },
+    {
+      "id": "saved_collection",
+      "name": "Сохранённая подборка",
+      "description": "Набор фильтров, территории и радиуса, сохранённый пользователем."
+    }
+  ],
+  "states": [
+    { "id": "available", "name": "Доступна" },
+    { "id": "unavailable", "name": "Недоступна" },
+    { "id": "pending_confirmation", "name": "На подтверждении" },
+    { "id": "signing_required", "name": "Требуется подписание" },
+    { "id": "booked", "name": "Пользователь записан" },
+    { "id": "active", "name": "Выполняется" },
+    { "id": "completed", "name": "Завершена" },
+    { "id": "cancelled", "name": "Отменена" },
+    { "id": "expired", "name": "Срок истёк" }
+  ],
+  "markers": [
+    { "id": "suitable_for_you", "name": "Подходит вам" },
+    { "id": "specially_for_you", "name": "Специально для вас" },
+    { "id": "favorite", "name": "В избранном" },
+    { "id": "restrictions_present", "name": "Есть ограничения" },
+    { "id": "not_suitable", "name": "Не подходит" }
+  ],
+  "surfaces": [
+    {
+      "id": "tasks",
+      "currentLabel": "задания",
+      "canonicalLabel": "услуги",
+      "terminologyStatus": "open_conflict"
+    },
+    {
+      "id": "my_tasks",
+      "currentLabel": "мои задания",
+      "canonicalLabel": "мои услуги",
+      "terminologyStatus": "open_conflict"
+    },
+    {
+      "id": "favorites",
+      "currentLabel": "избранное",
+      "canonicalLabel": "избранное",
+      "terminologyStatus": "approved"
+    },
+    {
+      "id": "signing",
+      "currentLabel": "задания на подписание",
+      "canonicalLabel": "на подписание",
+      "terminologyStatus": "open_conflict"
+    }
+  ],
+  "actions": [
+    "show",
+    "hide",
+    "set_value",
+    "set_variant",
+    "set_template",
+    "enable",
+    "disable",
+    "place",
+    "remove_from_surface",
+    "set_order",
+    "replace"
+  ],
+  "operators": [
+    "equals",
+    "not_equals",
+    "in",
+    "not_in",
+    "greater_than",
+    "greater_or_equal",
+    "less_than",
+    "less_or_equal",
+    "exists",
+    "not_exists",
+    "contains",
+    "matches_filters",
+    "compatible_with",
+    "overlaps",
+    "not_overlaps"
+  ],
+  "ruleStatuses": ["draft", "active", "superseded", "deprecated"],
+  "targetTypes": [
+    "content_element",
+    "card_variant",
+    "card_template",
+    "placement",
+    "order",
+    "action",
+    "surface_visibility"
+  ]
+}
