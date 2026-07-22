@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "surfaces": [
+    {
+      "id": "tasks",
+      "name": "Задания",
+      "canonicalName": "Услуги",
+      "description": "Каталог доступных и объяснимо недоступных предложений.",
+      "sections": [
+        { "id": "employee_schedule", "name": "Смены сотрудника", "order": 50 },
+        { "id": "special_offers", "name": "Специально для вас", "order": 100 },
+        { "id": "suitable_offers", "name": "Подходит вам", "order": 200 },
+        { "id": "available_offers", "name": "Другие доступные услуги", "order": 300 },
+        { "id": "other_offers", "name": "Другие услуги", "order": 400 }
+      ],
+      "emptyStateId": "tasks.empty"
+    },
+    {
+      "id": "my_tasks",
+      "name": "Мои задания",
+      "canonicalName": "Мои услуги",
+      "description": "Все услуги, по которым пользователь уже совершил действие.",
+      "sections": [
+        { "id": "pending_confirmation", "name": "На подтверждении", "order": 100 },
+        { "id": "signing_required", "name": "Нужно подписать", "order": 150 },
+        { "id": "upcoming", "name": "Предстоящие", "order": 200 },
+        { "id": "active", "name": "Выполняются", "order": 300 },
+        { "id": "completed", "name": "Завершённые", "order": 400 },
+        { "id": "cancelled", "name": "Отменённые", "order": 500 }
+      ],
+      "emptyStateId": "my_tasks.empty"
+    },
+    {
+      "id": "favorites",
+      "name": "Избранное",
+      "canonicalName": "Избранное",
+      "description": "Сохранённые услуги, магазины и подборки.",
+      "sections": [
+        { "id": "services_available", "name": "Доступные услуги", "order": 100 },
+        { "id": "services_unavailable", "name": "Больше недоступны", "order": 200 },
+        { "id": "stores", "name": "Магазины", "order": 300 },
+        { "id": "collections", "name": "Подборки", "order": 400 }
+      ],
+      "emptyStateId": "favorites.empty"
+    },
+    {
+      "id": "signing",
+      "name": "Задания на подписание",
+      "canonicalName": "На подписание",
+      "description": "Документы, требующие действия пользователя или находящиеся на проверке.",
+      "sections": [
+        { "id": "waiting_user", "name": "Ожидают подписания", "order": 100 },
+        { "id": "processing", "name": "На проверке", "order": 200 },
+        { "id": "signed", "name": "Подписано", "order": 300 }
+      ],
+      "emptyStateId": "signing.empty"
+    }
+  ]
+}
