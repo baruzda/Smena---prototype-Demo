@@ -76,10 +76,10 @@ expectFail("missing decision is categorized", "rule-decision", (rulesDir) => {
   });
 });
 
-expectFail("broken rule-scenario link is categorized", "rule-scenario", (rulesDir) => {
+expectFail("scenario outside rule scope is categorized", "rule-scenario", (rulesDir) => {
   mutateJson(rulesDir, "scenarios.json", (doc) => {
     const scenario = doc.scenarios.find((item) => item.id === "SCN-MATCH-001");
-    scenario.expected.appliedRules = scenario.expected.appliedRules.filter((id) => id !== "RULE-MARKER-001");
+    scenario.given.surface = "signing";
   });
 });
 
