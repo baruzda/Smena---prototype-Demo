@@ -553,6 +553,7 @@ const dayGroups = days.map((day, dayIndex) => {
 const myTaskStatuses = {
   booked: { label: "записаны", tone: "success" },
   pending: { label: "на подтверждении", tone: "warning" },
+  signing: { label: "на подписание", tone: "warning" },
   completed: { label: "смена завершена", tone: "neutral" },
   cancelled: { label: "отменена", tone: "danger" },
 };
@@ -562,6 +563,10 @@ const demoMyTaskRecords = [
   { day: dayGroups[3], id: "demo-my-task-pending", status: "pending", task: dayGroups[3].tasks[1] },
   { day: dayGroups[8], id: "demo-my-task-completed", status: "completed", task: dayGroups[8].tasks[0] },
   { day: dayGroups[10], id: "demo-my-task-cancelled", status: "cancelled", task: dayGroups[10].tasks[2] },
+];
+
+const demoSigningTaskRecords = [
+  { day: dayGroups[2], id: "demo-signing-task-ready", status: "signing", task: dayGroups[2].tasks[0] },
 ];
 
 const sortOptions = [
@@ -712,9 +717,7 @@ function getShortDayLabel(day) {
 function getGigTaskCardVariant(task) {
   const restrictionCount = task.restrictionTags?.length ?? 0;
   if (task.variant === "special" && restrictionCount === 0) return "special";
-  if (restrictionCount > 2) return "bottom-tags";
-  if (restrictionCount > 1) return "status-plus";
-  if (restrictionCount === 1) return "status";
+  if (restrictionCount > 0) return "bottom-tags";
   if (task.badge) return "match";
   return "default";
 }
@@ -973,7 +976,19 @@ function MyTasksView({ bookedTasks }) {
   const records = [
     ...bookedTasks.map((booking) => ({ ...booking, status: "booked" })),
     ...demoMyTaskRecords,
-  ];
+  ].filter((booking) => myTaskStatuses[booking.status]);
+
+  return <section className="my-tasks-list">
+    {records.map((booking) => <MyTaskCard booking={booking} key={booking.id} />)}
+  </section>;
+}
+
+function SigningTasksView() {
+  const records = demoSigningTaskRecords.filter((booking) => booking.status === "signing" && myTaskStatuses[booking.status]);
+
+  if (records.length === 0) {
+    return <p className="task-empty-state my-tasks-empty">Заданий на подписание нет</p>;
+  }
 
   return <section className="my-tasks-list">
     {records.map((booking) => <MyTaskCard booking={booking} key={booking.id} />)}
@@ -2380,7 +2395,7 @@ export function App() {
               setCurrentView("filters");
             }}
             onRemoveCollection={(id) => setFavoriteCollections((collections) => collections.filter((collection) => collection.id !== id))}
-          /> : activeTab === 2 ? <MyTasksView bookedTasks={bookedTasks} /> : activeTab === 3 ? <p className="task-empty-state my-tasks-empty">Заданий на подписание нет</p> : isTimelineLoading ? <TimelineLoadingState /> : dayGroups.map((day, dayIndex) => {
+          /> : activeTab === 2 ? <MyTasksView bookedTasks={bookedTasks} /> : activeTab === 3 ? <SigningTasksView /> : isTimelineLoading ? <TimelineLoadingState /> : dayGroups.map((day, dayIndex) => {
             const employeeShifts = getEmployeeShifts(day);
             const hasDemoEmptyDay = day.date === "14";
             const dayTasks = hasDemoEmptyDay ? [] : getLocationTasks(day, dayIndex);
