@@ -36,8 +36,8 @@ Workflow `Card rules validation` запускает базовую и cross-regi
 
 Финальный аудит повторил полный gate дважды на чистом Playwright-сервере:
 
-- цикл 1: **16 passed, 0 failed, 0 skipped, 0 flaky, 24.6s**;
-- цикл 2: **16 passed, 0 failed, 0 skipped, 0 flaky, 25.4s**.
+- цикл 1: **16 passed, 0 failed, 0 skipped, 0 flaky, 26.8s**;
+- цикл 2: **16 passed, 0 failed, 0 skipped, 0 flaky, 25.1s**.
 
 Перед этими циклами ветка обычным merge синхронизирована с `origin/main`. Новое правило полного reset демо-состояния потребовало обновить только E2E-контракты: жёсткое ожидание `defaultStateVersion === 3` заменено ожиданием валидной версии, а сценарии persistence разделены на сохраняемые записи/подборки и сбрасываемые фильтры/доступность. Это классифицировано как **MAIN_SYNC_STATE_DRIFT**, а не UI-регрессия.
 
