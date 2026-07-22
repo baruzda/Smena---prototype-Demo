@@ -2322,7 +2322,7 @@ export function App() {
                 </button>
                 <button
                   aria-label="Открыть настройки доступности"
-                  className="filter-icon-button"
+                  className="filter-icon-button filter-icon-button-availability"
                   onClick={() => {
                     setIsSettingsOnboardingVisible(false);
                     setCurrentView("settings");
