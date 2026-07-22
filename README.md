@@ -14,6 +14,12 @@ npm run dev
 npm run build
 ```
 
+Проверка архитектуры правил карточек:
+
+```bash
+npm run validate:card-rules
+```
+
 ## Реализованные сценарии
 
 ### Список заданий
@@ -77,6 +83,7 @@ npm run build
 
 ## Дополнительная документация
 
+- [Архитектура правил карточек](docs/card-rules/README.md)
 - [Матрица правил каталога, фильтров и доступности](docs/catalog-rules-matrix.md)
 - [Матрица правил доступности, смен и территории](docs/availability-rules.md)
 - [Отчёт E2E-проверки](docs/e2e-report.md)
