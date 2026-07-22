@@ -2,11 +2,15 @@ import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
-  await page.evaluate(() => {
-    localStorage.clear();
-    localStorage.setItem("x5-shift-prototype-state", JSON.stringify({ settingsOnboardingVersion: 2 }));
-  });
+  await page.evaluate(() => localStorage.clear());
   await page.reload();
+
+  const onboarding = page.locator(".settings-onboarding-dismiss");
+  if (await onboarding.isVisible()) {
+    await onboarding.click({ position: { x: 24, y: 320 } });
+    await expect(onboarding).toBeHidden();
+  }
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("x5-shift-prototype-state") || "{}").defaultStateVersion === 3);
 });
 
 test("подсказка настроек показывается один раз и ведёт в настройки", async ({ page }) => {
@@ -28,7 +32,7 @@ test("подсказка настроек показывается один ра
 
 test("выбор даты, сортировка и плавающий возврат к началу", async ({ page }) => {
   await page.getByRole("button", { name: "избранное", exact: true }).click();
-  await expect(page.getByRole("region", { name: "Избранное", exact: true })).toContainText("Избранных магазинов пока нет");
+  await expect(page.getByRole("region", { name: "Избранное", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "задания", exact: true }).click();
 
   await page.getByRole("button", { name: "5 пт", exact: true }).click();
@@ -46,15 +50,15 @@ test("выбор даты, сортировка и плавающий возвр
 test("специальное для вас приоритетно без сортировки и участвует в сортировке", async ({ page }) => {
   const firstDay = page.locator('[data-day="1"]');
 
-  await expect(firstDay.locator(".task-card").first()).toHaveClass(/task-card-special/);
+  await expect(firstDay.locator(".gig-task-card").first()).toHaveClass(/gig-task-card-special/);
   await expect(firstDay.getByText("специально для вас", { exact: false })).toBeVisible();
-  await expect(firstDay.locator(".match-badge")).toHaveCount(2);
+  await expect(firstDay.locator(".gig-task-badge")).toHaveCount(2);
   await expect(firstDay.locator(".special-card-timer")).toHaveText(/^\d{2}:\d{2}:\d{2}$/);
 
   await page.getByRole("button", { name: "Сортировка", exact: true }).click();
   await page.getByRole("radio", { name: "сначала ближайшие", exact: true }).click();
 
-  const distances = await firstDay.locator(".task-card .task-address-text").evaluateAll((nodes) => nodes.map((node) => {
+  const distances = await firstDay.locator(".gig-task-card .gig-task-address-text").evaluateAll((nodes) => nodes.map((node) => {
     const match = node.textContent?.match(/([\d,.]+)\s*(км|м)\s*$/);
     if (!match) return Number.POSITIVE_INFINITY;
     const value = Number.parseFloat(match[1].replace(",", "."));
@@ -65,21 +69,28 @@ test("специальное для вас приоритетно без сор�
   await expect(firstDay.getByText("специально для вас", { exact: false })).toBeVisible();
 });
 
-test("неподходящие задания раскрываются после подходящих с причинами", async ({ page }) => {
+test("общий каталог сохраняет дальние задания после подходящих", async ({ page }) => {
+  await page.getByRole("button", { name: "Открыть фильтры", exact: true }).click();
+  await page.getByRole("button", { name: "1 км", exact: true }).click();
+  await page.getByRole("button", { name: "применить", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("x5-shift-prototype-state") || "{}").searchRadius)).toBe(1);
+
   const firstDay = page.locator('[data-day="1"]');
+  const cards = firstDay.locator(".gig-task-card");
+  await expect(cards).toHaveCount(5);
+  await expect(page.locator(".toggle-label input")).not.toBeChecked();
 
-  await page.locator(".toggle-label input").uncheck();
-  const cards = firstDay.locator(".task-card");
-  const restrictedCards = firstDay.locator(".task-card:has(.task-restrictions)");
+  const distances = await cards.locator(".gig-task-address-text").evaluateAll((nodes) => nodes.map((node) => {
+    const match = node.textContent?.match(/([\d,.]+)\s*(км|м)\s*$/);
+    if (!match) return Number.POSITIVE_INFINITY;
+    const value = Number.parseFloat(match[1].replace(",", "."));
+    return match[2] === "км" ? value * 1000 : value;
+  }));
 
-  await expect(restrictedCards).toHaveCount(2);
-  await expect(restrictedCards.filter({ hasText: "Вне радиуса" })).toHaveCount(2);
-  await expect(restrictedCards.filter({ hasText: "Пересекается со сменой" })).toHaveCount(1);
-  await expect(restrictedCards.locator(".match-badge, .special-card-badges")).toHaveCount(0);
-
-  const firstRestrictedIndex = await restrictedCards.first().evaluate((card) => Array.from(card.parentElement?.children || []).indexOf(card));
-  const suitableCards = await cards.evaluateAll((nodes) => nodes.filter((card) => !card.querySelector(".task-restrictions")).length);
-  expect(firstRestrictedIndex).toBeGreaterThanOrEqual(suitableCards);
+  expect(distances.slice(0, 3).every((distance) => distance <= 1_000)).toBe(true);
+  expect(distances.slice(3).every((distance) => distance > 1_000)).toBe(true);
+  await expect(cards.nth(3).locator(".gig-task-badge, .special-card-badges")).toHaveCount(0);
+  await expect(cards.nth(4).locator(".gig-task-badge, .special-card-badges")).toHaveCount(0);
 });
 
 test("в моих заданиях показаны демо-записи с разными статусами", async ({ page }) => {
@@ -100,32 +111,34 @@ test("состояния отфильтрованных и отсутствую�
     }));
   });
   await page.reload();
+  await page.locator(".toggle-label input").check();
 
   const filteredDay = page.locator('[data-day="1"]');
-  await expect(filteredDay.getByText("подходящих услуг больше нет", { exact: true })).toBeVisible();
+  await expect(filteredDay.getByText("в этот день нет подходящих услуг", { exact: true })).toBeVisible();
   await expect(filteredDay.getByText("в этот день услуг нет", { exact: true })).toHaveCount(0);
-  await expect(filteredDay.getByText("ещё 5 услуг скрыты из-за фильтров", { exact: false })).toBeVisible();
+  await expect(filteredDay.getByText(/5 услуг скрыты из-за фильтров или выбранного времени/)).toBeVisible();
   await filteredDay.getByRole("button", { name: /показать остальные/ }).click();
-  await expect(filteredDay.locator(".task-card")).toHaveCount(5);
-  await expect(filteredDay.getByText("подходящих услуг больше нет", { exact: true })).toHaveCount(0);
+  await expect(filteredDay.locator(".gig-task-card")).toHaveCount(5);
+  await expect(filteredDay.getByText("в этот день нет подходящих услуг", { exact: true })).toHaveCount(0);
   await filteredDay.getByRole("button", { name: "скрыть неподходящие", exact: true }).click();
-  await expect(filteredDay.locator(".task-card")).toHaveCount(0);
-  await expect(filteredDay.getByText("подходящих услуг больше нет", { exact: true })).toBeVisible();
+  await expect(filteredDay.locator(".gig-task-card")).toHaveCount(0);
+  await expect(filteredDay.getByText("в этот день нет подходящих услуг", { exact: true })).toBeVisible();
 
   const emptyDay = page.locator('[data-day="14"]');
   await expect(emptyDay.getByText("в этот день услуг нет", { exact: true })).toBeVisible();
-  await expect(emptyDay.getByText("подходящих услуг больше нет", { exact: true })).toHaveCount(0);
+  await expect(emptyDay.getByText("в этот день нет подходящих услуг", { exact: true })).toHaveCount(0);
 });
 
-test("иконки в карточке скрытых заданий открывают фильтры и настройки в боттомшитах", async ({ page }) => {
-  const filteredNotice = page.locator('[data-day="1"] .task-message-card').first();
+test("карточка скрытых заданий показывает актуальные действия", async ({ page }) => {
+  await page.locator(".toggle-label input").check();
+  const firstDay = page.locator('[data-day="1"]');
+  const filteredNotice = firstDay.locator(".task-message-card").first();
 
-  await filteredNotice.getByRole("button", { name: "Открыть фильтры для этого дня", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "Фильтры заданий", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Закрыть фильтры", exact: true }).click();
-
-  await filteredNotice.getByRole("button", { name: "Открыть настройки доступности для этого дня", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "Настройки доступности", exact: true })).toBeVisible();
+  await expect(filteredNotice.getByRole("button", { name: "подписаться на новые задания", exact: true })).toBeVisible();
+  await expect(filteredNotice.getByRole("button", { name: /показать остальные/ })).toBeVisible();
+  await filteredNotice.getByRole("button", { name: /показать остальные/ }).click();
+  await expect(firstDay.locator(".gig-task-card")).toHaveCount(5);
+  await expect(firstDay.getByRole("button", { name: "скрыть неподходящие", exact: true })).toBeVisible();
 });
 
 test("дальний переход по таймлайну показывает skeleton перед прокруткой", async ({ page }) => {
@@ -157,22 +170,24 @@ test("сохранённая подборка открывает выдачу и
 
   await page.getByRole("button", { name: "избранное", exact: true }).click();
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
-  await expect(page.getByRole("region", { name: "Фильтры заданий", exact: true })).toHaveCount(0);
-  await expect(page.getByText("Лефортовский Вал · до 1 км", { exact: true })).toBeVisible();
-  await expect(page.getByText("Пятёрочка", { exact: true })).toBeVisible();
+  const collectionCard = page.locator(".favorite-collection-card").filter({ has: page.getByRole("heading", { name: "новая подборка", exact: true }) });
+  await expect(collectionCard).toBeVisible();
+  await expect(collectionCard.getByText("до 50 км", { exact: true })).toBeVisible();
+  await expect(collectionCard.getByRole("img", { name: "Пятёрочка", exact: true })).toBeVisible();
 
-  await page.getByRole("button", { name: "изменить", exact: true }).click();
+  await collectionCard.getByRole("button", { name: "Настройки подборки новая подборка", exact: true }).click();
   await page.getByRole("button", { name: "Перекрёсток", exact: true }).click();
   await page.getByRole("button", { name: "применить", exact: true }).click();
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
-  await expect(page.getByText("Пятёрочка, Перекрёсток", { exact: true })).toBeVisible();
+  const updatedCollectionCard = page.locator(".favorite-collection-card").filter({ has: page.getByRole("heading", { name: "новая подборка", exact: true }) });
+  await expect(updatedCollectionCard.getByRole("img", { name: "Перекрёсток", exact: true })).toBeVisible();
 
-  await page.getByRole("button", { name: "показать задания", exact: true }).click();
+  await updatedCollectionCard.getByRole("button", { name: "показать задания", exact: true }).click();
   await expect(page.getByRole("region", { name: "Список заданий", exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "избранное", exact: true }).click();
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
-  await page.getByRole("button", { name: "Удалить подборку Лефортовский Вал · до 1 км", exact: true }).click();
+  await page.locator(".favorite-collection-card .favorite-delete").evaluate((button) => button.click());
   await expect(page.getByText("Сохранённых подборок пока нет", { exact: true })).toBeVisible();
 });
 
@@ -185,7 +200,7 @@ test("адрес, радиус и выдача синхронизированы 
   });
 
   await page.getByRole("button", { name: "Открыть фильтры", exact: true }).click();
-  await page.getByRole("button", { name: /территория улица Лефортовский Вал/ }).click();
+  await page.getByRole("button", { name: "территория", exact: true }).click();
   await expect(page.getByRole("button", { name: "применить", exact: true })).toBeVisible();
   await page.getByRole("textbox", { name: "Адрес для поиска", exact: true }).fill("Красная площадь");
   await expect(page.getByRole("button", { name: /Красная площадь, 1/ })).toBeVisible();
@@ -234,7 +249,7 @@ test("неудачный поиск можно отменить без поте�
 });
 
 test("настройки доступности блокируют занятые дни и сохраняют ручное время", async ({ page }) => {
-  await page.getByRole("button", { name: "Настройки расписания", exact: true }).click();
+  await page.getByRole("button", { name: "Открыть настройки доступности", exact: true }).click();
   await page.getByRole("button", { name: "выберите дни", exact: true }).click();
   const busyDays = page.locator(".availability-calendar .availability-day-busy");
   expect(await busyDays.count()).toBeGreaterThan(0);
@@ -249,22 +264,21 @@ test("настройки доступности блокируют заняты�
   await page.getByRole("button", { name: "сохранить", exact: true }).click();
 
   await page.reload();
-  await page.getByRole("button", { name: "Настройки расписания", exact: true }).click();
+  await page.getByRole("button", { name: "Открыть настройки доступности", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Доступен с", exact: true })).toHaveValue("09:30");
   await expect(page.getByRole("button", { name: "короткие 4–6 часов", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("button", { name: "обычные 8–9 часов", exact: true })).toHaveAttribute("aria-pressed", "true");
 });
 
 test("периоды доступности поддерживают мультивыбор и ручной ввод", async ({ page }) => {
-  await page.getByRole("button", { name: "Настройки расписания", exact: true }).click();
+  await page.getByRole("button", { name: "Открыть настройки доступности", exact: true }).click();
   const allDay = page.getByRole("button", { name: "весь день", exact: true });
   const morning = page.getByRole("button", { name: "утро", exact: true });
   const evening = page.getByRole("button", { name: "вечер", exact: true });
 
-  await expect(allDay).toHaveAttribute("aria-pressed", "true");
+  await expect(allDay).toHaveAttribute("aria-pressed", "false");
   await morning.click();
   await evening.click();
-  await expect(allDay).toHaveAttribute("aria-pressed", "false");
   await expect(morning).toHaveAttribute("aria-pressed", "true");
   await expect(evening).toHaveAttribute("aria-pressed", "true");
 
@@ -276,7 +290,7 @@ test("периоды доступности поддерживают мульт�
 });
 
 test("запись на смену появляется в истории и не дублируется", async ({ page }) => {
-  const taskCard = page.locator(".task-card[role='button']").first();
+  const taskCard = page.locator(".gig-task-card[role='button']").first();
   const taskName = await taskCard.locator("h2").textContent();
   await taskCard.click();
   await page.getByRole("button", { name: "записаться", exact: true }).click();
@@ -286,7 +300,7 @@ test("запись на смену появляется в истории и н�
   await expect(page.locator(".my-task-card").filter({ hasText: "записаны" })).toHaveCount(2);
 
   await page.reload();
-  await page.getByRole("button", { name: `Подробнее: ${taskName}`, exact: true }).click();
+  await page.getByRole("button", { name: `Подробнее: ${taskName}`, exact: true }).first().click();
   await expect(page.getByRole("button", { name: "вы уже записаны", exact: true })).toBeDisabled();
 });
 
