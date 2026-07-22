@@ -76,8 +76,7 @@ const emptyFilters = { brands: [], minimumPayment: "", service: "" };
 
 const emptyAvailabilityTime = { from: "", to: "", preset: null, presets: [] };
 
-const prototypeDefaultStateVersion = 3;
-const settingsOnboardingVersion = 3;
+const prototypeDefaultStateVersion = 4;
 
 const availabilityTimePresets = [
   { id: "all-day", label: "весь день", from: "8:00", to: "22:00" },
@@ -718,16 +717,16 @@ function getShortDayLabel(day) {
   return day?.label?.replace(/^сегодня,\s*/i, "") ?? "1 июня";
 }
 
-function getGigTaskCardVariant(task) {
+function getGigTaskCardVariant(task, { revealRestrictionTags = false } = {}) {
   const restrictionCount = task.restrictionTags?.length ?? 0;
   if (task.variant === "special" && restrictionCount === 0) return "special";
-  if (restrictionCount > 0) return "bottom-tags";
+  if (restrictionCount > 0) return revealRestrictionTags ? "bottom-tags" : "default";
   if (task.badge) return "match";
   return "default";
 }
 
-function TaskCard({ day, task, onOpen }) {
-  const cardVariant = getGigTaskCardVariant(task);
+function TaskCard({ day, revealRestrictionTags = false, task, onOpen }) {
+  const cardVariant = getGigTaskCardVariant(task, { revealRestrictionTags });
   const isPersonalOffer = cardVariant === "special";
   const showMatchBadge = cardVariant === "match";
   const showStatus = cardVariant === "status" || cardVariant === "status-plus";
@@ -1069,7 +1068,7 @@ function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollect
             <div className="favorite-store-header">
               <div>
                 <h2>название подборки конкретного магазина</h2>
-                <p><BrandMark brand="pyaterochka" /><MetroIcon metro={{ city: "spb", color: "#d6083b", label: "Метро Санкт-Петербурга", station: "Площадь Восстания" }} />Площадь Восстания · Косой переулок 5, к. 8</p>
+                <p><BrandMark brand="pyaterochka" /><img alt="" aria-hidden="true" className="favorite-store-metro-icon" src={assetUrl("collection-metro.svg")} />Площадь Восстания · Косой переулок 5, к. 8</p>
               </div>
               <button aria-label="Настройки подборки магазина" className="card-kebab-button" type="button"><img alt="" src={assetUrl("kebab.svg")} /></button>
             </div>
@@ -1940,7 +1939,7 @@ export function App() {
   const persistedState = persistedStateRef.current;
   const [activeTab, setActiveTab] = useState(0);
   const [activeDay, setActiveDay] = useState("1");
-  const [onlyMatching, setOnlyMatching] = useState(false);
+  const [onlyMatching, setOnlyMatching] = useState(true);
   const [networkFilter, setNetworkFilter] = useState("торговая сеть");
   const [filterScrollState, setFilterScrollState] = useState("at-start");
   const [isBottomChromeHidden, setIsBottomChromeHidden] = useState(false);
@@ -1949,25 +1948,21 @@ export function App() {
   const [isScrollTopVisible, setIsScrollTopVisible] = useState(false);
   const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
   const [cardSheet, setCardSheet] = useState(null);
-  const [sortBy, setSortBy] = useState(persistedState.sortBy || "recommended");
-  const [hasAppliedSort, setHasAppliedSort] = useState(Boolean(persistedState.hasAppliedSort));
-  const [searchRadius, setSearchRadius] = useState(persistedState.searchRadius ?? null);
-  const [searchLocation, setSearchLocation] = useState(persistedState.searchLocation || emptySearchLocation);
-  const [appliedFilters, setAppliedFilters] = useState(persistedState.appliedFilters || emptyFilters);
+  const [sortBy, setSortBy] = useState("recommended");
+  const [hasAppliedSort, setHasAppliedSort] = useState(false);
+  const [searchRadius, setSearchRadius] = useState(null);
+  const [searchLocation, setSearchLocation] = useState(emptySearchLocation);
+  const [appliedFilters, setAppliedFilters] = useState(emptyFilters);
   const [favoriteCollections, setFavoriteCollections] = useState(persistedState.favoriteCollections || []);
   const [editingCollection, setEditingCollection] = useState(null);
-  const [catalogVersion, setCatalogVersion] = useState(persistedState.catalogVersion || 0);
-  const [selectedAvailabilityDates, setSelectedAvailabilityDates] = useState(persistedState.selectedAvailabilityDates || []);
-  const [selectedAvailabilityWeekdays, setSelectedAvailabilityWeekdays] = useState(persistedState.selectedAvailabilityWeekdays || []);
-  const [availabilityTime, setAvailabilityTime] = useState(persistedState.availabilityTime || emptyAvailabilityTime);
-  const [selectedAvailabilityDuration, setSelectedAvailabilityDuration] = useState(() => (
-    Array.isArray(persistedState.selectedAvailabilityDuration)
-      ? persistedState.selectedAvailabilityDuration
-      : persistedState.selectedAvailabilityDuration ? [persistedState.selectedAvailabilityDuration] : []
-  ));
+  const [catalogVersion, setCatalogVersion] = useState(0);
+  const [selectedAvailabilityDates, setSelectedAvailabilityDates] = useState([]);
+  const [selectedAvailabilityWeekdays, setSelectedAvailabilityWeekdays] = useState([]);
+  const [availabilityTime, setAvailabilityTime] = useState(emptyAvailabilityTime);
+  const [selectedAvailabilityDuration, setSelectedAvailabilityDuration] = useState([]);
   const [bookedTasks, setBookedTasks] = useState(persistedState.bookedTasks || []);
   const [currentView, setCurrentView] = useState("tasks");
-  const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(() => persistedState.settingsOnboardingVersion !== settingsOnboardingVersion);
+  const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
   const [scrollTargetDay, setScrollTargetDay] = useState(null);
   const [isTimelineLoading, setIsTimelineLoading] = useState(false);
@@ -1981,22 +1976,11 @@ export function App() {
 
   useEffect(() => {
     window.localStorage.setItem(prototypeStorageKey, JSON.stringify({
-      appliedFilters,
-      availabilityTime,
       bookedTasks,
-      catalogVersion,
       defaultStateVersion: prototypeDefaultStateVersion,
       favoriteCollections,
-      hasAppliedSort,
-      searchLocation,
-      searchRadius,
-      selectedAvailabilityDates,
-      selectedAvailabilityDuration,
-      selectedAvailabilityWeekdays,
-      settingsOnboardingVersion: isSettingsOnboardingVisible ? settingsOnboardingVersion - 1 : settingsOnboardingVersion,
-      sortBy,
     }));
-  }, [appliedFilters, availabilityTime, bookedTasks, catalogVersion, favoriteCollections, hasAppliedSort, isSettingsOnboardingVisible, searchLocation, searchRadius, selectedAvailabilityDates, selectedAvailabilityDuration, selectedAvailabilityWeekdays, sortBy]);
+  }, [bookedTasks, favoriteCollections]);
 
   useEffect(() => {
     const timeline = document.querySelector(".date-timeline");
@@ -2426,7 +2410,7 @@ export function App() {
                 >
                   скрыть неподходящие <img alt="" src={assetUrl("chevron-down.svg")} />
                 </button>}
-                {isFilteredDayExpanded && taskFeed.hiddenTasks.map((task) => <TaskCard day={day} key={task.id} onOpen={() => openTaskDetails(task, day)} task={task} />)}
+                {isFilteredDayExpanded && taskFeed.hiddenTasks.map((task) => <TaskCard day={day} key={task.id} onOpen={() => openTaskDetails(task, day)} revealRestrictionTags task={task} />)}
                 {hasFilteredOutTasks && <TaskMessageCard
                   hiddenCount={taskFeed.hiddenTasks.length}
                   variant={visibleTasks.length === 0 ? "empty-day-filtered" : "no-more"}
