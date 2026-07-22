@@ -9,6 +9,8 @@ const metroIconAssets = {
   spb: assetUrl("metro-spb.svg"),
   nino: assetUrl("metro-nino.svg"),
 };
+
+const defaultCollectionBrands = ["pyaterochka", "perekrestok", "vprok", "chizhik"];
 const days = [
   { date: "1", weekday: "пн" },
   { date: "2", weekday: "вт" },
@@ -707,10 +709,27 @@ function getShortDayLabel(day) {
   return day?.label?.replace(/^сегодня,\s*/i, "") ?? "1 июня";
 }
 
+function getGigTaskCardVariant(task) {
+  const restrictionCount = task.restrictionTags?.length ?? 0;
+  if (task.variant === "special" && restrictionCount === 0) return "special";
+  if (restrictionCount > 2) return "bottom-tags";
+  if (restrictionCount > 1) return "status-plus";
+  if (restrictionCount === 1) return "status";
+  if (task.badge) return "match";
+  return "default";
+}
+
 function TaskCard({ day, task, onOpen }) {
-  const isRestricted = task.restrictionTags?.length > 0;
-  const isPersonalOffer = task.variant === "special" && !isRestricted;
-  const shiftBadge = "сверхурочная смена";
+  const cardVariant = getGigTaskCardVariant(task);
+  const isPersonalOffer = cardVariant === "special";
+  const showMatchBadge = cardVariant === "match";
+  const showStatus = cardVariant === "status" || cardVariant === "status-plus";
+  const showRestrictionTags = cardVariant === "bottom-tags";
+  const cardClassName = [
+    "gig-task-card",
+    `gig-task-card-${cardVariant}`,
+    onOpen ? "gig-task-card-clickable" : "",
+  ].filter(Boolean).join(" ");
   const handleKeyDown = (event) => {
     if (!onOpen || (event.key !== "Enter" && event.key !== " ")) return;
     event.preventDefault();
@@ -720,15 +739,16 @@ function TaskCard({ day, task, onOpen }) {
   return (
     <article
       aria-label={onOpen ? `Подробнее: ${task.title}` : undefined}
-      className={`${onOpen ? "gig-task-card gig-task-card-clickable" : "gig-task-card"}${isPersonalOffer ? " gig-task-card-special" : ""}`}
+      className={cardClassName}
       onClick={onOpen}
       onKeyDown={handleKeyDown}
       role={onOpen ? "button" : undefined}
       tabIndex={onOpen ? 0 : undefined}
     >
-      <div className={isPersonalOffer ? "gig-task-card-top gig-task-card-top-special" : "gig-task-card-top"}>
+      <div className="gig-task-card-top">
         <div className="gig-task-card-copy">
-          {!isRestricted && <span className="gig-task-badge">{shiftBadge}</span>}
+          {showMatchBadge && <span className="gig-task-badge">подходит вам</span>}
+          {showStatus && <span className="gig-task-status-label"><i aria-hidden="true" />{cardVariant === "status-plus" ? "есть ограничения" : "не подходит"}</span>}
           {isPersonalOffer && <span className="special-card-badges"><span className="special-card-badge">специально для вас</span><OfferCountdown /></span>}
           <h2>{task.title}</h2>
           <p className={task.metro ? "gig-task-address gig-task-address-with-metro" : "gig-task-address"}>
@@ -743,16 +763,16 @@ function TaskCard({ day, task, onOpen }) {
       </div>
       <div className="gig-task-divider" />
       <div className="gig-task-card-bottom">
-        <div className="gig-task-date">
-          <p>{getShortDayLabel(day)}</p>
-          <p>{day?.secondaryLabel ?? "понедельник"}</p>
+        <div className="gig-task-payment">
+          <p>{task.payment}</p>
+          <p>{task.rate}</p>
         </div>
-        <div className="gig-task-hours">
+        <div className="gig-task-time">
           <p>{task.hours}</p>
           <p>{task.breakInfo}</p>
         </div>
       </div>
-      {isRestricted && (
+      {(showRestrictionTags || showStatus) && (
         <div className="gig-task-restrictions">
           {task.restrictionTags.map((tag) => <span key={tag}>{tag}</span>)}
         </div>
@@ -792,16 +812,19 @@ function getRussianPlural(count, forms) {
   return forms[2];
 }
 
-function NoMoreTasksCard({ hiddenCount, onOpenFilters, onShowAll }) {
+function TaskMessageCard({ hiddenCount, onShowAll, variant = "no-more" }) {
+  const isDayEmpty = variant === "empty-day-filtered";
+  const title = isDayEmpty ? "в этот день нет подходящих услуг" : "подходящих услуг больше нет";
+  const subtitle = isDayEmpty
+    ? `${hiddenCount} ${getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"])} скрыты из-за фильтров или выбранного времени`
+    : `ещё ${hiddenCount} ${getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"])} скрыты из-за фильтров или выбранного времени`;
   return (
-    <article className="task-message-card">
-      <h3>подходящих услуг больше нет</h3>
-      <p>ещё {hiddenCount} {getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"])} скрыты из-за фильтров<br />или выбранного времени</p>
+    <article className={`task-message-card ${isDayEmpty ? "task-message-card-filtered-day" : "task-message-card-no-more"}`}>
+      <h3>{title}</h3>
+      <p>{subtitle}</p>
       <div className="task-message-actions">
-        <button onClick={onShowAll} type="button">показать остальные <span aria-hidden="true">⌄</span></button>
-        <button aria-label="Открыть фильтры для этого дня" className="task-message-icon-button" onClick={onOpenFilters} type="button">
-          <img alt="" src={assetUrl("funnel.svg")} />
-        </button>
+        <button className="task-message-subscribe" type="button"><img alt="" src={assetUrl("task-hidden-star.svg")} />подписаться на новые задания</button>
+        <button className="task-message-show-all" onClick={onShowAll} type="button">показать остальные <img alt="" src={assetUrl("task-hidden-chevron-down.svg")} /></button>
       </div>
     </article>
   );
@@ -811,7 +834,7 @@ function NoTasksForDayCard() {
   return (
     <article className="task-message-card task-message-card-empty">
       <h3>в этот день услуг нет</h3>
-      <button type="button">подписаться на задания в этот день</button>
+      <button className="task-message-subscribe" type="button"><img alt="" src={assetUrl("task-hidden-star.svg")} />подписаться на новые задания</button>
     </article>
   );
 }
@@ -996,6 +1019,7 @@ function MyTaskCard({ booking }) {
 
 function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollection, onRemoveCollection }) {
   const [section, setSection] = useState("stores");
+  const demoStoreChips = ["уборка урожая пшеницы", "1, 2, 3 июня", "Пн, Ср, Пт", "от 1500 ₽"];
 
   return (
     <div className="favorites-view">
@@ -1021,31 +1045,55 @@ function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollect
       </div>
 
       {section === "stores" ? (
-        <p className="task-empty-state my-tasks-empty">Избранных магазинов пока нет</p>
+        <article className="favorite-store-card">
+          <div className="favorite-store-details">
+            <div className="favorite-store-header">
+              <div>
+                <h2>название подборки конкретного магазина</h2>
+                <p><BrandMark brand="pyaterochka" /><MetroIcon metro={{ city: "spb", color: "#d6083b", label: "Метро Санкт-Петербурга", station: "Площадь Восстания" }} />Площадь Восстания · Косой переулок 5, к. 8</p>
+              </div>
+              <button aria-label="Настройки подборки магазина" className="card-kebab-button" type="button"><img alt="" src={assetUrl("kebab.svg")} /></button>
+            </div>
+            <div className="favorite-chip-row">
+              {demoStoreChips.map((chip) => <span className="favorite-chip" key={chip}>{chip}</span>)}
+            </div>
+          </div>
+          <button className="favorite-apply" onClick={() => setSection("collections")} type="button">показать задания</button>
+        </article>
       ) : collections.length === 0 ? (
         <p className="task-empty-state my-tasks-empty">Сохранённых подборок пока нет</p>
       ) : (
         <div className="favorite-collections-list">
-          {collections.map((collection) => (
-            <article className="favorite-collection-card" key={collection.id}>
-              <div className="favorite-collection-copy">
-                <h2>{collection.title}</h2>
-                <p>{collection.location.label} · до {collection.radius} км</p>
-                <p>{collection.filters.brands.length ? collection.filters.brands.map((brand) => ({
-                  pyaterochka: "Пятёрочка",
-                  perekrestok: "Перекрёсток",
-                  chizhik: "Чижик",
-                }[brand])).join(", ") : "Все сети"}</p>
-              </div>
-              <div className="favorite-collection-actions">
+          {collections.map((collection) => {
+            const collectionBrands = collection.filters.brands.length ? collection.filters.brands : defaultCollectionBrands;
+            const collectionChips = [
+              collection.filters.service || "уборка урожая пшеницы",
+              "1, 2, 3 июня",
+              "Пн, Ср, Пт",
+              collection.filters.minimumPayment ? `от ${collection.filters.minimumPayment} ₽` : "от 1500 ₽",
+              collection.radius ? `до ${collection.radius} км` : "до 50 км",
+              collection.location.label ? `... ${getShortLocationLabel(collection.location.label)}` : null,
+            ].filter(Boolean);
+
+            return (
+              <article className="favorite-collection-card" key={collection.id}>
+                <div className="favorite-collection-header">
+                  <h2>{collection.title}</h2>
+                  <button aria-label={`Настройки подборки ${collection.title}`} className="card-kebab-button" onClick={() => onEditCollection(collection)} type="button"><img alt="" src={assetUrl("kebab.svg")} /></button>
+                </div>
+                <div className="favorite-brand-row">
+                  {collectionBrands.slice(0, 4).map((brand) => <BrandMark brand={brand} key={brand} />)}
+                </div>
+                <div className="favorite-chip-row">
+                  {collectionChips.map((chip) => <span className="favorite-chip" key={chip}>{chip}</span>)}
+                </div>
                 <button className="favorite-apply" onClick={() => onApplyCollection(collection)} type="button">показать задания</button>
-                <button className="favorite-edit" onClick={() => onEditCollection(collection)} type="button">изменить</button>
                 <button aria-label={`Удалить подборку ${collection.title}`} className="favorite-delete" onClick={() => onRemoveCollection(collection.id)} type="button">
                   <img alt="" src={assetUrl("trash.svg")} />
                 </button>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
     </div>
@@ -2360,9 +2408,9 @@ export function App() {
                   скрыть неподходящие <img alt="" src={assetUrl("chevron-down.svg")} />
                 </button>}
                 {isFilteredDayExpanded && taskFeed.hiddenTasks.map((task) => <TaskCard day={day} key={task.id} onOpen={() => openTaskDetails(task, day)} task={task} />)}
-                {hasFilteredOutTasks && <NoMoreTasksCard
+                {hasFilteredOutTasks && <TaskMessageCard
                   hiddenCount={taskFeed.hiddenTasks.length}
-                  onOpenFilters={() => setCardSheet("filters")}
+                  variant={visibleTasks.length === 0 ? "empty-day-filtered" : "no-more"}
                   onShowAll={() => setExpandedFilteredDays((current) => [...current, day.date])}
                 />}
                 {hasNoTasks && <NoTasksForDayCard />}

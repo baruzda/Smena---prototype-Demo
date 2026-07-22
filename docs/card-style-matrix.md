@@ -1,26 +1,34 @@
 # Матрица карточек прототипа «Смена X5»
 
-Цель документа — не смешивать типы карточек и не переиспользовать стили между разными сценариями. Если карточка меняется по макету, сначала обновляем эту матрицу, затем код.
+Источник правды: Figma component `mobile card`, node `10451:106630`.
 
-## Правило изоляции
+Этот документ — контракт перед любыми изменениями карточек. Сначала добавляем/обновляем строку матрицы, потом правим JSX/CSS. Цель — не смешивать варианты карточек через “почти общий” layout.
 
-- Каждый тип карточки имеет свой namespace CSS-классов.
-- Нельзя использовать классы одного типа карточки внутри другого типа.
-- Общие классы допустимы только для атомарных элементов без бизнес-смысла: логотип бренда, иконка метро, иконка расстояния.
-- Бейджи не шарятся между типами карточек: у каждой карточки свой класс бейджа.
+## Базовые правила
 
-## Матрица
+- Каждый Figma variant получает явный компонент или явный mode внутри компонента.
+- Семантические CSS-классы не шарятся между variants. Нельзя группировать селекторы вроде `.gig-task-hours, .employee-shift-hours`.
+- Общими могут быть только нейтральные атомы: `brand-logo`, `metro-icon`, `distance-mark`, экспортированные Figma icon assets.
+- Если два variants выглядят похоже, всё равно держим их layout-правила отдельно: это дешевле, чем ловить протечки после следующего макета.
 
-| Тип карточки | Компонент | CSS namespace | Назначение | Бейдж | Низ карточки |
-| --- | --- | --- | --- | --- | --- |
-| Основная смена | `EmployeeShiftCard` | `employee-shift-*` | Уже занятая/основная смена пользователя в расписании | `employee-shift-badge` | `employee-shift-date` + `employee-shift-hours` |
-| Сверхурочная смена / услуга | `TaskCard` | `gig-task-*` | Карточка доступной услуги в ленте | `gig-task-badge` | `gig-task-date` + `gig-task-hours` |
-| Спецпредложение | `TaskCard` + `task.variant === "special"` | `gig-task-*` + `special-card-*` | Та же карточка услуги, но с дополнительным CTA/таймером | `gig-task-badge`, `special-card-badge` | Только `gig-task-*` |
-| Мои задания | `MyTaskCard` | `my-task-*` | Задачи, на которые пользователь записался | `my-task-status` | `my-task-payment` + `my-task-date` |
-| Подходящих услуг больше нет | `NoMoreTasksCard` | `task-message-*` | Фильтры/доступность скрыли оставшиеся услуги | Нет | Кнопка «показать остальные» + фильтры |
-| В этот день услуг нет | `NoTasksForDayCard` | `task-message-*` | Пустой день без услуг | Нет | Подписка на задания |
-| Подборка / избранное | `FavoriteCollectionsView` | `favorite-collection-*` | Сохранённая пользовательская подборка | Нет | Действия: применить/редактировать/удалить |
-| Детали задания | `TaskDetailsScreen` | `details-*` | Экран подробностей выбранной услуги | `details-match-badge` | Секции деталей, не карточечный layout |
+## Variants Figma → код
+
+| Figma variant | Компонент / mode | CSS namespace | Фон / рамка | Верх | Низ / действия | Статус |
+| --- | --- | --- | --- | --- | --- | --- |
+| `sceleton` | `TaskSkeletonCard` | `task-skeleton-*` | white + stroke | placeholders + logo circle | divider + placeholders | Реализовано |
+| `default` | `TaskCard cardVariant="default"` fallback | `gig-task-*` | white + stroke | title + address + brand | payment/rate + hours/break | Реализовано |
+| `подходит вам` | `TaskCard cardVariant="match"` | `gig-task-*` | white + stroke | violet badge `подходит вам` + title + address + brand | payment/rate + hours/break | Реализовано |
+| `status+` | `TaskCard cardVariant="status-plus"` | `gig-task-*` | white + stroke | status label + title + address + brand | old/new payment + old/new time | Реализован отдельный mode |
+| `status` | `TaskCard cardVariant="status"` | `gig-task-*` | white + stroke | status label + title + address + brand | payment/rate + time/date | Реализован отдельный mode |
+| `нижние теги` | `TaskCard cardVariant="bottom-tags"` | `gig-task-*` | white + stroke | title + address + brand | payment/rate + hours/break + bottom restriction chips | Реализован отдельный mode |
+| `специально для вас` | `TaskCard cardVariant="special"` | `gig-task-*`, `special-card-*` | white + violet stroke | violet badge + timer + title + address + brand | payment/rate + hours/break + CTA | Реализовано |
+| `основная смена` | `EmployeeShiftCard` with `shift.type === "primary"` | `employee-shift-*` | grey-light, no stroke | grey badge + title + address + brand | date/time | Реализовано отдельным namespace |
+| `сверхурочная смена` | `EmployeeShiftCard` with `shift.type !== "primary"` | `employee-shift-*` | grey-light, no stroke | grey badge + title + address + brand | date/time | Зарезервировано для смен, не для услуг |
+| `подходящих услуг больше нет` | `TaskMessageCard variant="no-more"` | `task-message-*` | grey-light | centered title + explanatory text | subscribe + show all | Реализовано |
+| `в этот день нет подходящих услуг` | `TaskMessageCard variant="empty-day-filtered"` | `task-message-*` | grey-light | centered title + explanatory text | subscribe + show all | Реализовано |
+| `в этот день услуг нет` | `NoTasksForDayCard` | `task-message-*` | grey-light | centered title | subscribe | Реализовано |
+| `избранное-подборка` | saved collection card | `favorite-collection-*` | white + stroke | collection title + logos + menu | chips + CTA | Реализовано |
+| `избранное - магазин` | demo store card in stores tab | `favorite-store-*` | white + stroke | title + store/address + menu | chips + CTA | Реализовано |
 
 ## Запрещённые пересечения
 
@@ -28,23 +36,20 @@
 - `employee-shift-*` нельзя использовать в `TaskCard`.
 - `my-task-*` нельзя использовать в ленте заданий.
 - `details-*` нельзя использовать в карточках ленты.
-- Бейдж `gig-task-badge` не должен заменять `employee-shift-badge` или `details-match-badge`.
-
-## Текущие общие атомы
-
-| Класс | Где можно использовать | Почему общий |
-| --- | --- | --- |
-| `brand-logo` | Все карточки с брендом | Единый визуальный размер/asset логотипа |
-| `metro-icon` | Адреса с метро | Атомарная пиктограмма метро |
-| `distance-mark` | Адреса с дистанцией | Атомарная пиктограмма расстояния |
+- Бейджи не взаимозаменяемы: `gig-task-badge`, `employee-shift-badge`, `details-match-badge`, `my-task-status` — разные элементы.
+- Нельзя использовать текстовые псевдо-иконки (`☆`, `⌄`) вместо экспортированных assets, если asset уже есть.
 
 ## Чеклист перед деплоем
 
-1. Поискать старые общие классы:
-   - `match-badge`
-   - `task-card-bottom`
-   - `task-card-date`
-   - `task-hours`
-2. Убедиться, что `EmployeeShiftCard` содержит только `employee-shift-*` и общие атомы.
-3. Убедиться, что `TaskCard` содержит только `gig-task-*`, `special-card-*` и общие атомы.
-4. Собрать GitHub-прототип из чистого `origin/main` + изменённые файлы.
+1. `rg "\\b(task-card-bottom|task-hours|match-badge)\\b|gig-task.*employee|employee.*gig-task" src/App.jsx src/styles.css`
+2. Собрать проект.
+3. Открыть локальный preview.
+4. Проверить минимум эти states:
+   - обычная/подходящая услуга;
+   - обычная услуга без бейджа;
+   - основная смена;
+   - скрытая/неподходящая услуга;
+   - `подходящих услуг больше нет`;
+   - `в этот день нет подходящих услуг`;
+   - `в этот день услуг нет`.
+5. Если правка затрагивает карточки, обновить эту матрицу в том же коммите.
