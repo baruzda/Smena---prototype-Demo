@@ -38,7 +38,9 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run E2E
-        run: npm run test:e2e -- --max-failures=1 2>&1 | tee e2e-output.txt
+        run: |
+          set -o pipefail
+          npm run test:e2e -- --max-failures=1 2>&1 | tee e2e-output.txt
 
       - name: Upload E2E diagnostics
         if: always()
