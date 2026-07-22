@@ -4,7 +4,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => {
     localStorage.clear();
-    localStorage.setItem("x5-shift-prototype-state", JSON.stringify({ settingsOnboardingVersion: 2 }));
+    localStorage.setItem("x5-shift-prototype-state", JSON.stringify({ settingsOnboardingVersion: 3 }));
   });
   await page.reload();
 });
