@@ -718,16 +718,16 @@ function getShortDayLabel(day) {
   return day?.label?.replace(/^сегодня,\s*/i, "") ?? "1 июня";
 }
 
-function getGigTaskCardVariant(task) {
+function getGigTaskCardVariant(task, { revealRestrictionTags = false } = {}) {
   const restrictionCount = task.restrictionTags?.length ?? 0;
   if (task.variant === "special" && restrictionCount === 0) return "special";
-  if (restrictionCount > 0) return "bottom-tags";
+  if (restrictionCount > 0) return revealRestrictionTags ? "bottom-tags" : "default";
   if (task.badge) return "match";
   return "default";
 }
 
-function TaskCard({ day, task, onOpen }) {
-  const cardVariant = getGigTaskCardVariant(task);
+function TaskCard({ day, revealRestrictionTags = false, task, onOpen }) {
+  const cardVariant = getGigTaskCardVariant(task, { revealRestrictionTags });
   const isPersonalOffer = cardVariant === "special";
   const showMatchBadge = cardVariant === "match";
   const showStatus = cardVariant === "status" || cardVariant === "status-plus";
@@ -2426,7 +2426,7 @@ export function App() {
                 >
                   скрыть неподходящие <img alt="" src={assetUrl("chevron-down.svg")} />
                 </button>}
-                {isFilteredDayExpanded && taskFeed.hiddenTasks.map((task) => <TaskCard day={day} key={task.id} onOpen={() => openTaskDetails(task, day)} task={task} />)}
+                {isFilteredDayExpanded && taskFeed.hiddenTasks.map((task) => <TaskCard day={day} key={task.id} onOpen={() => openTaskDetails(task, day)} revealRestrictionTags task={task} />)}
                 {hasFilteredOutTasks && <TaskMessageCard
                   hiddenCount={taskFeed.hiddenTasks.length}
                   variant={visibleTasks.length === 0 ? "empty-day-filtered" : "no-more"}
