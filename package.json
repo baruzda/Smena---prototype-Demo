@@ -8,7 +8,8 @@
     "build": "vite build",
     "build:pages": "vite build --base=./",
     "preview": "vite preview",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "validate:card-rules": "node scripts/validate-card-rules.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "5.0.4",
