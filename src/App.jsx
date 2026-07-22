@@ -818,12 +818,19 @@ function getRussianPlural(count, forms) {
   return forms[2];
 }
 
-function TaskMessageCard({ hiddenCount, onShowAll, variant = "no-more" }) {
+function getHiddenReasonText(hiddenReason) {
+  if (hiddenReason === "filters") return "фильтров";
+  if (hiddenReason === "availability") return "настроек доступности";
+  return "фильтров или выбранного времени";
+}
+
+function TaskMessageCard({ hiddenCount, hiddenReason = "mixed", onShowAll, variant = "no-more" }) {
   const isDayEmpty = variant === "empty-day-filtered";
   const title = isDayEmpty ? "в этот день нет подходящих услуг" : "подходящих услуг больше нет";
+  const hiddenReasonText = getHiddenReasonText(hiddenReason);
   const subtitle = isDayEmpty
-    ? `${hiddenCount} ${getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"])} скрыты из-за фильтров или выбранного времени`
-    : `ещё ${hiddenCount} ${getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"])} скрыты из-за фильтров или выбранного времени`;
+    ? `${hiddenCount} ${getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"])} скрыты из-за ${hiddenReasonText}`
+    : `ещё ${hiddenCount} ${getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"])} скрыты из-за ${hiddenReasonText}`;
   return (
     <article className={`task-message-card ${isDayEmpty ? "task-message-card-filtered-day" : "task-message-card-no-more"}`}>
       <h3>{title}</h3>
@@ -2215,18 +2222,35 @@ export function App() {
     const selectedService = appliedFilters.service.trim().toLocaleLowerCase("ru-RU");
     const isSuggested = Boolean(task.badge || task.variant === "special");
     const reasons = [];
+    const hasAvailabilityMismatch = !matchesDurationPreference(task, selectedAvailabilityDuration);
     const hasFilterMismatch = (appliedFilters.brands.length > 0 && !appliedFilters.brands.includes(task.brand))
       || (selectedService && !task.title.toLocaleLowerCase("ru-RU").includes(selectedService))
-      || getPaymentValue(task.payment) < minimumPayment
-      || !matchesDurationPreference(task, selectedAvailabilityDuration);
+      || getPaymentValue(task.payment) < minimumPayment;
 
     if (!isAvailableForMatching(date)) reasons.push("Вне доступности");
     if (!isTaskWithinAvailability(task, availabilityTime)) reasons.push("Пересекается со сменой");
+    if (hasAvailabilityMismatch) reasons.push("Вне доступности");
     if (Number.isFinite(maximumDistance) && getDistanceInMeters(task.distance) > maximumDistance) reasons.push("Вне радиуса");
     if (hasFilterMismatch || (!isSuggested && reasons.length === 0)) reasons.push("Не совпадает с фильтрами");
     reasons.push(...task.mismatchHints);
 
     return [...new Set(reasons)];
+  }
+
+  function getHiddenReason(hiddenTasks) {
+    const reasonKinds = new Set();
+    hiddenTasks.forEach((task) => {
+      task.restrictionTags.forEach((reason) => {
+        if (reason === "Вне доступности" || reason === "Пересекается со сменой") {
+          reasonKinds.add("availability");
+          return;
+        }
+        reasonKinds.add("filters");
+      });
+    });
+
+    if (reasonKinds.size === 1) return [...reasonKinds][0];
+    return "mixed";
   }
 
   function getTasksForFeed(tasks, date) {
@@ -2240,10 +2264,12 @@ export function App() {
 
     const matchingTasks = getOrderedTasks(suggestedTasks, sortBy, hasAppliedSort);
     const hiddenTasks = getSortedTasks(restrictedTasks, sortBy);
+    const hiddenReason = getHiddenReason(hiddenTasks);
 
-    if (onlyMatching) return { hiddenTasks, visibleTasks: matchingTasks };
+    if (onlyMatching) return { hiddenReason, hiddenTasks, visibleTasks: matchingTasks };
 
     return {
+      hiddenReason: "mixed",
       hiddenTasks: [],
       visibleTasks: [
         ...getOrderedTasks(suitableTasks, sortBy, hasAppliedSort),
@@ -2413,6 +2439,7 @@ export function App() {
                 {isFilteredDayExpanded && taskFeed.hiddenTasks.map((task) => <TaskCard day={day} key={task.id} onOpen={() => openTaskDetails(task, day)} revealRestrictionTags task={task} />)}
                 {hasFilteredOutTasks && <TaskMessageCard
                   hiddenCount={taskFeed.hiddenTasks.length}
+                  hiddenReason={taskFeed.hiddenReason}
                   variant={visibleTasks.length === 0 ? "empty-day-filtered" : "no-more"}
                   onShowAll={() => setExpandedFilteredDays((current) => [...current, day.date])}
                 />}
