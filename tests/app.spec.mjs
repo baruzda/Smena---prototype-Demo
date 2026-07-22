@@ -8,7 +8,9 @@ test.beforeEach(async ({ page }) => {
   const onboarding = page.locator(".settings-onboarding-dismiss");
   if (await onboarding.isVisible()) {
     await onboarding.click({ position: { x: 24, y: 320 } });
+    await expect(onboarding).toBeHidden();
   }
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("x5-shift-prototype-state") || "{}").defaultStateVersion === 3);
 });
 
 test("подсказка настроек показывается один раз и ведёт в настройки", async ({ page }) => {
@@ -67,13 +69,18 @@ test("специальное для вас приоритетно без сор�
   await expect(firstDay.getByText("специально для вас", { exact: false })).toBeVisible();
 });
 
-test("неподходящие задания раскрываются после подходящих с причинами", async ({ page }) => {
-  const firstDay = page.locator('[data-day="1"]');
+test("неподходящие задания показываются после подходящих с причинами", async ({ page }) => {
+  await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem("x5-shift-prototype-state") || "{}");
+    localStorage.setItem("x5-shift-prototype-state", JSON.stringify({ ...state, searchRadius: 1 }));
+  });
+  await page.reload();
 
-  await page.locator(".toggle-label input").uncheck();
+  const firstDay = page.locator('[data-day="1"]');
   const cards = firstDay.locator(".gig-task-card");
   const restrictedCards = firstDay.locator(".gig-task-card:has(.gig-task-restrictions)");
 
+  await expect(page.locator(".toggle-label input")).not.toBeChecked();
   await expect(restrictedCards).toHaveCount(2);
   await expect(restrictedCards.filter({ hasText: "Вне радиуса" })).toHaveCount(2);
   await expect(restrictedCards.filter({ hasText: "Пересекается со сменой" })).toHaveCount(1);
@@ -102,32 +109,34 @@ test("состояния отфильтрованных и отсутствую�
     }));
   });
   await page.reload();
+  await page.locator(".toggle-label input").check();
 
   const filteredDay = page.locator('[data-day="1"]');
-  await expect(filteredDay.getByText("подходящих услуг больше нет", { exact: true })).toBeVisible();
+  await expect(filteredDay.getByText("в этот день нет подходящих услуг", { exact: true })).toBeVisible();
   await expect(filteredDay.getByText("в этот день услуг нет", { exact: true })).toHaveCount(0);
-  await expect(filteredDay.getByText("ещё 5 услуг скрыты из-за фильтров", { exact: false })).toBeVisible();
+  await expect(filteredDay.getByText(/5 услуг скрыты из-за фильтров или выбранного времени/)).toBeVisible();
   await filteredDay.getByRole("button", { name: /показать остальные/ }).click();
   await expect(filteredDay.locator(".gig-task-card")).toHaveCount(5);
-  await expect(filteredDay.getByText("подходящих услуг больше нет", { exact: true })).toHaveCount(0);
+  await expect(filteredDay.getByText("в этот день нет подходящих услуг", { exact: true })).toHaveCount(0);
   await filteredDay.getByRole("button", { name: "скрыть неподходящие", exact: true }).click();
   await expect(filteredDay.locator(".gig-task-card")).toHaveCount(0);
-  await expect(filteredDay.getByText("подходящих услуг больше нет", { exact: true })).toBeVisible();
+  await expect(filteredDay.getByText("в этот день нет подходящих услуг", { exact: true })).toBeVisible();
 
   const emptyDay = page.locator('[data-day="14"]');
   await expect(emptyDay.getByText("в этот день услуг нет", { exact: true })).toBeVisible();
-  await expect(emptyDay.getByText("подходящих услуг больше нет", { exact: true })).toHaveCount(0);
+  await expect(emptyDay.getByText("в этот день нет подходящих услуг", { exact: true })).toHaveCount(0);
 });
 
-test("иконки в карточке скрытых заданий открывают фильтры и настройки в боттомшитах", async ({ page }) => {
-  const filteredNotice = page.locator('[data-day="1"] .task-message-card').first();
+test("карточка скрытых заданий показывает актуальные действия", async ({ page }) => {
+  await page.locator(".toggle-label input").check();
+  const firstDay = page.locator('[data-day="1"]');
+  const filteredNotice = firstDay.locator(".task-message-card").first();
 
-  await filteredNotice.getByRole("button", { name: "Открыть фильтры для этого дня", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "Фильтры заданий", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Закрыть фильтры", exact: true }).click();
-
-  await filteredNotice.getByRole("button", { name: "Открыть настройки доступности для этого дня", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "Настройки доступности", exact: true })).toBeVisible();
+  await expect(filteredNotice.getByRole("button", { name: "подписаться на новые задания", exact: true })).toBeVisible();
+  await expect(filteredNotice.getByRole("button", { name: /показать остальные/ })).toBeVisible();
+  await filteredNotice.getByRole("button", { name: /показать остальные/ }).click();
+  await expect(firstDay.locator(".gig-task-card")).toHaveCount(5);
+  await expect(firstDay.getByRole("button", { name: "скрыть неподходящие", exact: true })).toBeVisible();
 });
 
 test("дальний переход по таймлайну показывает skeleton перед прокруткой", async ({ page }) => {
@@ -159,22 +168,24 @@ test("сохранённая подборка открывает выдачу и
 
   await page.getByRole("button", { name: "избранное", exact: true }).click();
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
-  await expect(page.getByRole("region", { name: "Фильтры заданий", exact: true })).toHaveCount(0);
-  await expect(page.getByText("Лефортовский Вал · до 1 км", { exact: true })).toBeVisible();
-  await expect(page.getByText("Пятёрочка", { exact: true })).toBeVisible();
+  const collectionCard = page.locator(".favorite-collection-card").filter({ has: page.getByRole("heading", { name: "новая подборка", exact: true }) });
+  await expect(collectionCard).toBeVisible();
+  await expect(collectionCard.getByText("до 50 км", { exact: true })).toBeVisible();
+  await expect(collectionCard.getByRole("img", { name: "Пятёрочка", exact: true })).toBeVisible();
 
-  await page.getByRole("button", { name: "изменить", exact: true }).click();
+  await collectionCard.getByRole("button", { name: "Настройки подборки новая подборка", exact: true }).click();
   await page.getByRole("button", { name: "Перекрёсток", exact: true }).click();
   await page.getByRole("button", { name: "применить", exact: true }).click();
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
-  await expect(page.getByText("Пятёрочка, Перекрёсток", { exact: true })).toBeVisible();
+  const updatedCollectionCard = page.locator(".favorite-collection-card").filter({ has: page.getByRole("heading", { name: "новая подборка", exact: true }) });
+  await expect(updatedCollectionCard.getByRole("img", { name: "Перекрёсток", exact: true })).toBeVisible();
 
-  await page.getByRole("button", { name: "показать задания", exact: true }).click();
+  await updatedCollectionCard.getByRole("button", { name: "показать задания", exact: true }).click();
   await expect(page.getByRole("region", { name: "Список заданий", exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "избранное", exact: true }).click();
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
-  await page.getByRole("button", { name: "Удалить подборку Лефортовский Вал · до 1 км", exact: true }).click();
+  await page.getByRole("button", { name: "Удалить подборку новая подборка", exact: true }).click();
   await expect(page.getByText("Сохранённых подборок пока нет", { exact: true })).toBeVisible();
 });
 
@@ -187,7 +198,7 @@ test("адрес, радиус и выдача синхронизированы 
   });
 
   await page.getByRole("button", { name: "Открыть фильтры", exact: true }).click();
-  await page.getByRole("button", { name: /территория улица Лефортовский Вал/ }).click();
+  await page.getByRole("button", { name: "территория", exact: true }).click();
   await expect(page.getByRole("button", { name: "применить", exact: true })).toBeVisible();
   await page.getByRole("textbox", { name: "Адрес для поиска", exact: true }).fill("Красная площадь");
   await expect(page.getByRole("button", { name: /Красная площадь, 1/ })).toBeVisible();
@@ -236,7 +247,7 @@ test("неудачный поиск можно отменить без поте�
 });
 
 test("настройки доступности блокируют занятые дни и сохраняют ручное время", async ({ page }) => {
-  await page.getByRole("button", { name: "Настройки расписания", exact: true }).click();
+  await page.getByRole("button", { name: "Открыть настройки доступности", exact: true }).click();
   await page.getByRole("button", { name: "выберите дни", exact: true }).click();
   const busyDays = page.locator(".availability-calendar .availability-day-busy");
   expect(await busyDays.count()).toBeGreaterThan(0);
@@ -251,22 +262,21 @@ test("настройки доступности блокируют заняты�
   await page.getByRole("button", { name: "сохранить", exact: true }).click();
 
   await page.reload();
-  await page.getByRole("button", { name: "Настройки расписания", exact: true }).click();
+  await page.getByRole("button", { name: "Открыть настройки доступности", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Доступен с", exact: true })).toHaveValue("09:30");
   await expect(page.getByRole("button", { name: "короткие 4–6 часов", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("button", { name: "обычные 8–9 часов", exact: true })).toHaveAttribute("aria-pressed", "true");
 });
 
 test("периоды доступности поддерживают мультивыбор и ручной ввод", async ({ page }) => {
-  await page.getByRole("button", { name: "Настройки расписания", exact: true }).click();
+  await page.getByRole("button", { name: "Открыть настройки доступности", exact: true }).click();
   const allDay = page.getByRole("button", { name: "весь день", exact: true });
   const morning = page.getByRole("button", { name: "утро", exact: true });
   const evening = page.getByRole("button", { name: "вечер", exact: true });
 
-  await expect(allDay).toHaveAttribute("aria-pressed", "true");
+  await expect(allDay).toHaveAttribute("aria-pressed", "false");
   await morning.click();
   await evening.click();
-  await expect(allDay).toHaveAttribute("aria-pressed", "false");
   await expect(morning).toHaveAttribute("aria-pressed", "true");
   await expect(evening).toHaveAttribute("aria-pressed", "true");
 
