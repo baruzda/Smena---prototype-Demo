@@ -879,31 +879,31 @@ h1 {
   align-items: flex-start;
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(0, 1fr) 28px;
+  grid-template-columns: minmax(0, 1fr) 32px;
 }
 
 .employee-shift-heading h3 {
   color: #000;
   font-family: "X5 Sans", Arial, sans-serif;
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 400;
   letter-spacing: 0;
-  line-height: 32px;
-  margin: 6px 0 8px;
+  line-height: 24px;
+  margin: 4px 0;
 }
 
 .employee-shift-heading p {
   color: #6c737d;
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 400;
-  line-height: 26px;
+  line-height: 20px;
   margin: 0;
   overflow-wrap: anywhere;
 }
 
 .employee-shift-heading .brand-logo {
-  height: 44px;
-  width: 44px;
+  height: 32px;
+  width: 32px;
 }
 
 .employee-shift-divider {
@@ -913,15 +913,15 @@ h1 {
 }
 
 .employee-shift-details p {
-  font-size: 28px;
-  line-height: 32px;
+  font-size: 20px;
+  line-height: 24px;
   margin: 0;
 }
 
 .employee-shift-details p + p {
   color: #6c737d;
-  font-size: 22px;
-  line-height: 26px;
+  font-size: 16px;
+  line-height: 20px;
   margin-top: 2px;
 }
 
@@ -986,18 +986,18 @@ h1 {
   border-radius: 8px;
   color: #fff;
   display: inline-flex;
-  font-size: 21px;
-  line-height: 24px;
-  margin-bottom: 8px;
-  padding: 4px 12px;
+  font-size: 14px;
+  line-height: 18px;
+  margin-bottom: 6px;
+  padding: 2px 8px;
 }
 
 .task-card h2 {
   font-family: "X5 Sans", Arial, sans-serif;
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 400;
   letter-spacing: 0;
-  line-height: 32px;
+  line-height: 24px;
   margin: 0;
 }
 
@@ -1005,9 +1005,9 @@ h1 {
 .task-rate,
 .task-hours p {
   color: #6c737d;
-  font-size: 22px;
-  line-height: 26px;
-  margin: 8px 0 0;
+  font-size: 16px;
+  line-height: 20px;
+  margin: 4px 0 0;
 }
 
 .task-address {
@@ -1038,15 +1038,15 @@ h1 {
 
 .brand-logo {
   display: block;
-  height: 44px;
+  height: 32px;
   margin-top: 4px;
-  width: 44px;
+  width: 32px;
 }
 
 .task-divider {
   background: rgba(0, 0, 0, 0.12);
   height: 1px;
-  margin: 18px 0;
+  margin: 12px 0;
 }
 
 .task-card-bottom {
@@ -1057,15 +1057,15 @@ h1 {
 
 .task-card-date p {
   color: #000;
-  font-size: 28px;
-  line-height: 32px;
+  font-size: 20px;
+  line-height: 24px;
   margin: 0;
 }
 
 .task-card-date p + p {
   color: #6c737d;
-  font-size: 22px;
-  line-height: 26px;
+  font-size: 16px;
+  line-height: 20px;
   margin-top: 2px;
 }
 
@@ -1233,9 +1233,9 @@ h1 {
 .task-payment,
 .task-hours > p:first-child {
   color: #000;
-  font-size: 28px;
+  font-size: 20px;
   letter-spacing: 0;
-  line-height: 32px;
+  line-height: 24px;
   margin: 0;
 }
 
