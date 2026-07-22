@@ -2329,7 +2329,7 @@ export function App() {
                   }}
                   type="button"
                 >
-                  <img alt="" src={assetUrl("calendar-sync-availability.svg")} />
+                  <img alt="" src={assetUrl("schedule_ic.svg")} />
                 </button>
               </div>
               <label className="toggle-label">
@@ -2620,7 +2620,7 @@ export function App() {
             }}
             type="button"
           >
-            <img alt="" src={assetUrl("calendar-sync-availability.svg")} />
+            <img alt="" src={assetUrl("schedule_ic.svg")} />
           </button>
         </div>
       )}
