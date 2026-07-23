@@ -8,6 +8,7 @@
 | SCN-CATALOG-002 | verified |
 | SCN-CATALOG-003 | verified |
 | SCN-CATALOG-004 | verified |
+| SCN-CATALOG-005 | verified |
 | SCN-CONTENT-001 | declarative |
 | SCN-CONTENT-002 | declarative |
 | SCN-FAVORITES-001 | verified |

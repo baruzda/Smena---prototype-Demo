@@ -665,6 +665,26 @@
       },
       "executionStatus": "verified",
       "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-CATALOG-005",
+      "name": "Частично скрытая выдача содержит отдельное сообщение скрытых услуг",
+      "given": {
+        "surface": "tasks",
+        "catalog": {
+          "visibleCount": 3,
+          "hiddenCount": 2,
+          "hiddenReason": "filters"
+        }
+      },
+      "expected": {
+        "uiStates": [
+          "catalog.partially_hidden",
+          "hidden_services.message"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/app.spec.mjs"
     }
   ]
 }

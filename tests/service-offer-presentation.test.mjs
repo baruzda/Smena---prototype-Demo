@@ -284,7 +284,7 @@ test("[SCN-FAVORITES-005][SCN-FAVORITES-006][RULE-FAVORITES-003] favorite store 
   assert.equal(resolveFavoriteStorePresentation().placement, "excluded");
 });
 
-test("hidden services keeps an explicit UI-state identity inside partial results", () => {
+test("[SCN-CATALOG-005] hidden services keeps an explicit UI-state identity inside partial results", () => {
   const result = resolveCatalogStatePresentation({
     hiddenCount: 2,
     hiddenReason: "filters",

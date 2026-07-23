@@ -53,7 +53,7 @@ service_offer
 
 ## Acceptance scenarios
 
-В `scenarios.json` хранится 30 приёмочных сценариев. Из них 14 имеют `executionStatus: verified` и прямую ссылку `testEvidence` на resolver tests; остальные остаются `declarative`, пока зависят от provisional правил или нерешённых продуктовых контрактов. Сам JSON-реестр не является production resolver.
+В `scenarios.json` хранится 31 приёмочный сценарий. Из них 15 имеют `executionStatus: verified` и прямую ссылку `testEvidence` на resolver или runtime tests; остальные остаются `declarative`, пока зависят от provisional правил или нерешённых продуктовых контрактов. Сам JSON-реестр не является production resolver.
 
 ## Правило атомарности
 
