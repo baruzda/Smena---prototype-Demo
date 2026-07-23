@@ -20,6 +20,7 @@ export function TaskFeed({
   onCollapseDay,
   onExpandDay,
   onOpenTask,
+  onShowAllServices,
   registerDaySection,
 }) {
   return dayGroups.map((day, dayIndex) => {
@@ -37,6 +38,15 @@ export function TaskFeed({
       && feed.visibleTasks.length === 0
       && feed.hiddenTasks.length === 0
       && filteredOutCount > 0;
+    const primaryConflictCount = feed.excludedTasks.filter((service) => (
+      service.state === "available"
+      && service.matchesFilters
+      && service.overlapsPrimarySchedule
+    )).length;
+    const hasOnlyPrimaryConflicts = dayTasks.length > 0
+      && feed.visibleTasks.length === 0
+      && feed.hiddenTasks.length === 0
+      && primaryConflictCount > 0;
 
     return (
       <section className={styles.day} data-day={day.date} key={day.date} ref={(node) => registerDaySection(day.date, node)}>
@@ -74,6 +84,13 @@ export function TaskFeed({
             hiddenCount={filteredOutCount}
             hiddenReason="filters"
             onChangeFilters={onChangeFilters}
+          />
+        )}
+        {hasOnlyPrimaryConflicts && (
+          <FilteredServicesState
+            hiddenCount={primaryConflictCount}
+            hiddenReason="availability"
+            onShowAll={onShowAllServices}
           />
         )}
         {dayTasks.length === 0 && <EmptyDayState />}

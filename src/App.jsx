@@ -1974,6 +1974,7 @@ export function App() {
                   onCollapseDay={(date) => setExpandedFilteredDays((current) => current.filter((item) => item !== date))}
                   onExpandDay={(date) => setExpandedFilteredDays((current) => [...current, date])}
                   onOpenTask={openTaskDetails}
+                  onShowAllServices={() => setOnlyMatching(false)}
                   registerDaySection={(date, node) => { daySectionRefs.current[date] = node; }}
                 />}
         </section>

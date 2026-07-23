@@ -56,6 +56,8 @@ function resolvePlacement(service, context, appliedRuleIds, appliedExceptionIds)
 
   if (surface === "tasks") {
     appliedRuleIds.push("RULE-PLACEMENT-001");
+    const isHiddenSection = context.section === "other_offers";
+    if (isHiddenSection) appliedRuleIds.push("RULE-HIDDEN-001");
     if (acceptedStates.includes(service.state)) {
       appliedExceptionIds.push("EXC-PLACEMENT-001");
       return { placement: "excluded", section: null, order: null };
@@ -67,8 +69,7 @@ function resolvePlacement(service, context, appliedRuleIds, appliedExceptionIds)
       appliedExceptionIds.push("EXC-PLACEMENT-002");
       return { placement: "excluded", section: null, order: null };
     }
-    if (context.section === "other_offers") {
-      appliedRuleIds.push("RULE-HIDDEN-001");
+    if (isHiddenSection) {
       if (overlapsPrimarySchedule) return { placement: "excluded", section: null, order: null };
       return { placement: "tasks", section: "other_offers", order: context.order ?? 400 };
     }
@@ -82,7 +83,9 @@ function resolvePlacement(service, context, appliedRuleIds, appliedExceptionIds)
       appliedExceptionIds.push("EXC-FAVORITES-001");
       return { placement: "favorites", section: "services_unavailable", order: 200 };
     }
-    return { placement: "favorites", section: "services_available", order: 100 };
+    return service.state === "available"
+      ? { placement: "favorites", section: "services_available", order: 100 }
+      : { placement: "excluded", section: null, order: null };
   }
 
   if (surface === "my_tasks") {

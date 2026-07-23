@@ -4,7 +4,7 @@
 
 Контекст: legacy-разметка карточек и связанных UI-состояний находилась в `src/App.jsx` и глобальном `src/styles.css`, поэтому правила, варианты и потребители нельзя было проверять изолированно. Решение: перенести presentation-логику в чистые resolvers, UI — в entity-компоненты с CSS Modules, списки — в widgets, а связь registry → source → tests закрепить `component-bindings.json` и автоматической проверкой `scripts/check-card-component-coverage.mjs`. Legacy-функции карточек и их семантические глобальные селекторы удаляются только после unit, visual и E2E evidence. Последствие: `App.jsx` остаётся orchestration shell, каждый зарегистрированный structural variant имеет отдельный visual snapshot. Не входит: утверждение provisional product rules, контракт signing states и отсутствующие контракты `catalog.error`/`catalog.stale`; они сохраняют статусы `migrated` или `planned`.
 
-Проверка статусов: `service_offer_card` остаётся `migrated`, пока в runtime Favorites отсутствует утверждённая секция услуг для `favorite_unavailable`; `hidden_services.message` остаётся `migrated`, пока exact UI-state не имеет отдельного runtime trigger. Наличие resolver и fixture snapshot само по себе не даёт `verified`.
+Проверка статусов: `service_offer_card` остаётся `migrated`, пока в runtime Favorites отсутствует утверждённая секция услуг для `favorite_unavailable`; `saved_collection_card` остаётся `migrated`, пока не утверждена exact anatomy варианта `empty_collection`; `hidden_services.message` остаётся `migrated`, пока exact UI-state не имеет отдельного runtime trigger. Наличие resolver и fixture snapshot само по себе не даёт `verified`.
 
 ## DEC-009 — состав списка скрытых услуг
 

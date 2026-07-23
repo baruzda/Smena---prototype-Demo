@@ -12,7 +12,7 @@
 | template | favorite_store_card | FavoriteStoreCard | FavoriteStoreCard | verified |
 | ui_state | hidden_services.message | HiddenServicesState | HiddenServicesState | migrated |
 | template | my_service_card | MyServiceCard | MyServiceCard | verified |
-| template | saved_collection_card | FavoriteCollectionCard | FavoriteCollectionCard | verified |
+| template | saved_collection_card | FavoriteCollectionCard | FavoriteCollectionCard | migrated |
 | template | service_offer_card | ServiceOfferCard | ServiceOfferCard | migrated |
 | ui_state | service_offer.skeleton | ServiceCardSkeleton | ServiceCardSkeleton | verified |
 | template | signing_card | SigningCard | SigningCard | migrated |

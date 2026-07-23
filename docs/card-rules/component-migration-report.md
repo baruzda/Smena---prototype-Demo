@@ -12,7 +12,7 @@
 | `employee_shift_card` | `resolveEmployeeShiftPresentation`, `resolveEmployeeShiftsForDay` | `EmployeeShiftCard` | `EmployeeShiftCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | tasks | verified |
 | `my_service_card` | `resolveMyServicePresentation` | `MyServiceCard` | `MyServiceCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | my tasks | verified |
 | `signing_card` | `resolveSigningPresentation` | `SigningCard` | `SigningCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | signing | migrated |
-| `saved_collection_card` | `resolveFavoriteCollectionPresentation` | `FavoriteCollectionCard` | `FavoriteCollectionCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | favorites | verified |
+| `saved_collection_card` | `resolveFavoriteCollectionPresentation` | `FavoriteCollectionCard` | `FavoriteCollectionCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | active collection in favorites | migrated |
 | `favorite_store_card` | `resolveFavoriteStorePresentation` | `FavoriteStoreCard` | `FavoriteStoreCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | favorites | verified |
 
 ## Template migration evidence
@@ -23,7 +23,7 @@
 | `employee_shift_card` | `src/App.jsx#EmployeeShiftCard`, global `employee-shift-*` | `src/entities/employee-shift/`, `src/features/employee-schedule/` | verified | resolver and day-placement tests | 2 variant snapshots + runtime snapshots | tasks schedule | yes | none in approved contract |
 | `my_service_card` | `src/App.jsx#MyTaskCard`, global `my-task-*` | `src/entities/my-service/` | verified | resolver + active placement rule | 5 variant snapshots + runtime snapshots | my tasks statuses | yes | provisional runtime status mapping is not promoted |
 | `signing_card` | signing branch of `src/App.jsx#MyTaskCard` | `src/entities/signing/` | migrated | resolver branch test | 3 variant snapshots + runtime snapshot | signing region/card | yes | CTA, deadline, history and final state contract unresolved |
-| `saved_collection_card` | `src/App.jsx#FavoriteCollectionsView`, global `favorite-collection-*` | `src/entities/favorite-collection/` | verified | saved/excluded placement test | 2 variant snapshots + runtime snapshot | apply/edit/delete collection | yes | none in approved contract |
+| `saved_collection_card` | `src/App.jsx#FavoriteCollectionsView`, global `favorite-collection-*` | `src/entities/favorite-collection/` | migrated | saved/excluded placement test | 2 variant snapshots + active runtime snapshot | apply/edit/delete active collection | yes | `empty_collection` has resolver/fixture evidence, but exact empty-result anatomy/actions are unresolved |
 | `favorite_store_card` | `src/App.jsx#FavoriteCollectionsView`, global `favorite-store-*` | `src/entities/favorite-store/` | verified | present/absent placement test | variant + runtime snapshot | favorites store tab | yes | none in approved contract |
 
 ## Catalog UI-state migration evidence

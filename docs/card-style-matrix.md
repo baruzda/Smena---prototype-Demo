@@ -32,7 +32,7 @@
 | `signing_card.processing` | `SigningCard` | `SigningCard.module.css` | migrated; product contract unresolved |
 | `signing_card.signed` | `SigningCard` | `SigningCard.module.css` | migrated; product contract unresolved |
 | `saved_collection_card.active_collection` | `FavoriteCollectionCard` | `FavoriteCollectionCard.module.css` | verified |
-| `saved_collection_card.empty_collection` | `FavoriteCollectionCard` | `FavoriteCollectionCard.module.css` | verified |
+| `saved_collection_card.empty_collection` | `FavoriteCollectionCard` | `FavoriteCollectionCard.module.css` | migrated; exact empty-result anatomy unresolved |
 | `favorite_store_card.default` | `FavoriteStoreCard` | `FavoriteStoreCard.module.css` | verified |
 
 Marker `suitable_for_you` — отдельная ось presentation model и не выбирает structural variant.

@@ -74,6 +74,7 @@ test("[SCN-CATALOG-003][SCN-CATALOG-004][RULE-HIDDEN-001] filtered and primary-s
   const primary = resolve({ overlapsPrimarySchedule: true }, { section: "other_offers" });
   assert.equal(filtered.placement, "excluded");
   assert.equal(primary.placement, "excluded");
+  assert.ok(filtered.appliedRuleIds.includes("RULE-HIDDEN-001"));
   assert.ok(primary.appliedRuleIds.includes("RULE-HIDDEN-001"));
 });
 
@@ -212,6 +213,14 @@ test("[SCN-FAVORITES-001][SCN-FAVORITES-002][RULE-FAVORITES-001] favorite placem
   assert.equal(available.section, "services_available");
   assert.equal(unavailable.section, "services_unavailable");
   assert.ok(unavailable.appliedExceptionIds.includes("EXC-FAVORITES-001"));
+});
+
+test("[RULE-FAVORITES-001] accepted and completed favorites leave the Favorites surface", () => {
+  for (const state of ["pending_confirmation", "signing_required", "booked", "active", "completed"]) {
+    const result = resolveServiceOfferPresentation({ ...baseService, isFavorite: true, state }, { surface: "favorites" });
+    assert.equal(result.placement, "excluded", state);
+    assert.equal(result.section, null, state);
+  }
 });
 
 test("[RULE-MYTASKS-001] accepted service placement is resolved outside JSX", () => {
