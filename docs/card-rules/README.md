@@ -53,7 +53,7 @@ service_offer
 
 ## Acceptance scenarios
 
-Все 26 записей `scenarios.json` являются декларативным реестром приёмочных сценариев (`executionStatus: declarative`), а не исполняемыми тестами и не production resolver.
+В `scenarios.json` хранится 30 приёмочных сценариев. Из них 14 имеют `executionStatus: verified` и прямую ссылку `testEvidence` на resolver tests; остальные остаются `declarative`, пока зависят от provisional правил или нерешённых продуктовых контрактов. Сам JSON-реестр не является production resolver.
 
 ## Правило атомарности
 

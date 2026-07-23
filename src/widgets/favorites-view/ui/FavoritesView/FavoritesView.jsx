@@ -6,6 +6,7 @@ import styles from "./FavoritesView.module.css";
 export function FavoritesView({
   collections,
   defaultBrands,
+  favoriteStore,
   onApplyCollection,
   onEditCollection,
   onRemoveCollection,
@@ -24,7 +25,7 @@ export function FavoritesView({
       </div>
 
       {section === "stores" ? (
-        <FavoriteStoreCard onApply={() => setSection("collections")} />
+        <FavoriteStoreCard onApply={() => setSection("collections")} store={favoriteStore} />
       ) : collections.length === 0 ? (
         <p className={styles.empty}>Сохранённых подборок пока нет</p>
       ) : (

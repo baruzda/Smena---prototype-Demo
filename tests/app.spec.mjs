@@ -136,6 +136,19 @@ test("personal feed объясняет busy day и раскрывает общи
   await expect(busyDay.locator('[data-card-template="service_offer_card"]')).toHaveCount(5);
 });
 
+test("mixed exclusions показывают одну recovery-карточку с двумя релевантными действиями", async ({ page }) => {
+  await page.getByRole("button", { name: "Открыть фильтры", exact: true }).click();
+  await page.getByRole("textbox", { name: "Минимальная стоимость", exact: true }).fill("2300");
+  await page.getByRole("button", { name: "применить", exact: true }).click();
+
+  const busyDay = page.locator('[data-day="3"]');
+  const state = busyDay.locator('[data-ui-state="catalog.filtered_empty"]');
+  await expect(state).toHaveCount(1);
+  await expect(state).toContainText("скрыты из-за фильтров или выбранного времени");
+  await expect(state.getByRole("button", { name: "изменить фильтры", exact: true })).toBeVisible();
+  await expect(state.getByRole("button", { name: "показать остальные", exact: true })).toBeVisible();
+});
+
 test("в моих заданиях показаны демо-записи с разными статусами", async ({ page }) => {
   await page.getByRole("button", { name: "мои задания", exact: true }).click();
   const records = page.getByRole("region", { name: "Мои задания", exact: true }).locator("article");
@@ -267,6 +280,7 @@ test("сохранённая подборка открывает выдачу и
   await expect(collectionCard.getByRole("img", { name: "Пятёрочка", exact: true })).toBeVisible();
 
   await collectionCard.getByRole("button", { name: "Настройки подборки новая подборка", exact: true }).click();
+  await collectionCard.getByRole("menuitem", { name: "изменить подборку", exact: true }).click();
   await page.getByRole("button", { name: "Перекрёсток", exact: true }).click();
   await page.getByRole("button", { name: "применить", exact: true }).click();
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
@@ -278,7 +292,9 @@ test("сохранённая подборка открывает выдачу и
 
   await page.getByRole("button", { name: "избранное", exact: true }).click();
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
-  await page.locator('[data-card-template="saved_collection_card"] [aria-label^="Удалить подборку"]').evaluate((button) => button.click());
+  const removableCollection = page.locator('[data-card-template="saved_collection_card"]').filter({ has: page.getByRole("heading", { name: "новая подборка", exact: true }) });
+  await removableCollection.getByRole("button", { name: "Настройки подборки новая подборка", exact: true }).click();
+  await removableCollection.getByRole("menuitem", { name: "удалить подборку", exact: true }).click();
   await expect(page.getByText("Сохранённых подборок пока нет", { exact: true })).toBeVisible();
 });
 

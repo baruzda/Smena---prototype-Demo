@@ -34,19 +34,18 @@ export function TaskFeed({
     const filteredOutCount = feed.excludedTasks.filter((service) => (
       service.state === "available" && !service.matchesFilters
     )).length;
-    const hasOnlyFilteredOutTasks = dayTasks.length > 0
-      && feed.visibleTasks.length === 0
-      && feed.hiddenTasks.length === 0
-      && filteredOutCount > 0;
     const primaryConflictCount = feed.excludedTasks.filter((service) => (
       service.state === "available"
       && service.matchesFilters
       && service.overlapsPrimarySchedule
     )).length;
-    const hasOnlyPrimaryConflicts = dayTasks.length > 0
+    const hasOnlyExcludedTasks = dayTasks.length > 0
       && feed.visibleTasks.length === 0
       && feed.hiddenTasks.length === 0
-      && primaryConflictCount > 0;
+      && filteredOutCount + primaryConflictCount > 0;
+    const excludedReason = filteredOutCount > 0 && primaryConflictCount > 0
+      ? "mixed"
+      : filteredOutCount > 0 ? "filters" : "availability";
 
     return (
       <section className={styles.day} data-day={day.date} key={day.date} ref={(node) => registerDaySection(day.date, node)}>
@@ -78,18 +77,13 @@ export function TaskFeed({
         {hasHiddenTasks && (feed.visibleTasks.length === 0
           ? <FilteredServicesState hiddenCount={feed.hiddenTasks.length} hiddenReason={feed.hiddenReason} onShowAll={() => onExpandDay(day.date)} />
           : <PartiallyHiddenState hiddenCount={feed.hiddenTasks.length} hiddenReason={feed.hiddenReason} onShowAll={() => onExpandDay(day.date)} />)}
-        {hasOnlyFilteredOutTasks && (
+        {hasOnlyExcludedTasks && (
           <FilteredServicesState
-            canReveal={false}
-            hiddenCount={filteredOutCount}
-            hiddenReason="filters"
+            canChangeFilters={filteredOutCount > 0}
+            canReveal={primaryConflictCount > 0}
+            hiddenCount={filteredOutCount + primaryConflictCount}
+            hiddenReason={excludedReason}
             onChangeFilters={onChangeFilters}
-          />
-        )}
-        {hasOnlyPrimaryConflicts && (
-          <FilteredServicesState
-            hiddenCount={primaryConflictCount}
-            hiddenReason="availability"
             onShowAll={onShowAllServices}
           />
         )}

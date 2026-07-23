@@ -559,6 +559,7 @@ const demoMyTaskRecords = [
 const demoSigningTaskRecords = [
   { day: dayGroups[2], id: "demo-signing-task-ready", status: "signing", task: dayGroups[2].tasks[0] },
 ];
+const demoFavoriteStore = Object.freeze({ isPresent: true });
 
 const sortOptions = [
   { id: "nearby", label: "сначала ближайшие" },
@@ -1932,6 +1933,7 @@ export function App() {
           {activeTab === 1 ? <FavoritesView
             collections={favoriteCollections}
             defaultBrands={defaultCollectionBrands}
+            favoriteStore={demoFavoriteStore}
             onApplyCollection={(collection) => {
               const hasLocationChanged = collection.location.label !== searchLocation.label
                 || collection.location.coords[0] !== searchLocation.coords[0]

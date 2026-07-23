@@ -3,9 +3,11 @@ import { BrandMark } from "../../../../shared/ui/BrandMark/BrandMark.jsx";
 import { resolveFavoriteStorePresentation } from "../../model/resolveFavoriteStorePresentation.js";
 import styles from "./FavoriteStoreCard.module.css";
 
-export function FavoriteStoreCard({ onApply }) {
+export function FavoriteStoreCard({ onApply, store }) {
   const chips = ["уборка урожая пшеницы", "1, 2, 3 июня", "Пн, Ср, Пт", "от 1500 ₽"];
-  const presentation = resolveFavoriteStorePresentation({ isPresent: true });
+  const presentation = resolveFavoriteStorePresentation(store);
+
+  if (presentation.placement === "excluded") return null;
 
   return (
     <article className={styles.card} data-card-template={presentation.templateId} data-card-variant={presentation.structuralVariant}>

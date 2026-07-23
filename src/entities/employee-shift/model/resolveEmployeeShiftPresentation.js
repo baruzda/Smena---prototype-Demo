@@ -9,6 +9,6 @@ export function resolveEmployeeShiftPresentation(shift, day) {
     placement: "tasks",
     section: "employee_schedule",
     order: 50,
-    appliedRuleIds: Object.freeze(["RULE-SHIFT-001"]),
+    appliedRuleIds: Object.freeze(structuralVariant === "primary_shift" ? ["RULE-SHIFT-001"] : []),
   });
 }

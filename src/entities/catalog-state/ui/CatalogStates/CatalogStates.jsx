@@ -24,6 +24,7 @@ export function CatalogLoadingState() {
 }
 
 function CatalogMessage({
+  canChangeFilters,
   canReveal,
   hiddenCount,
   hiddenReason,
@@ -31,9 +32,15 @@ function CatalogMessage({
   onShowAll,
   type,
 }) {
-  const presentation = resolveCatalogStatePresentation({ canReveal, hiddenCount, hiddenReason, type });
+  const presentation = resolveCatalogStatePresentation({
+    canChangeFilters,
+    canReveal,
+    hiddenCount,
+    hiddenReason,
+    type,
+  });
   const canShowAll = presentation.actions.includes("show_all");
-  const canChangeFilters = presentation.actions.includes("change_filters");
+  const canRenderChangeFilters = presentation.actions.includes("change_filters");
 
   return (
     <article className={styles.message} data-ui-state={presentation.uiState}>
@@ -48,7 +55,7 @@ function CatalogMessage({
             показать остальные <img alt="" src={assetUrl("task-hidden-chevron-down.svg")} />
           </button>
         )}
-        {canChangeFilters && (
+        {canRenderChangeFilters && (
           <button className={styles.showAll} onClick={onChangeFilters} type="button">
             изменить фильтры
           </button>

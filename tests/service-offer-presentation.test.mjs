@@ -241,9 +241,11 @@ test("[RULE-SIGNING-001] signing placement stays explicit and provisional", () =
 
 test("[RULE-SHIFT-001] employee shift placement and order are deterministic", () => {
   const result = resolveEmployeeShiftPresentation({ type: "primary" }, { label: "сегодня, 1 июня", secondaryLabel: "понедельник" });
+  const extra = resolveEmployeeShiftPresentation({ type: "gig" }, { label: "сегодня, 1 июня", secondaryLabel: "понедельник" });
   assert.equal(result.structuralVariant, "primary_shift");
   assert.equal(result.section, "employee_schedule");
   assert.equal(result.order, 50);
+  assert.deepEqual(extra.appliedRuleIds, []);
 });
 
 test("[SCN-SHIFT-001][SCN-SHIFT-002] shifts are scoped to the selected day outside App JSX", () => {
@@ -278,7 +280,7 @@ test("[SCN-FAVORITES-003][SCN-FAVORITES-004][RULE-FAVORITES-002] saved collectio
 
 test("[SCN-FAVORITES-005][SCN-FAVORITES-006][RULE-FAVORITES-003] favorite store placement is resolved", () => {
   assert.equal(resolveFavoriteStorePresentation({ isPresent: true }).section, "stores");
-  assert.equal(resolveFavoriteStorePresentation({ isPresent: false }).placement, "excluded");
+  assert.equal(resolveFavoriteStorePresentation().placement, "excluded");
 });
 
 test("every active card rule and exception has resolver evidence", () => {
