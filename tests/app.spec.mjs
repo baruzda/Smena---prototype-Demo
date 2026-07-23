@@ -2,10 +2,9 @@ import { expect, test } from "@playwright/test";
 
 async function dismissSettingsOnboarding(page) {
   const onboarding = page.getByRole("button", { name: "Закрыть подсказку настроек", exact: true });
-  if (await onboarding.isVisible()) {
-    await onboarding.click({ position: { x: 24, y: 320 } });
-    await expect(onboarding).toBeHidden();
-  }
+  await expect(onboarding).toBeVisible({ timeout: 3_000 });
+  await onboarding.click({ force: true });
+  await expect(onboarding).toBeHidden();
 }
 
 test.beforeEach(async ({ page }) => {
@@ -21,7 +20,7 @@ test("запуск сервиса показывает спиннер, скел�
   await page.reload();
 
   await expect(page.getByRole("status", { name: "Запуск сервиса", exact: true })).toBeVisible();
-  await expect(page.locator(".task-skeleton-card")).toHaveCount(2, { timeout: 1500 });
+  await expect(page.locator('[data-ui-state="service_offer.skeleton"]')).toHaveCount(2, { timeout: 1500 });
   await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeVisible();
   const [onboardingTarget, settingsButton] = await Promise.all([
     page.locator(".settings-onboarding-target").boundingBox(),
@@ -47,11 +46,16 @@ test("выбор даты, сортировка и плавающий возвр
 
   await page.getByRole("button", { name: "5 пт", exact: true }).click();
   await expect(page.getByRole("button", { name: "5 пт", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => page.locator(".screen").evaluate((element) => element.scrollTop)).toBeGreaterThan(320);
 
   await page.getByRole("button", { name: "Сортировка", exact: true }).click();
   await page.getByRole("radio", { name: "сначала ближайшие", exact: true }).click();
 
-  await page.locator(".screen").evaluate((element) => element.scrollTo({ top: 800 }));
+  await page.locator(".screen").evaluate((element) => {
+    element.scrollTop = 800;
+    element.dispatchEvent(new Event("scroll"));
+  });
+  await expect.poll(() => page.locator(".screen").evaluate((element) => element.scrollTop)).toBeGreaterThan(320);
   await expect(page.getByRole("button", { name: "Наверх", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Наверх", exact: true }).click();
   await expect.poll(() => page.locator(".screen").evaluate((element) => element.scrollTop)).toBeLessThan(2);
@@ -60,15 +64,15 @@ test("выбор даты, сортировка и плавающий возвр
 test("специальное для вас приоритетно без сортировки и участвует в сортировке", async ({ page }) => {
   const firstDay = page.locator('[data-day="1"]');
 
-  await expect(firstDay.locator(".gig-task-card").first()).toHaveClass(/gig-task-card-special/);
+  await expect(firstDay.locator('[data-card-template="service_offer_card"]').first()).toHaveAttribute("data-card-variant", "special");
   await expect(firstDay.getByText("специально для вас", { exact: false })).toBeVisible();
-  await expect(firstDay.locator(".gig-task-badge")).toHaveCount(2);
-  await expect(firstDay.locator(".special-card-timer")).toHaveText(/^\d{2}:\d{2}:\d{2}$/);
+  await expect(firstDay.getByText("подходит вам", { exact: true })).toHaveCount(2);
+  await expect(firstDay.getByLabel(/До окончания предложения/)).toHaveText(/^\d{2}:\d{2}:\d{2}$/);
 
   await page.getByRole("button", { name: "Сортировка", exact: true }).click();
   await page.getByRole("radio", { name: "сначала ближайшие", exact: true }).click();
 
-  const distances = await firstDay.locator(".gig-task-card .gig-task-address-text").evaluateAll((nodes) => nodes.map((node) => {
+  const distances = await firstDay.locator('[data-card-template="service_offer_card"] [data-testid="service-offer-address"]').evaluateAll((nodes) => nodes.map((node) => {
     const match = node.textContent?.match(/([\d,.]+)\s*(км|м)\s*$/);
     if (!match) return Number.POSITIVE_INFINITY;
     const value = Number.parseFloat(match[1].replace(",", "."));
@@ -79,28 +83,25 @@ test("специальное для вас приоритетно без сор�
   await expect(firstDay.getByText("специально для вас", { exact: false })).toBeVisible();
 });
 
-test("общий каталог сохраняет дальние задания после подходящих", async ({ page }) => {
+test("общий каталог не возвращает карточки, исключённые радиусом", async ({ page }) => {
   await page.getByRole("checkbox", { name: "подходит мне", exact: true }).uncheck();
   await page.getByRole("button", { name: "Открыть фильтры", exact: true }).click();
   await page.getByRole("button", { name: "1 км", exact: true }).click();
   await page.getByRole("button", { name: "применить", exact: true }).click();
 
   const firstDay = page.locator('[data-day="1"]');
-  const cards = firstDay.locator(".gig-task-card");
-  await expect(cards).toHaveCount(5);
+  const cards = firstDay.locator('[data-card-template="service_offer_card"]');
+  await expect(cards).toHaveCount(3);
   await expect(page.getByRole("checkbox", { name: "подходит мне", exact: true })).not.toBeChecked();
 
-  const distances = await cards.locator(".gig-task-address-text").evaluateAll((nodes) => nodes.map((node) => {
+  const distances = await cards.locator('[data-testid="service-offer-address"]').evaluateAll((nodes) => nodes.map((node) => {
     const match = node.textContent?.match(/([\d,.]+)\s*(км|м)\s*$/);
     if (!match) return Number.POSITIVE_INFINITY;
     const value = Number.parseFloat(match[1].replace(",", "."));
     return match[2] === "км" ? value * 1000 : value;
   }));
 
-  expect(distances.slice(0, 3).every((distance) => distance <= 1_000)).toBe(true);
-  expect(distances.slice(3).every((distance) => distance > 1_000)).toBe(true);
-  await expect(cards.nth(3).locator(".gig-task-badge, .special-card-badges")).toHaveCount(0);
-  await expect(cards.nth(4).locator(".gig-task-badge, .special-card-badges")).toHaveCount(0);
+  expect(distances.every((distance) => distance <= 1_000)).toBe(true);
 });
 
 test("в моих заданиях показаны демо-записи с разными статусами", async ({ page }) => {
@@ -124,10 +125,10 @@ test("состояния отфильтрованных и отсутствую�
   await expect(filteredDay.getByText("в этот день услуг нет", { exact: true })).toHaveCount(0);
   await expect(filteredDay.getByText(/5 услуг скрыты из-за настроек доступности/)).toBeVisible();
   await filteredDay.getByRole("button", { name: /показать остальные/ }).click();
-  await expect(filteredDay.locator(".gig-task-card")).toHaveCount(5);
+  await expect(filteredDay.locator('[data-card-template="service_offer_card"]')).toHaveCount(5);
   await expect(filteredDay.getByText("в этот день нет подходящих услуг", { exact: true })).toHaveCount(0);
   await filteredDay.getByRole("button", { name: "скрыть неподходящие", exact: true }).click();
-  await expect(filteredDay.locator(".gig-task-card")).toHaveCount(0);
+  await expect(filteredDay.locator('[data-card-template="service_offer_card"]')).toHaveCount(0);
   await expect(filteredDay.getByText("в этот день нет подходящих услуг", { exact: true })).toBeVisible();
 
   const emptyDay = page.locator('[data-day="14"]');
@@ -138,12 +139,12 @@ test("состояния отфильтрованных и отсутствую�
 test("карточка скрытых заданий показывает актуальные действия", async ({ page }) => {
   await page.getByRole("checkbox", { name: "подходит мне", exact: true }).check();
   const firstDay = page.locator('[data-day="1"]');
-  const filteredNotice = firstDay.locator(".task-message-card").first();
+  const filteredNotice = firstDay.locator('[data-ui-state="catalog.partially_hidden"]');
 
   await expect(filteredNotice.getByRole("button", { name: "подписаться на новые задания", exact: true })).toBeVisible();
   await expect(filteredNotice.getByRole("button", { name: /показать остальные/ })).toBeVisible();
   await filteredNotice.getByRole("button", { name: /показать остальные/ }).click();
-  await expect(firstDay.locator(".gig-task-card")).toHaveCount(5);
+  await expect(firstDay.locator('[data-card-template="service_offer_card"]')).toHaveCount(5);
   await expect(firstDay.getByRole("button", { name: "скрыть неподходящие", exact: true })).toBeVisible();
 });
 
@@ -176,7 +177,7 @@ test("сохранённая подборка открывает выдачу и
 
   await page.getByRole("button", { name: "избранное", exact: true }).click();
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
-  const collectionCard = page.locator(".favorite-collection-card").filter({ has: page.getByRole("heading", { name: "новая подборка", exact: true }) });
+  const collectionCard = page.locator('[data-card-template="saved_collection_card"]').filter({ has: page.getByRole("heading", { name: "новая подборка", exact: true }) });
   await expect(collectionCard).toBeVisible();
   await expect(collectionCard.getByText("до 50 км", { exact: true })).toBeVisible();
   await expect(collectionCard.getByRole("img", { name: "Пятёрочка", exact: true })).toBeVisible();
@@ -185,7 +186,7 @@ test("сохранённая подборка открывает выдачу и
   await page.getByRole("button", { name: "Перекрёсток", exact: true }).click();
   await page.getByRole("button", { name: "применить", exact: true }).click();
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
-  const updatedCollectionCard = page.locator(".favorite-collection-card").filter({ has: page.getByRole("heading", { name: "новая подборка", exact: true }) });
+  const updatedCollectionCard = page.locator('[data-card-template="saved_collection_card"]').filter({ has: page.getByRole("heading", { name: "новая подборка", exact: true }) });
   await expect(updatedCollectionCard.getByRole("img", { name: "Перекрёсток", exact: true })).toBeVisible();
 
   await updatedCollectionCard.getByRole("button", { name: "показать задания", exact: true }).click();
@@ -193,7 +194,7 @@ test("сохранённая подборка открывает выдачу и
 
   await page.getByRole("button", { name: "избранное", exact: true }).click();
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
-  await page.locator(".favorite-collection-card .favorite-delete").evaluate((button) => button.click());
+  await page.locator('[data-card-template="saved_collection_card"] [aria-label^="Удалить подборку"]').evaluate((button) => button.click());
   await expect(page.getByText("Сохранённых подборок пока нет", { exact: true })).toBeVisible();
 });
 
@@ -304,7 +305,7 @@ test("периоды доступности поддерживают мульт�
 });
 
 test("запись на смену появляется в истории и не дублируется", async ({ page }) => {
-  const taskCard = page.locator(".gig-task-card[role='button']").first();
+  const taskCard = page.locator('[data-card-template="service_offer_card"][role="button"]').first();
   const taskName = await taskCard.locator("h2").textContent();
   await taskCard.click();
   await page.getByRole("button", { name: "записаться", exact: true }).click();

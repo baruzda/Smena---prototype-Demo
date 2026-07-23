@@ -1,19 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getTaskHours, shiftsOverlap } from "./schedule-utils.js";
-
-const assetUrl = (name) => `${import.meta.env.BASE_URL}figma-assets/${name}`;
-const cssAssetUrl = (name) => {
-  const href = typeof window === "undefined" ? assetUrl(name) : new URL(assetUrl(name), window.location.href).href;
-  return `url("${href}")`;
-};
+import { CatalogLoadingState } from "./entities/catalog-state/ui/CatalogStates/CatalogStates.jsx";
+import { getPaymentValue, isTaskWithinAvailability } from "./features/catalog-feed/model/resolveTaskFeed.js";
+import { assetUrl } from "./shared/lib/assets.js";
+import { BrandMark } from "./shared/ui/BrandMark/BrandMark.jsx";
+import { MetroIcon } from "./shared/ui/MetroIcon/MetroIcon.jsx";
+import { FavoritesView } from "./widgets/favorites-view/ui/FavoritesView/FavoritesView.jsx";
+import { MyTasksList } from "./widgets/my-tasks-list/ui/MyTasksList/MyTasksList.jsx";
+import { SigningList } from "./widgets/signing-list/ui/SigningList/SigningList.jsx";
+import { TaskFeed } from "./widgets/task-feed/ui/TaskFeed/TaskFeed.jsx";
 
 const tabs = ["задания", "избранное", "мои задания", "задания на подписание"];
-const metroIconAssets = {
-  msk: "metro-msk.svg",
-  spb: "metro-spb.svg",
-  nino: "metro-nino.svg",
-};
-
 const defaultCollectionBrands = ["pyaterochka", "perekrestok", "vprok", "chizhik"];
 const days = [
   { date: "1", weekday: "пн" },
@@ -552,14 +549,6 @@ const dayGroups = days.map((day, dayIndex) => {
   };
 });
 
-const myTaskStatuses = {
-  booked: { label: "записаны", tone: "success" },
-  pending: { label: "на подтверждении", tone: "warning" },
-  signing: { label: "на подписание", tone: "warning" },
-  completed: { label: "смена завершена", tone: "neutral" },
-  cancelled: { label: "отменена", tone: "danger" },
-};
-
 const demoMyTaskRecords = [
   { day: dayGroups[1], id: "demo-my-task-booked", status: "booked", task: dayGroups[1].tasks[0] },
   { day: dayGroups[3], id: "demo-my-task-pending", status: "pending", task: dayGroups[3].tasks[1] },
@@ -577,57 +566,6 @@ const sortOptions = [
   { id: "earnings", label: "выше заработок" },
 ];
 
-function getDistanceInMeters(distance) {
-  const value = Number.parseFloat(distance.replace(",", "."));
-  return distance.includes("км") ? value * 1000 : value;
-}
-
-function getPaymentValue(payment) {
-  return Number(payment.replace(/[^\d]/g, ""));
-}
-
-function getTaskDuration(task) {
-  const { end, start } = getTaskHours(task);
-  return (end - start + 24) % 24;
-}
-
-function isTaskWithinAvailability(task, availability) {
-  const { end, start } = getTaskHours(task);
-  const duration = getTaskDuration(task);
-  const isWithinWindow = (from, to) => {
-    const availableFrom = Number.parseInt(from, 10);
-    const availableTo = Number.parseInt(to, 10);
-    if (![start, end, availableFrom, availableTo].every(Number.isFinite)) return true;
-
-    const isInside = (hour) => (availableFrom < availableTo
-      ? hour >= availableFrom && hour <= availableTo
-      : hour >= availableFrom || hour <= availableTo);
-
-    return Array.from({ length: duration + 1 }, (_, index) => isInside((start + index) % 24)).every(Boolean);
-  };
-  const selectedPresetIds = Array.isArray(availability.presets)
-    ? availability.presets
-    : availability.preset ? [availability.preset] : [];
-  const selectedPresets = availabilityTimePresets.filter((preset) => selectedPresetIds.includes(preset.id));
-
-  if (selectedPresets.length > 0) {
-    return selectedPresets.some((preset) => isWithinWindow(preset.from, preset.to));
-  }
-
-  return isWithinWindow(availability.from, availability.to);
-}
-
-function matchesDurationPreference(task, preference) {
-  const duration = getTaskDuration(task);
-  if (!preference.length) return true;
-
-  return preference.some((option) => (
-    (option === "short" && duration >= 4 && duration <= 6)
-    || (option === "regular" && duration >= 8 && duration <= 9)
-    || (option === "long" && duration >= 10)
-  ));
-}
-
 function seededValue(seed) {
   let value = 2166136261;
 
@@ -643,219 +581,11 @@ function formatPayment(value) {
   return `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(value)},00 ₽`;
 }
 
-function getShortLocationLabel(label) {
-  return label.split(",")[0].trim() || "выбранная точка";
-}
-
-function getSortedTasks(tasks, sortBy) {
-  if (sortBy === "recommended") {
-    return [...tasks].sort((first, second) => (second.recommendation ?? 0) - (first.recommendation ?? 0));
-  }
-
-  return [...tasks].sort((first, second) => {
-    if (sortBy === "nearby") {
-      return getDistanceInMeters(first.distance) - getDistanceInMeters(second.distance);
-    }
-
-    return getPaymentValue(second.payment) - getPaymentValue(first.payment);
-  });
-}
-
-function getOrderedTasks(tasks, sortBy, hasAppliedSort) {
-  if (hasAppliedSort) return getSortedTasks(tasks, sortBy);
-
-  // Personal offers stay first until the employee explicitly chooses a sort order.
-  return [
-    ...tasks.filter((task) => task.variant === "special"),
-    ...tasks.filter((task) => task.variant !== "special"),
-  ];
-}
-
-function BrandMark({ brand }) {
-  const logos = {
-    pyaterochka: { alt: "Пятёрочка", src: assetUrl("logo-pyaterochka.svg") },
-    perekrestok: { alt: "Перекрёсток", src: assetUrl("logo-perekrestok.svg") },
-    chizhik: { alt: "Чижик", src: assetUrl("logo-chizhik.svg") },
-    vprok: { alt: "Впрок", src: assetUrl("logo-vprok.svg") },
-    mnogoLososya: { alt: "Много лосося", src: assetUrl("logo-mnogo-lososya.svg") },
-  };
-  const logo = logos[brand];
-
-  return <img alt={logo.alt} className="brand-logo" src={logo.src} />;
-}
-
-function MetroIcon({ metro }) {
-  return (
-    <span
-      aria-label={metro.label}
-      className="metro-icon"
-      style={{ "--metro-color": metro.color, "--metro-icon": cssAssetUrl(metroIconAssets[metro.city]) }}
-    />
-  );
-}
-
-function formatCountdown(seconds) {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const remainingSeconds = seconds % 60;
-  return [hours, minutes, remainingSeconds].map((unit) => String(unit).padStart(2, "0")).join(":");
-}
-
-function OfferCountdown({ initialSeconds = 19936 }) {
-  const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => setSecondsLeft((current) => Math.max(0, current - 1)), 1000);
-    return () => window.clearInterval(interval);
-  }, []);
-
-  return <span aria-label={`До окончания предложения ${formatCountdown(secondsLeft)}`} className="special-card-timer">{formatCountdown(secondsLeft)}</span>;
-}
-
-function getShortDayLabel(day) {
-  return day?.label?.replace(/^сегодня,\s*/i, "") ?? "1 июня";
-}
-
-function getGigTaskCardVariant(task, { revealRestrictionTags = false } = {}) {
-  const restrictionCount = task.restrictionTags?.length ?? 0;
-  if (task.variant === "special" && restrictionCount === 0) return "special";
-  if (restrictionCount > 0) return revealRestrictionTags ? "bottom-tags" : "default";
-  if (task.badge) return "match";
-  return "default";
-}
-
-function TaskCard({ day, revealRestrictionTags = false, task, onOpen }) {
-  const cardVariant = getGigTaskCardVariant(task, { revealRestrictionTags });
-  const isPersonalOffer = cardVariant === "special";
-  const showMatchBadge = cardVariant === "match";
-  const showStatus = cardVariant === "status" || cardVariant === "status-plus";
-  const showRestrictionTags = cardVariant === "bottom-tags";
-  const cardClassName = [
-    "gig-task-card",
-    `gig-task-card-${cardVariant}`,
-    onOpen ? "gig-task-card-clickable" : "",
-  ].filter(Boolean).join(" ");
-  const handleKeyDown = (event) => {
-    if (!onOpen || (event.key !== "Enter" && event.key !== " ")) return;
-    event.preventDefault();
-    onOpen();
-  };
-
-  return (
-    <article
-      aria-label={onOpen ? `Подробнее: ${task.title}` : undefined}
-      className={cardClassName}
-      onClick={onOpen}
-      onKeyDown={handleKeyDown}
-      role={onOpen ? "button" : undefined}
-      tabIndex={onOpen ? 0 : undefined}
-    >
-      <div className="gig-task-card-top">
-        <div className="gig-task-card-copy">
-          {showMatchBadge && <span className="gig-task-badge">подходит вам</span>}
-          {showStatus && <span className="gig-task-status-label"><i aria-hidden="true" />{cardVariant === "status-plus" ? "есть ограничения" : "не подходит"}</span>}
-          {isPersonalOffer && <span className="special-card-badges"><span className="special-card-badge">специально для вас</span><OfferCountdown /></span>}
-          <h2>{task.title}</h2>
-          <p className={task.metro ? "gig-task-address gig-task-address-with-metro" : "gig-task-address"}>
-            {task.metro && <MetroIcon metro={task.metro} />}
-            <span className="gig-task-address-text">
-              {task.metro && <>{task.metro.station} · </>}
-              {task.address} · <img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />{task.distance}
-            </span>
-          </p>
-        </div>
-        <BrandMark brand={task.brand} />
-      </div>
-      <div className="gig-task-divider" />
-      <div className="gig-task-card-bottom">
-        <div className="gig-task-payment">
-          <p>{task.payment}</p>
-          <p>{task.rate}</p>
-        </div>
-        <div className="gig-task-time">
-          <p>{task.hours}</p>
-          <p>{task.breakInfo}</p>
-        </div>
-      </div>
-      {showRestrictionTags && (
-        <div className="gig-task-restrictions">
-          {task.restrictionTags.map((tag) => <span key={tag}>{tag}</span>)}
-        </div>
-      )}
-      {isPersonalOffer && <button className="special-task-action" onClick={(event) => { event.stopPropagation(); onOpen?.(); }} type="button">принять задание</button>}
-    </article>
-  );
-}
-
-function TaskSkeletonCard() {
-  return (
-    <article aria-label="Загрузка заданий" className="task-skeleton-card">
-      <div className="task-skeleton-top"><span /><i /></div>
-      <span className="task-skeleton-title" />
-      <span className="task-skeleton-address" />
-      <div className="task-skeleton-divider" />
-      <div className="task-skeleton-bottom"><span /><span /></div>
-    </article>
-  );
-}
-
-function TimelineLoadingState() {
-  return (
-    <section aria-label="Загрузка заданий" className="timeline-loading-state" role="status">
-      <TaskSkeletonCard />
-      <TaskSkeletonCard />
-    </section>
-  );
-}
-
 function ServiceLaunchScreen() {
   return (
     <section aria-label="Запуск сервиса" className="service-launch-screen" role="status">
       <span aria-hidden="true" className="service-launch-spinner" />
     </section>
-  );
-}
-
-function getRussianPlural(count, forms) {
-  const remainder = Math.abs(count) % 100;
-  const lastDigit = remainder % 10;
-  if (remainder > 10 && remainder < 20) return forms[2];
-  if (lastDigit === 1) return forms[0];
-  if (lastDigit > 1 && lastDigit < 5) return forms[1];
-  return forms[2];
-}
-
-function getHiddenReasonText(hiddenReason) {
-  if (hiddenReason === "filters") return "фильтров";
-  if (hiddenReason === "availability") return "настроек доступности";
-  return "фильтров или выбранного времени";
-}
-
-function TaskMessageCard({ hiddenCount, hiddenReason = "mixed", onShowAll, variant = "no-more" }) {
-  const isDayEmpty = variant === "empty-day-filtered";
-  const title = isDayEmpty ? "в этот день нет подходящих услуг" : "подходящих услуг больше нет";
-  const hiddenReasonText = getHiddenReasonText(hiddenReason);
-  const subtitle = isDayEmpty
-    ? `${hiddenCount} ${getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"])} скрыты из-за ${hiddenReasonText}`
-    : `ещё ${hiddenCount} ${getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"])} скрыты из-за ${hiddenReasonText}`;
-  return (
-    <article className={`task-message-card ${isDayEmpty ? "task-message-card-filtered-day" : "task-message-card-no-more"}`}>
-      <h3>{title}</h3>
-      <p>{subtitle}</p>
-      <div className="task-message-actions">
-        <button className="task-message-subscribe" type="button"><img alt="" src={assetUrl("task-hidden-star.svg")} />подписаться на новые задания</button>
-        <button className="task-message-show-all" onClick={onShowAll} type="button">показать остальные <img alt="" src={assetUrl("task-hidden-chevron-down.svg")} /></button>
-      </div>
-    </article>
-  );
-}
-
-function NoTasksForDayCard() {
-  return (
-    <article className="task-message-card task-message-card-empty">
-      <h3>в этот день услуг нет</h3>
-      <button className="task-message-subscribe" type="button"><img alt="" src={assetUrl("task-hidden-star.svg")} />подписаться на новые задания</button>
-    </article>
   );
 }
 
@@ -892,7 +622,7 @@ function CardFiltersSheet({ filters, onApply, onClose, onOpenFullFilters }) {
               key={brand.id}
               onClick={() => toggleBrand(brand.id)}
               type="button"
-            ><BrandMark brand={brand.id} /><span>{brand.label}</span></button>;
+            ><BrandMark brand={brand.id} size="small" /><span>{brand.label}</span></button>;
           })}
         </div>
         <label className={minimumPayment ? "card-sheet-field card-sheet-field-filled" : "card-sheet-field"}>
@@ -986,181 +716,6 @@ function BookingSuccessScreen({ task, day, onGoToMyTasks, onBackToTasks }) {
         <button className="success-primary" onClick={onGoToMyTasks} type="button">мои задания</button>
       </div>
     </section>
-  );
-}
-
-function MyTasksView({ bookedTasks }) {
-  const records = [
-    ...bookedTasks.map((booking) => ({ ...booking, status: "booked" })),
-    ...demoMyTaskRecords,
-  ].filter((booking) => myTaskStatuses[booking.status]);
-
-  return <section className="my-tasks-list">
-    {records.map((booking) => <MyTaskCard booking={booking} key={booking.id} />)}
-  </section>;
-}
-
-function SigningTasksView() {
-  const records = demoSigningTaskRecords.filter((booking) => booking.status === "signing" && myTaskStatuses[booking.status]);
-
-  if (records.length === 0) {
-    return <p className="task-empty-state my-tasks-empty">Заданий на подписание нет</p>;
-  }
-
-  return <section className="my-tasks-list">
-    {records.map((booking) => <MyTaskCard booking={booking} key={booking.id} />)}
-  </section>;
-}
-
-function MyTaskCard({ booking }) {
-  const { day, task } = booking;
-  const dateFragment = `${day.label}, ${day.secondaryLabel}`.match(/\d+ июня/)?.[0];
-  const date = dateFragment ? `${dateFragment}, 2025` : `${day.label}, ${day.secondaryLabel}`;
-  const status = myTaskStatuses[booking.status] ?? myTaskStatuses.booked;
-
-  return (
-    <article className="my-task-card">
-      <div className="my-task-card-top">
-        <div className="my-task-card-copy">
-          <p className={`my-task-status my-task-status-${status.tone}`}><span aria-hidden="true" />{status.label}</p>
-          <h2>{task.title}</h2>
-          <p className={task.metro ? "my-task-address my-task-address-with-metro" : "my-task-address"}>
-            {task.metro && <MetroIcon metro={task.metro} />}
-            <span>
-              {task.metro && <>{task.metro.station} · </>}
-              {task.address} · <img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />{task.distance}
-            </span>
-          </p>
-        </div>
-        <BrandMark brand={task.brand} />
-      </div>
-      <div className="my-task-divider" />
-      <div className="my-task-card-bottom">
-        <div>
-          <p className="my-task-payment">{task.payment}</p>
-          <p className="my-task-rate">{task.rate}</p>
-        </div>
-        <div className="my-task-date">
-          <p>{date}</p>
-          <p>{task.hours}</p>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollection, onRemoveCollection }) {
-  const [section, setSection] = useState("stores");
-  const demoStoreChips = ["уборка урожая пшеницы", "1, 2, 3 июня", "Пн, Ср, Пт", "от 1500 ₽"];
-
-  return (
-    <div className="favorites-view">
-      <div aria-label="Разделы избранного" className="favorites-tabs" role="tablist">
-        <button
-          aria-selected={section === "stores"}
-          className={section === "stores" ? "favorites-tab favorites-tab-active" : "favorites-tab"}
-          onClick={() => setSection("stores")}
-          role="tab"
-          type="button"
-        >
-          магазины
-        </button>
-        <button
-          aria-selected={section === "collections"}
-          className={section === "collections" ? "favorites-tab favorites-tab-active" : "favorites-tab"}
-          onClick={() => setSection("collections")}
-          role="tab"
-          type="button"
-        >
-          подборки
-        </button>
-      </div>
-
-      {section === "stores" ? (
-        <article className="favorite-store-card">
-          <div className="favorite-store-details">
-            <div className="favorite-store-header">
-              <div>
-                <h2>название подборки конкретного магазина</h2>
-                <p><BrandMark brand="pyaterochka" /><img alt="" aria-hidden="true" className="favorite-store-metro-icon" src={assetUrl("collection-metro.svg")} />Площадь Восстания · Косой переулок 5, к. 8</p>
-              </div>
-              <button aria-label="Настройки подборки магазина" className="card-kebab-button" type="button"><img alt="" src={assetUrl("kebab.svg")} /></button>
-            </div>
-            <div className="favorite-chip-row">
-              {demoStoreChips.map((chip) => <span className="favorite-chip" key={chip}>{chip}</span>)}
-            </div>
-          </div>
-          <button className="favorite-apply" onClick={() => setSection("collections")} type="button">показать задания</button>
-        </article>
-      ) : collections.length === 0 ? (
-        <p className="task-empty-state my-tasks-empty">Сохранённых подборок пока нет</p>
-      ) : (
-        <div className="favorite-collections-list">
-          {collections.map((collection) => {
-            const collectionBrands = collection.filters.brands.length ? collection.filters.brands : defaultCollectionBrands;
-            const collectionChips = [
-              collection.filters.service || "уборка урожая пшеницы",
-              "1, 2, 3 июня",
-              "Пн, Ср, Пт",
-              collection.filters.minimumPayment ? `от ${collection.filters.minimumPayment} ₽` : "от 1500 ₽",
-              collection.radius ? `до ${collection.radius} км` : "до 50 км",
-              collection.location.label ? `... ${getShortLocationLabel(collection.location.label)}` : null,
-            ].filter(Boolean);
-
-            return (
-              <article className="favorite-collection-card" key={collection.id}>
-                <div className="favorite-collection-header">
-                  <h2>{collection.title}</h2>
-                  <button aria-label={`Настройки подборки ${collection.title}`} className="card-kebab-button" onClick={() => onEditCollection(collection)} type="button"><img alt="" src={assetUrl("kebab.svg")} /></button>
-                </div>
-                <div className="favorite-brand-row">
-                  {collectionBrands.slice(0, 4).map((brand) => <BrandMark brand={brand} key={brand} />)}
-                </div>
-                <div className="favorite-chip-row">
-                  {collectionChips.map((chip) => <span className="favorite-chip" key={chip}>{chip}</span>)}
-                </div>
-                <button className="favorite-apply" onClick={() => onApplyCollection(collection)} type="button">показать задания</button>
-                <button aria-label={`Удалить подборку ${collection.title}`} className="favorite-delete" onClick={() => onRemoveCollection(collection.id)} type="button">
-                  <img alt="" src={assetUrl("trash.svg")} />
-                </button>
-              </article>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function EmployeeShiftCard({ day, shift }) {
-  const isPrimaryShift = shift.type === "primary";
-  const shiftTitle = isPrimaryShift ? "основная смена" : "сверхурочная смена";
-
-  return (
-    <article className="employee-shift-card">
-      <div className="employee-shift-heading">
-        <div>
-          <span className="employee-shift-badge">{shiftTitle}</span>
-          <h3>{shift.title}</h3>
-          <p>
-            {shift.metro && <span className="employee-shift-metro"><MetroIcon metro={shift.metro} />{shift.metro.station} ·</span>}
-            {shift.address} · <img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />{shift.distance}
-          </p>
-        </div>
-        <BrandMark brand={shift.brand} />
-      </div>
-      <div className="employee-shift-divider" />
-      <div className="employee-shift-details">
-        <div className="employee-shift-date">
-          <p>{getShortDayLabel(day)}</p>
-          <p>{day.secondaryLabel}</p>
-        </div>
-        <div className="employee-shift-hours">
-          <p>{shift.hours}</p>
-          <p>{shift.breakInfo ?? "11 ч + 1 ч перерыв"}</p>
-        </div>
-      </div>
-    </article>
   );
 }
 
@@ -1814,7 +1369,7 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
                   onClick={() => toggleBrand(brand.id)}
                   type="button"
                 >
-                  <BrandMark brand={brand.id} />
+                  <BrandMark brand={brand.id} size="small" />
                   <span>{brand.label}</span>
                 </button>
               );
@@ -2086,7 +1641,7 @@ export function App() {
     onScroll();
 
     return () => screen.removeEventListener("scroll", onScroll);
-  }, [currentView]);
+  }, [currentView, startupPhase]);
 
   function handleFilterScroll(event) {
     const { clientWidth, scrollLeft, scrollWidth } = event.currentTarget;
@@ -2271,68 +1826,6 @@ export function App() {
     });
   }
 
-  function getTaskMismatchReasons(task, date) {
-    const maximumDistance = Number.isFinite(searchRadius) ? searchRadius * 1000 : Infinity;
-    const minimumPayment = Number.parseInt(appliedFilters.minimumPayment.replace(/\D/g, ""), 10) || 0;
-    const selectedService = appliedFilters.service.trim().toLocaleLowerCase("ru-RU");
-    const isSuggested = Boolean(task.badge || task.variant === "special");
-    const reasons = [];
-    const hasAvailabilityMismatch = !matchesDurationPreference(task, selectedAvailabilityDuration);
-    const hasFilterMismatch = (appliedFilters.brands.length > 0 && !appliedFilters.brands.includes(task.brand))
-      || (selectedService && !task.title.toLocaleLowerCase("ru-RU").includes(selectedService))
-      || getPaymentValue(task.payment) < minimumPayment;
-
-    if (!isAvailableForMatching(date)) reasons.push("Вне доступности");
-    if (!isTaskWithinAvailability(task, availabilityTime)) reasons.push("Пересекается со сменой");
-    if (hasAvailabilityMismatch) reasons.push("Вне доступности");
-    if (Number.isFinite(maximumDistance) && getDistanceInMeters(task.distance) > maximumDistance) reasons.push("Вне радиуса");
-    if (hasFilterMismatch || (!isSuggested && reasons.length === 0)) reasons.push("Не совпадает с фильтрами");
-    reasons.push(...task.mismatchHints);
-
-    return [...new Set(reasons)];
-  }
-
-  function getHiddenReason(hiddenTasks) {
-    const reasonKinds = new Set();
-    hiddenTasks.forEach((task) => {
-      task.restrictionTags.forEach((reason) => {
-        if (reason === "Вне доступности" || reason === "Пересекается со сменой") {
-          reasonKinds.add("availability");
-          return;
-        }
-        reasonKinds.add("filters");
-      });
-    });
-
-    if (reasonKinds.size === 1) return [...reasonKinds][0];
-    return "mixed";
-  }
-
-  function getTasksForFeed(tasks, date) {
-    const decoratedTasks = tasks.map((task) => ({
-      ...task,
-      restrictionTags: getTaskMismatchReasons(task, date),
-    }));
-    const suitableTasks = decoratedTasks.filter((task) => task.restrictionTags.length === 0);
-    const suggestedTasks = suitableTasks.filter((task) => task.badge || task.variant === "special");
-    const restrictedTasks = decoratedTasks.filter((task) => task.restrictionTags.length > 0);
-
-    const matchingTasks = getOrderedTasks(suggestedTasks, sortBy, hasAppliedSort);
-    const hiddenTasks = getSortedTasks(restrictedTasks, sortBy);
-    const hiddenReason = getHiddenReason(hiddenTasks);
-
-    if (onlyMatching) return { hiddenReason, hiddenTasks, visibleTasks: matchingTasks };
-
-    return {
-      hiddenReason: "mixed",
-      hiddenTasks: [],
-      visibleTasks: [
-        ...getOrderedTasks(suitableTasks, sortBy, hasAppliedSort),
-        ...hiddenTasks,
-      ],
-    };
-  }
-
   if (startupPhase === "spinner") {
     return <main className="mobile-prototype" aria-label="Смена X5"><ServiceLaunchScreen /></main>;
   }
@@ -2453,9 +1946,13 @@ export function App() {
           </div>
         </section>}
 
-        <section aria-label={activeTab === 2 ? "Мои задания" : activeTab === 1 ? "Избранное" : "Список заданий"} className={isTaskListLoading ? "task-list task-list-loading" : "task-list"}>
-          {activeTab === 1 ? <FavoriteCollectionsView
+        <section
+          aria-label={activeTab === 2 ? "Мои задания" : activeTab === 1 ? "Избранное" : activeTab === 3 ? "Задания на подписание" : "Список заданий"}
+          className={isTaskListLoading ? "task-list task-list-loading" : "task-list"}
+        >
+          {activeTab === 1 ? <FavoritesView
             collections={favoriteCollections}
+            defaultBrands={defaultCollectionBrands}
             onApplyCollection={(collection) => {
               const hasLocationChanged = collection.location.label !== searchLocation.label
                 || collection.location.coords[0] !== searchLocation.coords[0]
@@ -2471,44 +1968,32 @@ export function App() {
               setCurrentView("filters");
             }}
             onRemoveCollection={(id) => setFavoriteCollections((collections) => collections.filter((collection) => collection.id !== id))}
-          /> : activeTab === 2 ? <MyTasksView bookedTasks={bookedTasks} /> : activeTab === 3 ? <SigningTasksView /> : isTaskListLoading ? <TimelineLoadingState /> : dayGroups.map((day, dayIndex) => {
-            const employeeShifts = getEmployeeShifts(day);
-            const hasDemoEmptyDay = day.date === "14";
-            const dayTasks = hasDemoEmptyDay ? [] : getLocationTasks(day, dayIndex);
-            const taskFeed = getTasksForFeed(dayTasks, day.date);
-            const isFilteredDayExpanded = expandedFilteredDays.includes(day.date);
-            const visibleTasks = taskFeed.visibleTasks;
-            const hasFilteredOutTasks = taskFeed.hiddenTasks.length > 0 && !isFilteredDayExpanded;
-            const hasNoTasks = dayTasks.length === 0;
-
-            return (
-              <section
-                className="task-day-section"
-                data-day={day.date}
-                key={day.date}
-                ref={(node) => { daySectionRefs.current[day.date] = node; }}
-              >
-                <h2 className="day-heading">{day.label}, <span>{day.secondaryLabel}</span></h2>
-                {employeeShifts.map((shift, index) => <EmployeeShiftCard day={day} key={`${day.date}-${shift.type}-${shift.hours}-${index}`} shift={shift} />)}
-                {visibleTasks.map((task) => <TaskCard day={day} key={task.id} onOpen={() => openTaskDetails(task, day)} task={task} />)}
-                {isFilteredDayExpanded && taskFeed.hiddenTasks.length > 0 && <button
-                  className="hide-incompatible-button"
-                  onClick={() => setExpandedFilteredDays((current) => current.filter((date) => date !== day.date))}
-                  type="button"
-                >
-                  скрыть неподходящие <img alt="" src={assetUrl("chevron-down.svg")} />
-                </button>}
-                {isFilteredDayExpanded && taskFeed.hiddenTasks.map((task) => <TaskCard day={day} key={task.id} onOpen={() => openTaskDetails(task, day)} revealRestrictionTags task={task} />)}
-                {hasFilteredOutTasks && <TaskMessageCard
-                  hiddenCount={taskFeed.hiddenTasks.length}
-                  hiddenReason={taskFeed.hiddenReason}
-                  variant={visibleTasks.length === 0 ? "empty-day-filtered" : "no-more"}
-                  onShowAll={() => setExpandedFilteredDays((current) => [...current, day.date])}
+          /> : activeTab === 2 ? <MyTasksList bookedTasks={bookedTasks} demoRecords={demoMyTaskRecords} />
+            : activeTab === 3 ? <SigningList records={demoSigningTaskRecords} />
+              : isTaskListLoading ? <CatalogLoadingState />
+                : <TaskFeed
+                  dayGroups={dayGroups}
+                  expandedFilteredDays={expandedFilteredDays}
+                  feedContext={{
+                    appliedFilters,
+                    availabilityByDate,
+                    availabilityTime,
+                    days,
+                    hasAppliedSort,
+                    onlyMatching,
+                    searchRadius,
+                    selectedAvailabilityDates,
+                    selectedAvailabilityDuration,
+                    selectedAvailabilityWeekdays,
+                    sortBy,
+                  }}
+                  getEmployeeShifts={getEmployeeShifts}
+                  getLocationTasks={getLocationTasks}
+                  onCollapseDay={(date) => setExpandedFilteredDays((current) => current.filter((item) => item !== date))}
+                  onExpandDay={(date) => setExpandedFilteredDays((current) => [...current, date])}
+                  onOpenTask={openTaskDetails}
+                  registerDaySection={(date, node) => { daySectionRefs.current[date] = node; }}
                 />}
-                {hasNoTasks && <NoTasksForDayCard />}
-              </section>
-            );
-          })}
         </section>
 
       </section> : currentView === "settings" ? <ScheduleSettings
