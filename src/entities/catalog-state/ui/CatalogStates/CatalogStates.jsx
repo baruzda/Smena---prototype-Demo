@@ -23,9 +23,17 @@ export function CatalogLoadingState() {
   );
 }
 
-function CatalogMessage({ hiddenCount, hiddenReason, onShowAll, type }) {
-  const presentation = resolveCatalogStatePresentation({ hiddenCount, hiddenReason, type });
+function CatalogMessage({
+  canReveal,
+  hiddenCount,
+  hiddenReason,
+  onChangeFilters,
+  onShowAll,
+  type,
+}) {
+  const presentation = resolveCatalogStatePresentation({ canReveal, hiddenCount, hiddenReason, type });
   const canShowAll = presentation.actions.includes("show_all");
+  const canChangeFilters = presentation.actions.includes("change_filters");
 
   return (
     <article className={styles.message} data-ui-state={presentation.uiState}>
@@ -38,6 +46,11 @@ function CatalogMessage({ hiddenCount, hiddenReason, onShowAll, type }) {
         {canShowAll && (
           <button className={styles.showAll} onClick={onShowAll} type="button">
             показать остальные <img alt="" src={assetUrl("task-hidden-chevron-down.svg")} />
+          </button>
+        )}
+        {canChangeFilters && (
+          <button className={styles.showAll} onClick={onChangeFilters} type="button">
+            изменить фильтры
           </button>
         )}
       </div>

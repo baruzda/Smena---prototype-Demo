@@ -13,7 +13,12 @@ function getHiddenReasonText(hiddenReason) {
   return "фильтров или выбранного времени";
 }
 
-export function resolveCatalogStatePresentation({ hiddenCount = 0, hiddenReason = "mixed", type }) {
+export function resolveCatalogStatePresentation({
+  canReveal = true,
+  hiddenCount = 0,
+  hiddenReason = "mixed",
+  type,
+}) {
   const reason = getHiddenReasonText(hiddenReason);
   const serviceWord = getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"]);
 
@@ -22,7 +27,7 @@ export function resolveCatalogStatePresentation({ hiddenCount = 0, hiddenReason 
       uiState: "catalog.filtered_empty",
       title: "в этот день нет подходящих услуг",
       subtitle: `${hiddenCount} ${serviceWord} скрыты из-за ${reason}`,
-      actions: Object.freeze(["subscribe", "show_all"]),
+      actions: Object.freeze(canReveal ? ["subscribe", "show_all"] : ["subscribe", "change_filters"]),
     });
   }
 

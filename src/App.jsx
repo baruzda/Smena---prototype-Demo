@@ -1970,6 +1970,7 @@ export function App() {
                     sortBy,
                   }}
                   getLocationTasks={getLocationTasks}
+                  onChangeFilters={() => setCurrentView("filters")}
                   onCollapseDay={(date) => setExpandedFilteredDays((current) => current.filter((item) => item !== date))}
                   onExpandDay={(date) => setExpandedFilteredDays((current) => [...current, date])}
                   onOpenTask={openTaskDetails}

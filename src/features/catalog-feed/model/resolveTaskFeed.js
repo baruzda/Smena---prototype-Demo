@@ -6,7 +6,11 @@ export function getDistanceInMeters(distance) {
 }
 
 export function getPaymentValue(payment) {
-  return Number(payment.replace(/[^\d]/g, ""));
+  const normalized = payment
+    .replace(/\s/g, "")
+    .replace(/[^\d,.]/g, "")
+    .replace(",", ".");
+  return Number.parseFloat(normalized) || 0;
 }
 
 export function getTaskDuration(task) {
@@ -76,7 +80,11 @@ function getHiddenReason(hiddenTasks) {
   const kinds = new Set();
   hiddenTasks.forEach((task) => {
     task.restrictionTags.forEach((reason) => {
-      if (reason === "Вне доступности" || reason === "Пересекается со сменой") kinds.add("availability");
+      if (
+        reason === "Вне доступности"
+        || reason === "Пересекается со сменой"
+        || reason === "Пересекается с принятой услугой"
+      ) kinds.add("availability");
       else kinds.add("filters");
     });
   });
@@ -139,11 +147,12 @@ function decorateTask(task, date, context) {
 export function resolveTaskFeed(tasks, date, context) {
   const decoratedTasks = tasks.map((task) => decorateTask(task, date, context));
   const catalogEligibleTasks = decoratedTasks.filter((task) => (
-    task.state === "available" && task.matchesFilters && !task.overlapsPrimarySchedule
+    task.state === "available"
+    && task.matchesFilters
+    && (!context.onlyMatching || !task.overlapsPrimarySchedule)
   ));
-  const excludedTasks = decoratedTasks.filter((task) => (
-    task.state !== "available" || !task.matchesFilters || task.overlapsPrimarySchedule
-  ));
+  const catalogEligibleIds = new Set(catalogEligibleTasks.map((task) => task.id));
+  const excludedTasks = decoratedTasks.filter((task) => !catalogEligibleIds.has(task.id));
   const suitableTasks = catalogEligibleTasks.filter((task) => task.restrictionTags.length === 0);
   const suggestedTasks = suitableTasks.filter((task) => task.badge || task.isSpecialOffer);
   const restrictedTasks = catalogEligibleTasks.filter((task) => task.restrictionTags.length > 0);

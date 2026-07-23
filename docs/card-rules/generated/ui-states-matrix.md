@@ -8,5 +8,5 @@
 | catalog.loading | tasks | CatalogLoadingState | implemented |
 | catalog.partially_hidden | tasks | PartiallyHiddenState | implemented |
 | catalog.stale | tasks | - | not_implemented |
-| hidden_services.message | tasks | HiddenServicesState | implemented |
+| hidden_services.message | tasks | HiddenServicesState | partially_implemented |
 | service_offer.skeleton | tasks | ServiceCardSkeleton | implemented |

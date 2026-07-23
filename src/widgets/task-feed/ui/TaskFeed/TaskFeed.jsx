@@ -16,6 +16,7 @@ export function TaskFeed({
   expandedFilteredDays,
   feedContext,
   getLocationTasks,
+  onChangeFilters,
   onCollapseDay,
   onExpandDay,
   onOpenTask,
@@ -29,6 +30,13 @@ export function TaskFeed({
     const isExpanded = expandedFilteredDays.includes(day.date);
     const hiddenTasks = isExpanded ? feed.hiddenTasks : [];
     const hasHiddenTasks = feed.hiddenTasks.length > 0 && !isExpanded;
+    const filteredOutCount = feed.excludedTasks.filter((service) => (
+      service.state === "available" && !service.matchesFilters
+    )).length;
+    const hasOnlyFilteredOutTasks = dayTasks.length > 0
+      && feed.visibleTasks.length === 0
+      && feed.hiddenTasks.length === 0
+      && filteredOutCount > 0;
 
     return (
       <section className={styles.day} data-day={day.date} key={day.date} ref={(node) => registerDaySection(day.date, node)}>
@@ -60,6 +68,14 @@ export function TaskFeed({
         {hasHiddenTasks && (feed.visibleTasks.length === 0
           ? <FilteredServicesState hiddenCount={feed.hiddenTasks.length} hiddenReason={feed.hiddenReason} onShowAll={() => onExpandDay(day.date)} />
           : <PartiallyHiddenState hiddenCount={feed.hiddenTasks.length} hiddenReason={feed.hiddenReason} onShowAll={() => onExpandDay(day.date)} />)}
+        {hasOnlyFilteredOutTasks && (
+          <FilteredServicesState
+            canReveal={false}
+            hiddenCount={filteredOutCount}
+            hiddenReason="filters"
+            onChangeFilters={onChangeFilters}
+          />
+        )}
         {dayTasks.length === 0 && <EmptyDayState />}
       </section>
     );

@@ -8,7 +8,7 @@
 
 | UX template | Resolver | React component | Style module | Unit | Visual | E2E | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `service_offer_card` | `resolveServiceOfferPresentation` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | tasks + favorites | verified |
+| `service_offer_card` | `resolveServiceOfferPresentation` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | tasks; favorites surface navigation absent | migrated |
 | `employee_shift_card` | `resolveEmployeeShiftPresentation`, `resolveEmployeeShiftsForDay` | `EmployeeShiftCard` | `EmployeeShiftCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | tasks | verified |
 | `my_service_card` | `resolveMyServicePresentation` | `MyServiceCard` | `MyServiceCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | my tasks | verified |
 | `signing_card` | `resolveSigningPresentation` | `SigningCard` | `SigningCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | signing | migrated |
@@ -19,7 +19,7 @@
 
 | UX ID | Legacy source | Target source | Status | Unit evidence | Visual evidence | E2E evidence | Legacy removed | Remaining gap |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `service_offer_card` | `src/App.jsx#TaskCard`, global `gig-task-*` | `src/entities/service-offer/` | verified | resolver + coverage tests | 6 variant snapshots + runtime snapshots | tasks/favorites flows | yes | provisional variant rules remain declarative |
+| `service_offer_card` | `src/App.jsx#TaskCard`, global `gig-task-*` | `src/entities/service-offer/` | migrated | resolver + coverage tests | 6 variant snapshots + runtime snapshots | tasks flow; Favorites lacks runtime service section | yes | `favorite_unavailable` has resolver/fixture evidence but no approved runtime Favorites entry point |
 | `employee_shift_card` | `src/App.jsx#EmployeeShiftCard`, global `employee-shift-*` | `src/entities/employee-shift/`, `src/features/employee-schedule/` | verified | resolver and day-placement tests | 2 variant snapshots + runtime snapshots | tasks schedule | yes | none in approved contract |
 | `my_service_card` | `src/App.jsx#MyTaskCard`, global `my-task-*` | `src/entities/my-service/` | verified | resolver + active placement rule | 5 variant snapshots + runtime snapshots | my tasks statuses | yes | provisional runtime status mapping is not promoted |
 | `signing_card` | signing branch of `src/App.jsx#MyTaskCard` | `src/entities/signing/` | migrated | resolver branch test | 3 variant snapshots + runtime snapshot | signing region/card | yes | CTA, deadline, history and final state contract unresolved |
@@ -34,7 +34,7 @@
 | `service_offer.skeleton` | `src/App.jsx#TaskSkeletonCard` | `ServiceCardSkeleton` | verified | component coverage | skeleton snapshot | reload sequence | yes | none |
 | `catalog.filtered_empty` | `src/App.jsx#TaskMessageCard` | `FilteredServicesState` | verified | component coverage | filtered snapshot | filtered flow | yes | none |
 | `catalog.partially_hidden` | `src/App.jsx#TaskMessageCard` | `PartiallyHiddenState` | verified | component coverage | partial snapshot | expand/collapse flow | yes | none |
-| `hidden_services.message` | `src/App.jsx#TaskMessageCard` | `HiddenServicesState` | verified | component coverage | hidden-action snapshot | expand/collapse flow | yes | none |
+| `hidden_services.message` | `src/App.jsx#TaskMessageCard` | `HiddenServicesState` | migrated | component coverage | component path covered through partial state | expand/collapse flow | yes | exact `hidden_services.message` state is not emitted separately at runtime |
 | `catalog.empty_day` | `src/App.jsx#NoTasksForDayCard` | `EmptyDayState` | verified | component coverage | empty-day snapshot | empty-day flow | yes | none |
 | `catalog.error` | отсутствует | planned `CatalogErrorState` | planned | registry coverage | none | none | n/a | утверждённый product/visual contract отсутствует |
 | `catalog.stale` | отсутствует | planned `CatalogStaleState` | planned | registry coverage | none | none | n/a | утверждённый product/visual contract отсутствует |

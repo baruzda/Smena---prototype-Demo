@@ -104,6 +104,29 @@ test("общий каталог не возвращает карточки, ис
   expect(distances.every((distance) => distance <= 1_000)).toBe(true);
 });
 
+test("полностью отфильтрованный день предлагает изменить фильтры без раскрытия исключённых карточек", async ({ page }) => {
+  await page.getByRole("button", { name: "Открыть фильтры", exact: true }).click();
+  await page.getByRole("textbox", { name: "Минимальная стоимость", exact: true }).fill("99999");
+  await page.getByRole("button", { name: "применить", exact: true }).click();
+
+  const firstDay = page.locator('[data-day="1"]');
+  const state = firstDay.locator('[data-ui-state="catalog.filtered_empty"]');
+  await expect(state).toBeVisible();
+  await expect(firstDay.locator('[data-card-template="service_offer_card"]')).toHaveCount(0);
+  await expect(state.getByRole("button", { name: "показать остальные", exact: true })).toHaveCount(0);
+  await state.getByRole("button", { name: "изменить фильтры", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "фильтры", exact: true })).toBeVisible();
+});
+
+test("общий каталог показывает конфликты с основной сменой, но не разрешает запись", async ({ page }) => {
+  await page.getByRole("checkbox", { name: "подходит мне", exact: true }).uncheck();
+  const busyDay = page.locator('[data-day="3"]');
+  const cards = busyDay.locator('[data-card-template="service_offer_card"]');
+  await expect(cards).toHaveCount(5);
+  await cards.first().getByRole("button", { name: /Подробнее:/ }).click();
+  await expect(page.getByRole("button", { name: "недоступно в этот день", exact: true })).toBeDisabled();
+});
+
 test("в моих заданиях показаны демо-записи с разными статусами", async ({ page }) => {
   await page.getByRole("button", { name: "мои задания", exact: true }).click();
   const records = page.getByRole("region", { name: "Мои задания", exact: true }).locator("article");

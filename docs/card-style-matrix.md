@@ -20,7 +20,7 @@
 | `service_offer_card.restriction_status` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | verified |
 | `service_offer_card.restriction_status_plus` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | verified |
 | `service_offer_card.restriction_tags` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | verified |
-| `service_offer_card.favorite_unavailable` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | verified |
+| `service_offer_card.favorite_unavailable` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | migrated; Favorites runtime section unresolved |
 | `employee_shift_card.primary_shift` | `EmployeeShiftCard` | `EmployeeShiftCard.module.css` | verified |
 | `employee_shift_card.accepted_extra_shift` | `EmployeeShiftCard` | `EmployeeShiftCard.module.css` | verified |
 | `my_service_card.pending` | `MyServiceCard` | `MyServiceCard.module.css` | verified |
@@ -45,7 +45,7 @@ Marker `suitable_for_you` — отдельная ось presentation model и н
 | `service_offer.skeleton` | `ServiceCardSkeleton` | `CatalogStates.module.css` | verified |
 | `catalog.filtered_empty` | `FilteredServicesState` | `CatalogStates.module.css` | verified |
 | `catalog.partially_hidden` | `PartiallyHiddenState` | `CatalogStates.module.css` | verified |
-| `hidden_services.message` | `HiddenServicesState` | `CatalogStates.module.css` | verified |
+| `hidden_services.message` | `HiddenServicesState` | `CatalogStates.module.css` | migrated; exact runtime state not emitted |
 | `catalog.empty_day` | `EmptyDayState` | `CatalogStates.module.css` | verified |
 | `catalog.error` | `CatalogErrorState` | — | planned; product contract unresolved |
 | `catalog.stale` | `CatalogStaleState` | — | planned; product contract unresolved |

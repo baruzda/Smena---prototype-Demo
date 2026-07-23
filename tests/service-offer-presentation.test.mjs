@@ -31,6 +31,25 @@ function resolve(service = {}, context = {}) {
   return resolveServiceOfferPresentation({ ...baseService, ...service }, { surface: "tasks", ...context });
 }
 
+function makeFeedContext(overrides = {}) {
+  return {
+    acceptedGigByDate: {},
+    appliedFilters: { brands: [], minimumPayment: "", service: "" },
+    availabilityByDate: { "1": "free" },
+    availabilityTime: { from: "08:00", presets: ["all-day"], to: "22:00" },
+    bookedTasks: [],
+    days: [{ date: "1", weekday: "пн" }],
+    hasAppliedSort: false,
+    onlyMatching: true,
+    searchRadius: 50,
+    selectedAvailabilityDates: [],
+    selectedAvailabilityDuration: [],
+    selectedAvailabilityWeekdays: [],
+    sortBy: "recommended",
+    ...overrides,
+  };
+}
+
 test("[SCN-CATALOG-001][RULE-PLACEMENT-001] available filtered service is placed in tasks", () => {
   const result = resolve();
   assert.equal(result.placement, "tasks");
@@ -103,7 +122,39 @@ test("[RULE-ACTION-001] feed decoration passes accepted-service overlaps into pr
 
   assert.equal(candidate.overlapsAcceptedServices, true);
   assert.ok(candidate.restrictionTags.includes("Пересекается с принятой услугой"));
+  assert.equal(feed.hiddenReason, "availability");
   assert.deepEqual(presentation.disabledActions, ["service.primary_action"]);
+});
+
+test("[RULE-HIDDEN-001] primary-shift conflicts return only in the general catalog", () => {
+  const personalFeed = resolveTaskFeed(
+    [{ ...baseService, badge: "подходит вам", id: "candidate" }],
+    "1",
+    makeFeedContext({ availabilityByDate: { "1": "busy" } }),
+  );
+  const generalFeed = resolveTaskFeed(
+    [{ ...baseService, badge: "подходит вам", id: "candidate" }],
+    "1",
+    makeFeedContext({ availabilityByDate: { "1": "busy" }, onlyMatching: false }),
+  );
+
+  assert.equal(personalFeed.visibleTasks.length, 0);
+  assert.equal(personalFeed.hiddenTasks.length, 0);
+  assert.equal(personalFeed.excludedTasks[0].overlapsPrimarySchedule, true);
+  assert.equal(generalFeed.visibleTasks[0].overlapsPrimarySchedule, true);
+});
+
+test("[EXC-PLACEMENT-002] fully filtered results remain excluded with a recoverable count", () => {
+  const feed = resolveTaskFeed(
+    [{ ...baseService, badge: "подходит вам", id: "candidate" }],
+    "1",
+    makeFeedContext({ appliedFilters: { brands: [], minimumPayment: "99999", service: "" } }),
+  );
+
+  assert.equal(feed.visibleTasks.length, 0);
+  assert.equal(feed.hiddenTasks.length, 0);
+  assert.equal(feed.excludedTasks.length, 1);
+  assert.equal(feed.excludedTasks[0].matchesFilters, false);
 });
 
 test("[EXC-PLACEMENT-001] feed excludes an already booked service", () => {

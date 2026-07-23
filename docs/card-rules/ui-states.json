@@ -2,12 +2,12 @@
   "version": 1,
   "uiStates": [
     { "id": "catalog.loading", "usedOn": ["tasks"], "display": "Два скелетона услуг", "canCoexistWithCards": false, "actions": [], "sourceType": "observed_implementation", "currentImplementation": "CatalogLoadingState", "implementationStatus": "implemented" },
-    { "id": "catalog.filtered_empty", "usedOn": ["tasks"], "display": "Сообщение о скрытых фильтрами услугах", "canCoexistWithCards": false, "actions": ["subscribe", "show_all"], "sourceType": "observed_implementation", "currentImplementation": "FilteredServicesState", "implementationStatus": "implemented" },
+    { "id": "catalog.filtered_empty", "usedOn": ["tasks"], "display": "Сообщение о скрытых фильтрами услугах", "canCoexistWithCards": false, "actions": ["subscribe", "show_all", "change_filters"], "sourceType": "observed_implementation", "currentImplementation": "FilteredServicesState", "implementationStatus": "implemented" },
     { "id": "catalog.empty_day", "usedOn": ["tasks"], "display": "День без услуг", "canCoexistWithCards": false, "actions": ["subscribe"], "sourceType": "observed_implementation", "currentImplementation": "EmptyDayState", "implementationStatus": "implemented" },
     { "id": "catalog.partially_hidden", "usedOn": ["tasks"], "display": "Сообщение после видимых услуг", "canCoexistWithCards": true, "actions": ["subscribe", "show_all"], "sourceType": "observed_implementation", "currentImplementation": "PartiallyHiddenState", "implementationStatus": "implemented" },
     { "id": "catalog.error", "usedOn": ["tasks"], "display": "Не реализовано отдельной карточкой", "canCoexistWithCards": true, "actions": [], "sourceType": "unresolved_assumption", "currentImplementation": null, "implementationStatus": "not_implemented" },
     { "id": "catalog.stale", "usedOn": ["tasks"], "display": "Не реализовано", "canCoexistWithCards": true, "actions": [], "sourceType": "unresolved_assumption", "currentImplementation": null, "implementationStatus": "not_implemented" },
     { "id": "service_offer.skeleton", "usedOn": ["tasks"], "display": "Скелетон одной услуги", "canCoexistWithCards": false, "actions": [], "sourceType": "observed_implementation", "currentImplementation": "ServiceCardSkeleton", "implementationStatus": "implemented" },
-    { "id": "hidden_services.message", "usedOn": ["tasks"], "display": "Сообщение скрытых услуг", "canCoexistWithCards": true, "actions": ["subscribe", "show_all"], "sourceType": "observed_implementation", "currentImplementation": "HiddenServicesState", "implementationStatus": "implemented" }
+    { "id": "hidden_services.message", "usedOn": ["tasks"], "display": "Сообщение скрытых услуг", "canCoexistWithCards": true, "actions": ["subscribe", "show_all"], "sourceType": "observed_implementation", "currentImplementation": "HiddenServicesState", "implementationStatus": "partially_implemented" }
   ]
 }
