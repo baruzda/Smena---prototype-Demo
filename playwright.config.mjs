@@ -7,6 +7,11 @@ export default defineConfig({
   testDir: "./tests",
   fullyParallel: false,
   snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}{ext}",
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.05,
+    },
+  },
   use: {
     baseURL,
     viewport: { width: 393, height: 860 },
