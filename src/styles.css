@@ -2949,6 +2949,13 @@ button.filter-field {
   resize: none;
 }
 
+.collection-availability-note {
+  color: #6c737d;
+  font-size: 16px;
+  line-height: 20px;
+  margin: 12px 0 20px;
+}
+
 .collection-name-clear {
   align-self: start;
   background: transparent;

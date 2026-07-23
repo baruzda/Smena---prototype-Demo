@@ -865,7 +865,7 @@ function getRussianPlural(count, forms) {
   return forms[2];
 }
 
-function TaskMessageCard({ hiddenCount, onShowAll, variant = "no-more" }) {
+function TaskMessageCard({ hiddenCount, onShowAll, onSubscribe, variant = "no-more" }) {
   const isDayEmpty = variant === "empty-day-filtered";
   const title = isDayEmpty ? "в этот день нет подходящих услуг" : "подходящих услуг больше нет";
   const servicesLabel = `${hiddenCount} ${getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"])}`;
@@ -877,18 +877,18 @@ function TaskMessageCard({ hiddenCount, onShowAll, variant = "no-more" }) {
       <h3>{title}</h3>
       <p>{subtitle}</p>
       <div className="task-message-actions">
-        <Button className="task-message-subscribe" fullWidth leadingIcon={<img alt="" src={assetUrl("task-hidden-star.svg")} />} variant="ghost">подписаться на новые задания</Button>
+        <Button className="task-message-subscribe" fullWidth leadingIcon={<img alt="" src={assetUrl("task-hidden-star.svg")} />} onClick={onSubscribe} variant="ghost">подписаться на новые задания</Button>
         <Button className="task-message-show-all" fullWidth onClick={onShowAll} trailingIcon={<img alt="" src={assetUrl("task-hidden-chevron-down.svg")} />} variant="primary">показать остальные</Button>
       </div>
     </article>
   );
 }
 
-function NoTasksForDayCard() {
+function NoTasksForDayCard({ onSubscribe }) {
   return (
     <article className="task-message-card task-message-card-empty">
       <h3>в этот день услуг нет</h3>
-      <Button className="task-message-subscribe" fullWidth leadingIcon={<img alt="" src={assetUrl("task-hidden-star.svg")} />} variant="ghost">подписаться на новые задания</Button>
+      <Button className="task-message-subscribe" fullWidth leadingIcon={<img alt="" src={assetUrl("task-hidden-star.svg")} />} onClick={onSubscribe} variant="ghost">подписаться на новые задания</Button>
     </article>
   );
 }
@@ -1122,7 +1122,7 @@ function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollect
             const collectionServices = normalizeSelectedServices(collection.filters.service);
             const collectionChips = [
               collectionServices.length ? getServiceSelectionSummary(collectionServices) : "уборка урожая пшеницы",
-              "1, 2, 3 июня",
+              ...(collection.availability?.labels || ["1, 2, 3 июня"]),
               "Пн, Ср, Пт",
               collection.filters.minimumPayment ? `от ${collection.filters.minimumPayment} ₽` : "от 1500 ₽",
               collection.radius ? `до ${collection.radius} км` : "до 50 км",
@@ -1753,7 +1753,7 @@ function LocationPicker({ initialLocation, initialRadius, onApply, onBack }) {
   );
 }
 
-function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditingCollection = false, onBack, onSave, onSaveCollection }) {
+function FiltersScreen({ initialCollectionAvailability, initialFilters, initialLocation, initialRadius, isEditingCollection = false, onBack, onSave, onSaveCollection }) {
   const [selectedBrands, setSelectedBrands] = useState(initialFilters.brands);
   const initialStores = normalizeSelectedStores(initialFilters.stores);
   const [selectedStores, setSelectedStores] = useState(initialStores);
@@ -1876,9 +1876,17 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
     setIsCollectionSaveSheetOpen(true);
   }
 
+  useEffect(() => {
+    if (initialCollectionAvailability) openCollectionSaveSheet();
+  }, [initialCollectionAvailability]);
+
   function saveCollection() {
     const title = collectionName.trim() || getDefaultCollectionName();
     onSaveCollection({
+      availability: initialCollectionAvailability ? {
+        dateKeys: [initialCollectionAvailability.key],
+        labels: [initialCollectionAvailability.label],
+      } : undefined,
       filters: { brands: selectedBrands, minimumPayment, service: selectedServices, stores: selectedStores },
       location: { ...location, coords: [...location.coords] },
       notifications: {
@@ -2125,6 +2133,8 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
             {collectionName && <button aria-label="Очистить название подборки" className="collection-name-clear" onClick={() => setCollectionName("")} type="button" />}
           </label>
 
+          {initialCollectionAvailability && <p className="collection-availability-note">доступность: {initialCollectionAvailability.label}</p>}
+
           <h2>присылать обновления через</h2>
           <label className="collection-notification-row">
             <span className="collection-notification-label"><i aria-hidden="true" className="collection-notification-icon collection-notification-icon-email" />письмо на почту</span>
@@ -2177,6 +2187,7 @@ export function App() {
   const [searchLocation, setSearchLocation] = useState(persistedState.searchLocation || emptySearchLocation);
   const [appliedFilters, setAppliedFilters] = useState(persistedState.appliedFilters || emptyFilters);
   const [favoriteCollections, setFavoriteCollections] = useState(persistedState.favoriteCollections || []);
+  const [pendingCollectionAvailability, setPendingCollectionAvailability] = useState(null);
   const [editingCollection, setEditingCollection] = useState(null);
   const [catalogVersion, setCatalogVersion] = useState(persistedState.catalogVersion || 0);
   const [selectedAvailabilityDates, setSelectedAvailabilityDates] = useState(persistedState.selectedAvailabilityDates || []);
@@ -2728,6 +2739,7 @@ export function App() {
               setAppliedFilters(collection.filters);
               setSearchLocation(collection.location);
               setSearchRadius(collection.radius);
+              if (collection.availability?.dateKeys?.length) setSelectedAvailabilityDates(collection.availability.dateKeys);
               if (hasLocationChanged) setCatalogVersion((current) => current + 1);
               setActiveTab(0);
             }}
@@ -2768,10 +2780,17 @@ export function App() {
                 {isFilteredDayExpanded && taskFeed.hiddenTasks.map((task) => <TaskCard day={day} key={task.id} onOpen={() => openTaskDetails(task, day)} revealRestrictionTags task={task} />)}
                 {hasFilteredOutTasks && <TaskMessageCard
                   hiddenCount={taskFeed.hiddenTasks.length}
+                  onSubscribe={() => {
+                    setPendingCollectionAvailability({ key: day.date, label: `${day.label}, ${day.secondaryLabel}` });
+                    setCurrentView("filters");
+                  }}
                   variant={visibleTasks.length === 0 ? "empty-day-filtered" : "no-more"}
                   onShowAll={() => setExpandedFilteredDays((current) => [...current, day.date])}
                 />}
-                {hasNoFeedContent && <NoTasksForDayCard />}
+                {hasNoFeedContent && <NoTasksForDayCard onSubscribe={() => {
+                  setPendingCollectionAvailability({ key: day.date, label: `${day.label}, ${day.secondaryLabel}` });
+                  setCurrentView("filters");
+                }} />}
               </section>
             );
           })}
@@ -2815,12 +2834,14 @@ export function App() {
         }}
         onBack={() => setCurrentView("tasks")}
       /> : <FiltersScreen
+        initialCollectionAvailability={pendingCollectionAvailability}
         initialFilters={editingCollection?.filters || appliedFilters}
         initialLocation={editingCollection?.location || searchLocation}
         initialRadius={editingCollection?.radius || searchRadius}
         isEditingCollection={Boolean(editingCollection)}
         onBack={() => {
           setEditingCollection(null);
+          setPendingCollectionAvailability(null);
           setCurrentView("tasks");
         }}
         onSave={({ filters, location, radius }) => {
@@ -2846,9 +2867,10 @@ export function App() {
           if (hasLocationChanged) setCatalogVersion((current) => current + 1);
           setCurrentView("tasks");
         }}
-        onSaveCollection={({ filters, location, notifications, radius, title }) => {
+        onSaveCollection={({ availability, filters, location, notifications, radius, title }) => {
           setFavoriteCollections((collections) => [
             {
+              availability,
               filters: { ...filters, brands: [...filters.brands] },
               id: `collection-${Date.now()}`,
               location,
@@ -2858,6 +2880,7 @@ export function App() {
             },
             ...collections,
           ]);
+          setPendingCollectionAvailability(null);
         }}
       />}
 
