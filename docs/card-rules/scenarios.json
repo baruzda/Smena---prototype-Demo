@@ -402,6 +402,20 @@
         "template": "service_offer_card",
         "variant": "favorite_unavailable",
         "section": "services_unavailable",
+        "visibleContent": [
+          "favorite.unavailable_status",
+          "favorite.remove_action"
+        ],
+        "enabledActions": [
+          "favorite.remove_action"
+        ],
+        "disabledActions": [
+          "service.primary_action"
+        ],
+        "appliedRules": [
+          "RULE-FAVORITES-001",
+          "RULE-FAVORITES-004"
+        ],
         "appliedExceptions": [
           "EXC-FAVORITES-001"
         ]
@@ -480,6 +494,84 @@
         "appliedRules": [
           "RULE-FAVORITES-003"
         ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-FAVORITES-007",
+      "name": "Избранное открывается со вкладки услуг и двумя секциями",
+      "given": {
+        "surface": "favorites",
+        "favoriteServices": [
+          { "state": "available", "isFavorite": true },
+          { "state": "expired", "isFavorite": true }
+        ]
+      },
+      "expected": {
+        "template": "service_offer_card",
+        "section": "services_available",
+        "appliedRules": ["RULE-FAVORITES-001", "RULE-FAVORITES-004"]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/app.spec.mjs"
+    },
+    {
+      "id": "SCN-FAVORITES-008",
+      "name": "Пользователь удаляет недоступную услугу из избранного",
+      "given": {
+        "surface": "favorites",
+        "userAction": "favorite.remove_action",
+        "service": {
+          "state": "expired",
+          "isFavorite": true
+        }
+      },
+      "expected": {
+        "enabledActions": ["favorite.remove_action"],
+        "disabledActions": ["service.primary_action"],
+        "notInSections": ["services_unavailable"],
+        "appliedRules": ["RULE-FAVORITES-004"]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/app.spec.mjs"
+    },
+    {
+      "id": "SCN-FAVORITES-009",
+      "name": "Принятые и завершённые услуги покидают избранное",
+      "given": {
+        "surface": "favorites",
+        "service": {
+          "state": ["pending_confirmation", "signing_required", "booked", "active", "completed"],
+          "isFavorite": true
+        }
+      },
+      "expected": {
+        "notInSections": ["services_available", "services_unavailable"],
+        "appliedRules": ["RULE-FAVORITES-001"]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-FAVORITES-010",
+      "name": "Отменённая избранная услуга остаётся до явного удаления",
+      "given": {
+        "surface": "favorites",
+        "service": {
+          "state": "cancelled",
+          "isFavorite": true
+        }
+      },
+      "expected": {
+        "template": "service_offer_card",
+        "variant": "favorite_unavailable",
+        "section": "services_unavailable",
+        "visibleContent": ["favorite.unavailable_status", "favorite.remove_action"],
+        "enabledActions": ["favorite.remove_action"],
+        "disabledActions": ["service.primary_action"],
+        "appliedRules": ["RULE-FAVORITES-001", "RULE-FAVORITES-004"],
+        "appliedExceptions": ["EXC-FAVORITES-001"]
       },
       "executionStatus": "verified",
       "testEvidence": "tests/service-offer-presentation.test.mjs"

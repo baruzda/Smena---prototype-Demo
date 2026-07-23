@@ -13,6 +13,6 @@
 | ui_state | hidden_services.message | HiddenServicesState | HiddenServicesState | verified |
 | template | my_service_card | MyServiceCard | MyServiceCard | verified |
 | template | saved_collection_card | FavoriteCollectionCard | FavoriteCollectionCard | migrated |
-| template | service_offer_card | ServiceOfferCard | ServiceOfferCard | migrated |
+| template | service_offer_card | ServiceOfferCard | ServiceOfferCard | verified |
 | ui_state | service_offer.skeleton | ServiceCardSkeleton | ServiceCardSkeleton | verified |
 | template | signing_card | SigningCard | SigningCard | verified |

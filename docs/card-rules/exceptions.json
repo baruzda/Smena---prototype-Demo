@@ -60,6 +60,7 @@
       "id": "EXC-FAVORITES-001",
       "name": "Недоступная избранная услуга сохраняется отдельной карточкой",
       "status": "active",
+      "relatedQuestion": "OPEN-QUESTION-012",
       "baseRule": "RULE-FAVORITES-001",
       "when": { "all": [
         { "path": "service.isFavorite", "operator": "equals", "value": true },
@@ -67,7 +68,8 @@
       ] },
       "override": { "action": "place", "surface": "favorites", "section": "services_unavailable", "variant": "favorite_unavailable" },
       "priority": 800,
-      "reason": "Избранное сохраняет пользовательский выбор и объясняет, почему услуга больше недоступна."
+      "reason": "Избранное сохраняет пользовательский выбор и объясняет, почему услуга больше недоступна.",
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-013" }
     },
     {
       "id": "EXC-SIGNING-001",

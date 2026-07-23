@@ -1,5 +1,9 @@
 # Журнал решений по карточкам
 
+## DEC-013 — утверждённый контракт избранных услуг
+
+Контекст: пользователь утвердил блок Favorites services из product decision brief 2026-07-23. Решение: Favorites получает три вкладки в порядке `услуги`, `магазины`, `подборки`. Доступные избранные услуги остаются в `services_available`; `unavailable`, `cancelled`, `expired` остаются в `services_unavailable` до явного удаления пользователем. `pending_confirmation`, `signing_required`, `booked`, `active`, `completed` покидают Favorites. Доступная услуга открывает детали; `favorite_unavailable` не открывает детали и не имеет booking CTA, её единственное действие — `удалить из избранного`. Последствие: существующие `RULE-FAVORITES-001` и `EXC-FAVORITES-001` получают утверждённый runtime-entry, добавляется отдельное action rule, а `service_offer_card` переводится в `verified`. Не входит: синхронизация с production Favorites API и временной SLA хранения недоступных записей.
+
 ## DEC-012 — утверждённый контракт Signing
 
 Контекст: пользователь утвердил блок Signing из product decision brief 2026-07-23. Решение: Signing остаётся отдельным табом; канонические runtime-состояния — `waiting_user`, `processing`, `signed`, `rejected`, и все они остаются в табе в отдельных упорядоченных секциях. Primary CTA `подписать` доступен только в `waiting_user` и переводит запись в `processing`. Deadline остаётся необязательным и не получает критичного оформления без отдельного решения. Последствие: placement, document status, primary action и переход получают active rules, runtime, unit, visual и E2E evidence; `signing_card` переводится в `verified`. Не входит: интеграция с реальным сервисом подписания, история документов и критичный deadline.

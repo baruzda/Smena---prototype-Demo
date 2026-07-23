@@ -23,7 +23,8 @@
   font-size: 16px;
   height: 36px;
   line-height: 20px;
-  padding: 0 14px;
+  min-width: 0;
+  padding: 0 8px;
   text-align: center;
   transition: background-color 180ms ease, color 180ms ease;
 }
@@ -38,6 +39,36 @@
   display: grid;
   gap: 8px;
   margin-top: 16px;
+}
+
+.serviceList {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.serviceGroup {
+  min-width: 0;
+}
+
+.serviceHeading {
+  color: #6c737d;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18px;
+  margin: 0 0 8px;
+}
+
+.serviceCardShell {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.serviceCardLeaving {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 .empty {
@@ -61,7 +92,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tab,
-  .activeTab {
+  .activeTab,
+  .serviceCardShell {
     transition: none;
   }
 }

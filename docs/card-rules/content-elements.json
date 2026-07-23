@@ -155,6 +155,24 @@
       "templates": ["service_offer_card", "my_service_card"]
     },
     {
+      "id": "favorite.unavailable_status",
+      "name": "Статус недоступной избранной услуги",
+      "slot": "markers",
+      "source": "computed",
+      "required": false,
+      "fallback": null,
+      "templates": ["service_offer_card"]
+    },
+    {
+      "id": "favorite.remove_action",
+      "name": "Удалить недоступную услугу из избранного",
+      "slot": "actions",
+      "source": "computed",
+      "required": false,
+      "fallback": null,
+      "templates": ["service_offer_card"]
+    },
+    {
       "id": "signing.document_status",
       "name": "Статус документов",
       "slot": "document",

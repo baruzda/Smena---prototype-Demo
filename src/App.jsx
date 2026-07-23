@@ -586,6 +586,16 @@ const demoSigningTaskRecords = [
     task: dayGroups[8].tasks[2],
   },
 ];
+const demoFavoriteServiceRecords = [
+  {
+    day: dayGroups[0],
+    service: { ...dayGroups[0].tasks[1], isFavorite: true, state: "available" },
+  },
+  {
+    day: dayGroups[4],
+    service: { ...dayGroups[4].tasks[2], badge: undefined, isFavorite: true, state: "expired" },
+  },
+];
 const demoFavoriteStore = Object.freeze({ isPresent: true });
 
 const sortOptions = [
@@ -1558,6 +1568,7 @@ export function App() {
   const [availabilityTime, setAvailabilityTime] = useState(emptyAvailabilityTime);
   const [selectedAvailabilityDuration, setSelectedAvailabilityDuration] = useState([]);
   const [bookedTasks, setBookedTasks] = useState(persistedState.bookedTasks || []);
+  const [favoriteServiceRecords, setFavoriteServiceRecords] = useState(demoFavoriteServiceRecords);
   const [signingTaskRecords, setSigningTaskRecords] = useState(demoSigningTaskRecords);
   const [currentView, setCurrentView] = useState("tasks");
   const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(true);
@@ -1976,7 +1987,10 @@ export function App() {
               setEditingCollection(collection);
               setCurrentView("filters");
             }}
+            onOpenService={openTaskDetails}
             onRemoveCollection={(id) => setFavoriteCollections((collections) => collections.filter((collection) => collection.id !== id))}
+            onRemoveService={(id) => setFavoriteServiceRecords((records) => records.filter((record) => record.service.id !== id))}
+            serviceRecords={favoriteServiceRecords.filter((record) => !bookedTasks.some((booking) => booking.id === record.service.id))}
           /> : activeTab === 2 ? <MyTasksList bookedTasks={bookedTasks} demoRecords={demoMyTaskRecords} />
             : activeTab === 3 ? <SigningList
               onPrimaryAction={(recordId) => setSigningTaskRecords((records) => records.map((record) => (

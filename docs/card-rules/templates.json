@@ -28,8 +28,8 @@
         },
         {
           "id": "favorite_unavailable",
-          "name": "Недоступная избранная услуга (legacy presentation)",
-          "description": "Legacy-совместимость исключения избранного до отдельного решения о варианте."
+      "name": "Недоступная избранная услуга",
+      "description": "Утверждённая DEC-013 presentation: без details/booking, с единственным действием явного удаления."
         },
         {
           "id": "restriction_status",

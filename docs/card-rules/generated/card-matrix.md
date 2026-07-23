@@ -3,7 +3,7 @@
 | Template | Карточка | Variant | Название | Табы | Слоты |
 | --- | --- | --- | --- | --- | --- |
 | service_offer_card | Карточка услуги | default | Базовая | tasks, favorites | header, markers, title, location, commercial, schedule, restrictions, actions |
-| service_offer_card | Карточка услуги | favorite_unavailable | Недоступная избранная услуга (legacy presentation) | tasks, favorites | header, markers, title, location, commercial, schedule, restrictions, actions |
+| service_offer_card | Карточка услуги | favorite_unavailable | Недоступная избранная услуга | tasks, favorites | header, markers, title, location, commercial, schedule, restrictions, actions |
 | service_offer_card | Карточка услуги | restriction_status | Не подходит | tasks, favorites | header, markers, title, location, commercial, schedule, restrictions, actions |
 | service_offer_card | Карточка услуги | restriction_status_plus | Есть ограничения | tasks, favorites | header, markers, title, location, commercial, schedule, restrictions, actions |
 | service_offer_card | Карточка услуги | restriction_tags | Ограничения тегами | tasks, favorites | header, markers, title, location, commercial, schedule, restrictions, actions |

@@ -2,6 +2,7 @@ const ACTIVE_RULE_IDS = Object.freeze([
   "RULE-PLACEMENT-001",
   "RULE-MARKER-001",
   "RULE-FAVORITES-001",
+  "RULE-FAVORITES-004",
   "RULE-MYTASKS-001",
   "RULE-ACTION-001",
   "RULE-HIDDEN-001",
@@ -78,6 +79,7 @@ function resolvePlacement(service, context, appliedRuleIds, appliedExceptionIds)
 
   if (surface === "favorites") {
     appliedRuleIds.push("RULE-FAVORITES-001");
+    appliedRuleIds.push("RULE-FAVORITES-004");
     if (!service.isFavorite) return { placement: "excluded", section: null, order: null };
     if (["unavailable", "cancelled", "expired"].includes(service.state)) {
       appliedExceptionIds.push("EXC-FAVORITES-001");
@@ -135,6 +137,8 @@ export function resolveServiceOfferPresentation(service, context = {}) {
   appliedRuleIds.push("RULE-ACTION-001");
   const actionDisabled = !isAvailable || overlapsPrimarySchedule || overlapsAcceptedServices;
   const primaryAction = "service.primary_action";
+  const removeFavoriteAction = "favorite.remove_action";
+  const isFavoriteUnavailable = structuralVariant === "favorite_unavailable";
   const hasMetro = Boolean(normalizedService.metro?.station);
   const visibleContent = [
     "service.title",
@@ -146,11 +150,17 @@ export function resolveServiceOfferPresentation(service, context = {}) {
     "service.schedule",
     ...(hasMetro ? ["service.metro"] : []),
     ...(restrictionTags.length ? ["service.restrictions"] : []),
+    ...(isFavoriteUnavailable ? ["favorite.unavailable_status", removeFavoriteAction] : []),
   ];
   const hiddenContent = [
     ...(!hasMetro ? ["service.metro"] : []),
     ...(!restrictionTags.length ? ["service.restrictions"] : []),
+    ...(!isFavoriteUnavailable ? ["favorite.unavailable_status", removeFavoriteAction] : []),
   ];
+  const enabledActions = isFavoriteUnavailable
+    ? [removeFavoriteAction]
+    : actionDisabled ? [] : [primaryAction];
+  const disabledActions = isFavoriteUnavailable || actionDisabled ? [primaryAction] : [];
 
   return Object.freeze({
     templateId: "service_offer_card",
@@ -158,8 +168,8 @@ export function resolveServiceOfferPresentation(service, context = {}) {
     markers: Object.freeze(unique(markers)),
     visibleContent: Object.freeze(unique(visibleContent)),
     hiddenContent: Object.freeze(unique(hiddenContent)),
-    enabledActions: Object.freeze(actionDisabled ? [] : [primaryAction]),
-    disabledActions: Object.freeze(actionDisabled ? [primaryAction] : []),
+    enabledActions: Object.freeze(enabledActions),
+    disabledActions: Object.freeze(disabledActions),
     placement: placementResult.placement,
     section: placementResult.section,
     order: placementResult.order,

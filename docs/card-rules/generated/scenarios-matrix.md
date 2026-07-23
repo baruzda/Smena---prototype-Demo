@@ -17,6 +17,10 @@
 | SCN-FAVORITES-004 | verified |
 | SCN-FAVORITES-005 | verified |
 | SCN-FAVORITES-006 | verified |
+| SCN-FAVORITES-007 | verified |
+| SCN-FAVORITES-008 | verified |
+| SCN-FAVORITES-009 | verified |
+| SCN-FAVORITES-010 | verified |
 | SCN-MATCH-001 | declarative |
 | SCN-MATCH-002 | declarative |
 | SCN-MYTASKS-001 | declarative |

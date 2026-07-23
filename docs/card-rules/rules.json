@@ -289,8 +289,9 @@
       "priority": 700,
       "exceptions": ["EXC-FAVORITES-001"],
       "supersedes": [],
-      "source": { "documents": ["README.md"], "decision": "DEC-001" },
-      "tests": ["SCN-FAVORITES-001", "SCN-FAVORITES-002"]
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-013" },
+      "relatedQuestion": "OPEN-QUESTION-012",
+      "tests": ["SCN-FAVORITES-001", "SCN-FAVORITES-002", "SCN-FAVORITES-007", "SCN-FAVORITES-009", "SCN-FAVORITES-010"]
     },
     {
       "id": "RULE-FAVORITES-002",
@@ -329,6 +330,31 @@
       "supersedes": [],
       "source": { "documents": ["docs/card-style-matrix.md"], "decision": "DEC-001" },
       "tests": ["SCN-FAVORITES-005", "SCN-FAVORITES-006"]
+    },
+    {
+      "id": "RULE-FAVORITES-004",
+      "name": "Недоступную избранную услугу можно только удалить",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["favorites"],
+        "templates": ["service_offer_card"]
+      },
+      "target": { "type": "content_element", "id": "favorite.remove_action" },
+      "when": {
+        "all": [
+          { "path": "service.isFavorite", "operator": "equals", "value": true },
+          { "path": "service.state", "operator": "in", "value": ["unavailable", "cancelled", "expired"] }
+        ]
+      },
+      "effect": { "action": "enable" },
+      "otherwise": { "action": "disable" },
+      "priority": 900,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-013" },
+      "relatedQuestion": "OPEN-QUESTION-013",
+      "tests": ["SCN-FAVORITES-002", "SCN-FAVORITES-008"]
     },
     {
       "id": "RULE-SIGNING-001",

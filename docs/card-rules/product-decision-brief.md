@@ -14,25 +14,17 @@
 
 Связанные вопросы: `OPEN-QUESTION-012`, `OPEN-QUESTION-013`.
 
-Текущее доказанное состояние:
+Статус: утверждено пользователем 2026-07-23, зафиксировано в `DEC-013`.
 
-- Favorites runtime содержит только вкладки `магазины` и `подборки`;
-- `service_offer_card.favorite_unavailable` существует в resolver и visual fixture;
-- утверждённого runtime-entry для списка избранных услуг нет.
+Утверждённый контракт:
 
-Нужно утвердить:
+1. Favorites содержит вкладки `услуги`, `магазины`, `подборки`; вкладка услуг открывается первой.
+2. `available` остаётся в `services_available`; `unavailable`, `cancelled`, `expired` остаются в `services_unavailable`.
+3. `pending_confirmation`, `signing_required`, `booked`, `active`, `completed` покидают Favorites.
+4. Недоступные записи не удаляются по времени и остаются до явного действия пользователя.
+5. Доступная услуга открывает детали; `favorite_unavailable` не открывает детали и имеет единственное действие `удалить из избранного`.
 
-1. Есть ли отдельная секция или вкладка услуг в Favorites.
-2. Какие состояния остаются в ней: только `available`, также `unavailable`/`expired`, либо иной набор.
-3. Покидают ли Favorites принятые, активные, завершённые и отменённые услуги.
-4. Какое действие доступно для `favorite_unavailable`.
-
-После решения:
-
-- обновить `RULE-FAVORITES-001` и `EXC-FAVORITES-001`;
-- добавить runtime route/section либо официально deprecated-вариант;
-- добавить E2E available/unavailable placement и visual baseline;
-- перевести `service_offer_card` в `verified`, если все его runtime variants покрыты.
+Не входит в решение: production-синхронизация Favorites и серверная политика хранения.
 
 ## Решение 2. Signing
 
@@ -99,9 +91,9 @@
 
 ## Порядок утверждения
 
-1. Signing — блокирует обязательные content/actions и четыре open questions.
-2. Favorites services — блокирует полный runtime service-offer contract.
-3. Empty collection — локальный variant contract.
-4. Catalog error/stale — два независимых UI-state contract.
+1. Signing — утверждено и реализовано в `DEC-012`.
+2. Favorites services — утверждено и реализовано в `DEC-013`.
+3. Empty collection — следующий локальный variant contract.
+4. Catalog error/stale — два независимых UI-state contract после empty collection.
 
 После утверждения каждого блока решения должны быть записаны отдельными DEC ID и связаны с rules, exceptions, scenarios, templates, observations и migration map до реализации UI.

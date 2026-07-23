@@ -99,9 +99,26 @@ test("my tasks, signing and favorites visual baseline", async ({ page }) => {
   await expect(signingCards.nth(3)).toHaveScreenshot("signing-card-rejected.png", { animations: "disabled" });
 
   await page.getByRole("button", { name: "избранное", exact: true }).click();
+  const favoriteServices = page.getByRole("region", { name: "Избранное", exact: true }).locator('[data-card-template="service_offer_card"]');
+  await expect(favoriteServices).toHaveCount(2);
+  await expect(favoriteServices.nth(0)).toHaveScreenshot("favorite-service-available.png", { animations: "disabled" });
+  await expect(favoriteServices.nth(1)).toHaveScreenshot("favorite-service-unavailable.png", { animations: "disabled" });
+  await page.getByRole("tab", { name: "магазины", exact: true }).click();
   await expect(page.locator('[data-card-template="favorite_store_card"]')).toHaveScreenshot("favorite-store.png", { animations: "disabled" });
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
   await expect(page.getByText("Сохранённых подборок пока нет", { exact: true })).toHaveScreenshot("favorites-empty.png", { animations: "disabled" });
+});
+
+test("favorites services narrow viewport visual baseline", async ({ page }) => {
+  await waitForReadyPrototype(page);
+  await stabilizeCardScreenshots(page);
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.getByRole("button", { name: "избранное", exact: true }).click();
+  await page.locator(".screen").evaluate((element) => { element.scrollTop = 0; });
+
+  await expect(page).toHaveScreenshot("favorites-services-narrow.png", {
+    animations: "disabled",
+  });
 });
 
 test("saved collection visual baseline", async ({ page }) => {

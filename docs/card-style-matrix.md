@@ -20,7 +20,7 @@
 | `service_offer_card.restriction_status` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | verified |
 | `service_offer_card.restriction_status_plus` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | verified |
 | `service_offer_card.restriction_tags` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | verified |
-| `service_offer_card.favorite_unavailable` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | migrated; Favorites runtime section unresolved |
+| `service_offer_card.favorite_unavailable` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | verified; unavailable status + remove-only action |
 | `employee_shift_card.primary_shift` | `EmployeeShiftCard` | `EmployeeShiftCard.module.css` | verified |
 | `employee_shift_card.accepted_extra_shift` | `EmployeeShiftCard` | `EmployeeShiftCard.module.css` | verified |
 | `my_service_card.pending` | `MyServiceCard` | `MyServiceCard.module.css` | verified |

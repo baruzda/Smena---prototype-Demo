@@ -8,7 +8,7 @@
 
 | UX template | Resolver | React component | Style module | Unit | Visual | E2E | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `service_offer_card` | `resolveServiceOfferPresentation` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | tasks; favorites surface navigation absent | migrated |
+| `service_offer_card` | `resolveServiceOfferPresentation` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | tasks + Favorites services | verified |
 | `employee_shift_card` | `resolveEmployeeShiftPresentation`, `resolveEmployeeShiftsForDay` | `EmployeeShiftCard` | `EmployeeShiftCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | tasks | verified |
 | `my_service_card` | `resolveMyServicePresentation` | `MyServiceCard` | `MyServiceCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | my tasks | verified |
 | `signing_card` | `resolveSigningPresentation` | `SigningCard` | `SigningCard.module.css` | `service-offer-presentation.test.mjs` | оба card visual suites | signing | verified |
@@ -19,7 +19,7 @@
 
 | UX ID | Legacy source | Target source | Status | Unit evidence | Visual evidence | E2E evidence | Legacy removed | Remaining gap |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `service_offer_card` | `src/App.jsx#TaskCard`, global `gig-task-*` | `src/entities/service-offer/` | migrated | resolver + coverage tests | 6 variant snapshots + runtime snapshots | tasks flow; Favorites lacks runtime service section | yes | `favorite_unavailable` has resolver/fixture evidence but no approved runtime Favorites entry point |
+| `service_offer_card` | `src/App.jsx#TaskCard`, global `gig-task-*` | `src/entities/service-offer/` | verified | resolver + coverage tests | 6 variant snapshots + runtime Favorites snapshots | tasks + Favorites available/unavailable flows | yes | DEC-013 closes lifecycle, navigation, and remove-only behavior |
 | `employee_shift_card` | `src/App.jsx#EmployeeShiftCard`, global `employee-shift-*` | `src/entities/employee-shift/`, `src/features/employee-schedule/` | verified | resolver and day-placement tests | 2 variant snapshots + runtime snapshots | tasks schedule | yes | none in approved contract |
 | `my_service_card` | `src/App.jsx#MyTaskCard`, global `my-task-*` | `src/entities/my-service/` | verified | resolver + active placement rule | 5 variant snapshots + runtime snapshots | my tasks statuses | yes | provisional runtime status mapping is not promoted |
 | `signing_card` | signing branch of `src/App.jsx#MyTaskCard` | `src/entities/signing/` | verified | resolver states/actions test | 4 variant snapshots + 4 runtime snapshots | signing region/card + CTA transition | yes | Реальная signing-интеграция и критичный deadline вне prototype scope |

@@ -30,6 +30,7 @@ function OfferCountdown({ initialSeconds = 19936 }) {
 export function ServiceOfferCard({
   context = {},
   onOpen,
+  onRemoveFavorite,
   presentation: suppliedPresentation,
   service,
 }) {
@@ -38,7 +39,21 @@ export function ServiceOfferCard({
   const showRestrictionTags = presentation.structuralVariant === "restriction_tags";
   const showStatus = ["restriction_status", "restriction_status_plus"].includes(presentation.structuralVariant);
   const showSuitableMarker = presentation.markers.includes("suitable_for_you");
+  const isFavoriteUnavailable = presentation.structuralVariant === "favorite_unavailable";
   const actionDisabled = presentation.disabledActions.includes("service.primary_action");
+  const cardClass = isFavoriteUnavailable ? styles.favoriteUnavailableCard : styles.card;
+  const topClass = isFavoriteUnavailable ? styles.favoriteUnavailableTop : styles.top;
+  const copyClass = isFavoriteUnavailable ? styles.favoriteUnavailableCopy : styles.copy;
+  const addressClass = isFavoriteUnavailable
+    ? [
+      styles.favoriteUnavailableAddress,
+      service.metro ? styles.favoriteUnavailableAddressWithMetro : "",
+    ]
+    : [styles.address, service.metro ? styles.addressWithMetro : ""];
+  const dividerClass = isFavoriteUnavailable ? styles.favoriteUnavailableDivider : styles.divider;
+  const bottomClass = isFavoriteUnavailable ? styles.favoriteUnavailableBottom : styles.bottom;
+  const paymentClass = isFavoriteUnavailable ? styles.favoriteUnavailablePayment : styles.payment;
+  const timeClass = isFavoriteUnavailable ? styles.favoriteUnavailableTime : styles.time;
 
   function handlePrimaryAction(event) {
     event.stopPropagation();
@@ -48,7 +63,7 @@ export function ServiceOfferCard({
   return (
     <article
       className={[
-        styles.card,
+        cardClass,
         styles[presentation.structuralVariant],
         onOpen ? styles.clickable : "",
       ].filter(Boolean).join(" ")}
@@ -63,9 +78,10 @@ export function ServiceOfferCard({
           type="button"
         />
       )}
-      <div className={styles.top}>
-        <div className={styles.copy}>
+      <div className={topClass}>
+        <div className={copyClass}>
           {showSuitableMarker && <span className={styles.suitableMarker}>подходит вам</span>}
+          {isFavoriteUnavailable && <span className={styles.favoriteUnavailableStatus}>больше недоступно</span>}
           {showStatus && (
             <span className={styles.restrictionStatus}>
               <i aria-hidden="true" />
@@ -79,7 +95,7 @@ export function ServiceOfferCard({
             </span>
           )}
           <h2>{service.title}</h2>
-          <p className={service.metro ? `${styles.address} ${styles.addressWithMetro}` : styles.address}>
+          <p className={addressClass.filter(Boolean).join(" ")}>
             {service.metro && <MetroIcon className={styles.metroIcon} metro={service.metro} />}
             <span data-testid="service-offer-address">
               {service.metro && <>{service.metro.station} · </>}
@@ -89,13 +105,13 @@ export function ServiceOfferCard({
         </div>
         <BrandMark brand={service.brand} className={styles.brandLogo} />
       </div>
-      <div className={styles.divider} />
-      <div className={styles.bottom}>
-        <div className={styles.payment}>
+      <div className={dividerClass} />
+      <div className={bottomClass}>
+        <div className={paymentClass}>
           <p>{service.payment}</p>
           <p>{service.rate}</p>
         </div>
-        <div className={styles.time}>
+        <div className={timeClass}>
           <p>{service.hours}</p>
           <p>{service.breakInfo}</p>
         </div>
@@ -108,6 +124,18 @@ export function ServiceOfferCard({
       {isSpecial && (
         <button className={styles.primaryAction} disabled={actionDisabled} onClick={handlePrimaryAction} type="button">
           принять задание
+        </button>
+      )}
+      {isFavoriteUnavailable && (
+        <button
+          className={styles.favoriteRemoveAction}
+          onClick={(event) => {
+            event.stopPropagation();
+            onRemoveFavorite?.(service.id);
+          }}
+          type="button"
+        >
+          удалить из избранного
         </button>
       )}
     </article>

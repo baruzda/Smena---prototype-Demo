@@ -208,15 +208,22 @@ test("metro content uses address fallback when data is absent", () => {
   assert.ok(withMetro.visibleContent.includes("service.metro"));
 });
 
-test("[SCN-FAVORITES-001][SCN-FAVORITES-002][RULE-FAVORITES-001] favorite placement and [EXC-FAVORITES-001] unavailable section", () => {
+test("[SCN-FAVORITES-001][SCN-FAVORITES-002][SCN-FAVORITES-010][RULE-FAVORITES-001][RULE-FAVORITES-004] favorite placement and [EXC-FAVORITES-001] unavailable section", () => {
   const available = resolveServiceOfferPresentation({ ...baseService, isFavorite: true }, { surface: "favorites" });
   const unavailable = resolveServiceOfferPresentation({ ...baseService, isFavorite: true, state: "expired" }, { surface: "favorites" });
+  const cancelled = resolveServiceOfferPresentation({ ...baseService, isFavorite: true, state: "cancelled" }, { surface: "favorites" });
   assert.equal(available.section, "services_available");
   assert.equal(unavailable.section, "services_unavailable");
+  assert.equal(cancelled.section, "services_unavailable");
+  assert.equal(cancelled.structuralVariant, "favorite_unavailable");
+  assert.deepEqual(unavailable.enabledActions, ["favorite.remove_action"]);
+  assert.deepEqual(unavailable.disabledActions, ["service.primary_action"]);
+  assert.ok(unavailable.visibleContent.includes("favorite.unavailable_status"));
+  assert.ok(unavailable.appliedRuleIds.includes("RULE-FAVORITES-004"));
   assert.ok(unavailable.appliedExceptionIds.includes("EXC-FAVORITES-001"));
 });
 
-test("[RULE-FAVORITES-001] accepted and completed favorites leave the Favorites surface", () => {
+test("[SCN-FAVORITES-009][RULE-FAVORITES-001] accepted and completed favorites leave the Favorites surface", () => {
   for (const state of ["pending_confirmation", "signing_required", "booked", "active", "completed"]) {
     const result = resolveServiceOfferPresentation({ ...baseService, isFavorite: true, state }, { surface: "favorites" });
     assert.equal(result.placement, "excluded", state);

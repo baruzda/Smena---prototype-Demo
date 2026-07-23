@@ -49,3 +49,16 @@
 - No application-console errors. The browser sandbox reports a Vite HMR WebSocket transport warning only; it does not affect rendering or interaction.
 
 final result: passed
+
+## Favorites services — DEC-013
+
+- Scope: shared `service_offer_card` on Favorites plus the local Favorites tab shell.
+- Evidence: `favorite-service-available.png`, `favorite-service-unavailable.png`, `favorites-services-narrow.png`, and `service-offer-card--favorite-unavailable.png`.
+- Checked at 393 × 860 and 320 × 700; tabs fit without horizontal clipping.
+- Available service opens details. `favorite_unavailable` has no details/booking control and only exposes `удалить из избранного`.
+- Tabs use a stable `tabpanel`, roving focus, arrow/Home/End navigation, and selected-state semantics.
+- `favorite_unavailable` semantic layout styles are isolated from other service-card variants; only approved neutral atoms remain shared.
+- Removal exits softly for normal motion, uses independent pending timers, flushes on unmount, and commits immediately under reduced motion.
+- Independent design-QA re-review: no remaining actionable findings, score 10/10.
+
+final result: passed
