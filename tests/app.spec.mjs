@@ -360,6 +360,31 @@ test("сохранённая подборка открывает выдачу и
   await expect(page.getByText("Сохранённых подборок пока нет", { exact: true })).toBeVisible();
 });
 
+test("[SCN-FAVORITES-012] пустая подборка предлагает изменить условия и не открывает пустую выдачу", async ({ page }) => {
+  await page.getByRole("button", { name: "Открыть фильтры", exact: true }).click();
+  await page.getByRole("textbox", { name: "Минимальная стоимость", exact: true }).fill("99999");
+  await page.getByRole("button", { name: "сохранить подборку", exact: true }).click();
+  const saveDialog = page.getByRole("dialog", { name: "Сохранение подборки", exact: true });
+  await saveDialog.getByRole("button", { name: "сохранить подборку", exact: true }).click();
+  await page.getByRole("button", { name: "Назад к заданиям", exact: true }).click();
+
+  await page.getByRole("button", { name: "избранное", exact: true }).click();
+  await page.getByRole("tab", { name: "подборки", exact: true }).click();
+  const emptyCollection = page.locator('[data-card-template="saved_collection_card"][data-card-variant="empty_collection"]');
+  await expect(emptyCollection).toBeVisible();
+  await expect(emptyCollection.getByText("сейчас подходящих заданий нет", { exact: true })).toBeVisible();
+  await expect(emptyCollection.getByText("измените условия подборки — покажем новые варианты", { exact: true })).toBeVisible();
+  await expect(emptyCollection.getByRole("button", { name: "показать задания", exact: true })).toHaveCount(0);
+  await emptyCollection.getByRole("button", { name: "изменить подборку", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "Минимальная стоимость", exact: true })).toHaveValue("99999");
+
+  await page.getByRole("button", { name: "Назад к заданиям", exact: true }).click();
+  await page.getByRole("tab", { name: "подборки", exact: true }).click();
+  const removableCollection = page.locator('[data-card-template="saved_collection_card"][data-card-variant="empty_collection"]');
+  await removableCollection.getByRole("button", { name: "Настройки подборки новая подборка", exact: true }).click();
+  await expect(removableCollection.getByRole("button", { name: "удалить подборку", exact: true })).toBeVisible();
+});
+
 test("адрес, радиус и выдача синхронизированы в сессии и сбрасываются после перезагрузки", async ({ page }) => {
   await page.route(/nominatim\.openstreetmap\.org\/search/, async (route) => {
     await route.fulfill({

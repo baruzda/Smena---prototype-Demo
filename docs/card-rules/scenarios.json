@@ -577,6 +577,111 @@
       "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
+      "id": "SCN-FAVORITES-011",
+      "name": "Сохранённая подборка без результатов остаётся видимой",
+      "given": {
+        "surface": "favorites",
+        "collection": {
+          "isSaved": true,
+          "resultCount": 0
+        }
+      },
+      "expected": {
+        "template": "saved_collection_card",
+        "variant": "empty_collection",
+        "section": "collections",
+        "visibleContent": [
+          "collection.filters_summary",
+          "collection.location",
+          "collection.empty_status",
+          "collection.empty_description"
+        ],
+        "enabledActions": [
+          "collection.edit",
+          "collection.delete"
+        ],
+        "disabledActions": [
+          "collection.apply"
+        ],
+        "appliedRules": [
+          "RULE-FAVORITES-002",
+          "RULE-FAVORITES-005",
+          "RULE-FAVORITES-006"
+        ],
+        "appliedExceptions": [
+          "EXC-FAVORITES-002"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-FAVORITES-012",
+      "name": "Пустая подборка открывает изменение условий",
+      "given": {
+        "surface": "favorites",
+        "userAction": "collection.edit",
+        "collection": {
+          "isSaved": true,
+          "resultCount": 0
+        }
+      },
+      "expected": {
+        "template": "saved_collection_card",
+        "variant": "empty_collection",
+        "section": "collections",
+        "visibleContent": [
+          "collection.empty_status",
+          "collection.empty_description"
+        ],
+        "enabledActions": [
+          "collection.edit",
+          "collection.delete"
+        ],
+        "disabledActions": [
+          "collection.apply"
+        ],
+        "appliedRules": [
+          "RULE-FAVORITES-002",
+          "RULE-FAVORITES-005",
+          "RULE-FAVORITES-006"
+        ],
+        "appliedExceptions": [
+          "EXC-FAVORITES-002"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/app.spec.mjs"
+    },
+    {
+      "id": "SCN-FAVORITES-013",
+      "name": "Непустая подборка открывает выдачу",
+      "given": {
+        "surface": "favorites",
+        "collection": {
+          "isSaved": true,
+          "resultCount": 1
+        }
+      },
+      "expected": {
+        "template": "saved_collection_card",
+        "section": "collections",
+        "enabledActions": [
+          "collection.edit",
+          "collection.apply",
+          "collection.delete"
+        ],
+        "disabledActions": [],
+        "appliedRules": [
+          "RULE-FAVORITES-002",
+          "RULE-FAVORITES-005",
+          "RULE-FAVORITES-006"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
       "id": "SCN-SIGNING-001",
       "name": "Документы ждут подписи пользователя",
       "given": {

@@ -216,6 +216,51 @@
       "required": false,
       "fallback": "Любая территория",
       "templates": ["saved_collection_card"]
+    },
+    {
+      "id": "collection.empty_status",
+      "name": "Статус пустой сохранённой подборки",
+      "slot": "status",
+      "source": "computed",
+      "required": false,
+      "fallback": null,
+      "templates": ["saved_collection_card"]
+    },
+    {
+      "id": "collection.empty_description",
+      "name": "Пояснение пустой сохранённой подборки",
+      "slot": "status",
+      "source": "computed",
+      "required": false,
+      "fallback": null,
+      "templates": ["saved_collection_card"]
+    },
+    {
+      "id": "collection.apply",
+      "name": "Показать задания подборки",
+      "slot": "actions",
+      "source": "computed",
+      "required": false,
+      "fallback": null,
+      "templates": ["saved_collection_card"]
+    },
+    {
+      "id": "collection.edit",
+      "name": "Изменить подборку",
+      "slot": "actions",
+      "source": "computed",
+      "required": false,
+      "fallback": null,
+      "templates": ["saved_collection_card"]
+    },
+    {
+      "id": "collection.delete",
+      "name": "Удалить подборку",
+      "slot": "actions",
+      "source": "computed",
+      "required": false,
+      "fallback": null,
+      "templates": ["saved_collection_card"]
     }
   ]
 }

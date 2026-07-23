@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getTaskHours, shiftsOverlap } from "./schedule-utils.js";
 import { CatalogLoadingState } from "./entities/catalog-state/ui/CatalogStates/CatalogStates.jsx";
-import { getPaymentValue, isTaskWithinAvailability } from "./features/catalog-feed/model/resolveTaskFeed.js";
+import { getDistanceInMeters, getPaymentValue, isTaskWithinAvailability } from "./features/catalog-feed/model/resolveTaskFeed.js";
 import { assetUrl } from "./shared/lib/assets.js";
 import { BrandMark } from "./shared/ui/BrandMark/BrandMark.jsx";
 import { MetroIcon } from "./shared/ui/MetroIcon/MetroIcon.jsx";
@@ -548,6 +548,19 @@ const dayGroups = days.map((day, dayIndex) => {
     })),
   };
 });
+
+function getSavedCollectionResultCount(filters, radius) {
+  const maximumDistance = Number.isFinite(radius) ? radius * 1000 : Infinity;
+  const minimumPayment = Number.parseInt(filters.minimumPayment.replace(/\D/g, ""), 10) || 0;
+  const selectedService = filters.service.trim().toLocaleLowerCase("ru-RU");
+
+  return dayGroups.flatMap((day) => day.tasks).filter((task) => (
+    (filters.brands.length === 0 || filters.brands.includes(task.brand))
+    && (!selectedService || task.title.toLocaleLowerCase("ru-RU").includes(selectedService))
+    && getPaymentValue(task.payment) >= minimumPayment
+    && getDistanceInMeters(task.distance) <= maximumDistance
+  )).length;
+}
 
 const demoMyTaskRecords = [
   { day: dayGroups[1], id: "demo-my-task-booked", status: "booked", task: dayGroups[1].tasks[0] },
@@ -2083,6 +2096,7 @@ export function App() {
               filters: { ...filters, brands: [...filters.brands] },
               location: { ...location, coords: [...location.coords] },
               radius,
+              resultCount: getSavedCollectionResultCount(filters, radius),
               title: editingCollection.title,
             } : collection));
             setEditingCollection(null);
@@ -2107,6 +2121,7 @@ export function App() {
               location,
               notifications,
               radius,
+              resultCount: getSavedCollectionResultCount(filters, radius),
               title,
             },
             ...collections,

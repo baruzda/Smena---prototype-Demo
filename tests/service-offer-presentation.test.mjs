@@ -316,17 +316,29 @@ test("[SCN-SHIFT-001][SCN-SHIFT-002] shifts are scoped to the selected day outsi
   assert.deepEqual(otherDay, []);
 });
 
-test("[SCN-FAVORITES-003][SCN-FAVORITES-004][RULE-FAVORITES-002] saved collection placement is resolved", () => {
+test("[SCN-FAVORITES-003][SCN-FAVORITES-004][SCN-FAVORITES-011][SCN-FAVORITES-013][RULE-FAVORITES-002][RULE-FAVORITES-005][RULE-FAVORITES-006][EXC-FAVORITES-002] saved collection states are resolved", () => {
   const collection = {
     filters: { brands: [], minimumPayment: "", service: "" },
     location: { label: "" },
     radius: 1,
   };
   const saved = resolveFavoriteCollectionPresentation(collection, ["pyaterochka"]);
+  const empty = resolveFavoriteCollectionPresentation({ ...collection, resultCount: 0 }, ["pyaterochka"]);
   const unsaved = resolveFavoriteCollectionPresentation({ ...collection, isSaved: false }, ["pyaterochka"]);
   assert.equal(saved.section, "collections");
+  assert.equal(saved.structuralVariant, "active_collection");
+  assert.deepEqual(saved.enabledActions, ["collection.edit", "collection.apply", "collection.delete"]);
+  assert.deepEqual(saved.disabledActions, []);
+  assert.equal(empty.structuralVariant, "empty_collection");
+  assert.deepEqual(empty.enabledActions, ["collection.edit", "collection.delete"]);
+  assert.deepEqual(empty.disabledActions, ["collection.apply"]);
+  assert.ok(empty.visibleContent.includes("collection.empty_status"));
+  assert.ok(empty.visibleContent.includes("collection.empty_description"));
+  assert.ok(empty.appliedExceptionIds.includes("EXC-FAVORITES-002"));
   assert.equal(unsaved.placement, "excluded");
   assert.ok(saved.appliedRuleIds.includes("RULE-FAVORITES-002"));
+  assert.ok(saved.appliedRuleIds.includes("RULE-FAVORITES-005"));
+  assert.ok(saved.appliedRuleIds.includes("RULE-FAVORITES-006"));
 });
 
 test("[SCN-FAVORITES-005][SCN-FAVORITES-006][RULE-FAVORITES-003] favorite store placement is resolved", () => {
@@ -354,6 +366,8 @@ test("every active card rule and exception has resolver evidence", () => {
     "RULE-SHIFT-001",
     "RULE-FAVORITES-002",
     "RULE-FAVORITES-003",
+    "RULE-FAVORITES-005",
+    "RULE-FAVORITES-006",
     "RULE-SIGNING-001",
     "RULE-SIGNING-002",
     "RULE-SIGNING-003",
@@ -362,6 +376,7 @@ test("every active card rule and exception has resolver evidence", () => {
   ].sort();
   const evidencedExceptionIds = [
     ...serviceOfferResolverCoverage.activeExceptions,
+    "EXC-FAVORITES-002",
     "EXC-SIGNING-001",
   ].sort();
   assert.deepEqual(evidencedRuleIds, activeRuleIds);

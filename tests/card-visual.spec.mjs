@@ -136,3 +136,24 @@ test("saved collection visual baseline", async ({ page }) => {
 
   await expect(page.locator('[data-card-template="saved_collection_card"]')).toHaveScreenshot("favorite-saved-collection.png", { animations: "disabled" });
 });
+
+test("empty saved collection visual baseline", async ({ page }) => {
+  await waitForReadyPrototype(page);
+  await stabilizeCardScreenshots(page);
+
+  await page.getByRole("button", { name: "Открыть фильтры", exact: true }).click();
+  await page.getByRole("textbox", { name: "Минимальная стоимость", exact: true }).fill("99999");
+  await page.getByRole("button", { name: "сохранить подборку", exact: true }).click();
+  const saveDialog = page.getByRole("dialog", { name: "Сохранение подборки", exact: true });
+  await saveDialog.getByRole("button", { name: "сохранить подборку", exact: true }).click();
+  await page.getByRole("button", { name: "Назад к заданиям", exact: true }).click();
+  await page.getByRole("button", { name: "избранное", exact: true }).click();
+  await page.getByRole("tab", { name: "подборки", exact: true }).click();
+
+  const emptyCollection = page.locator('[data-card-template="saved_collection_card"][data-card-variant="empty_collection"]');
+  await expect(emptyCollection).toHaveScreenshot("favorite-empty-collection.png", { animations: "disabled" });
+
+  await page.setViewportSize({ width: 320, height: 700 });
+  await emptyCollection.getByRole("button", { name: "Настройки подборки новая подборка", exact: true }).click();
+  await expect(emptyCollection).toHaveScreenshot("favorite-empty-collection-narrow-menu.png", { animations: "disabled" });
+});

@@ -44,27 +44,21 @@
 
 ## Решение 3. Пустая сохранённая подборка
 
-Связанные вопросы определяются контрактом `saved_collection_card.empty_collection`; отдельного утверждённого решения в доступных источниках нет.
+Статус: утверждено пользователем 2026-07-23, зафиксировано в `DEC-014`.
 
-Текущее доказанное состояние:
+Утверждённый контракт:
 
-- сохранённая подборка поддерживает apply/edit/delete;
-- unsaved collection исключается resolver-ом и не рендерится;
-- `empty_collection` имеет resolver и fixture, но повторяет active anatomy;
-- экран без сохранённых подборок — отдельное общее empty state, а не `empty_collection`.
-
-Нужно утвердить:
-
-1. Остаётся ли сохранённая карточка видимой, если текущая подборка возвращает ноль заданий.
-2. Какой текст заменяет или дополняет summary.
-3. Доступно ли `показать задания`, либо primary action меняется на редактирование фильтров.
-4. Сохраняются ли edit/delete и chips.
+1. Сохранённая подборка с `resultCount: 0` остаётся видимой в Favorites.
+2. Карточка сохраняет title, brand context и filter chips.
+3. Карточка показывает `сейчас подходящих заданий нет` и `измените условия подборки — покажем новые варианты`.
+4. `показать задания` скрыто; primary recovery — `изменить подборку`.
+5. Edit и delete остаются доступны; несохранённая подборка остаётся исключённой.
 
 После решения:
 
-- закрепить variant anatomy и `enabledActions`;
-- добавить runtime zero-result scenario, E2E и visual baseline;
-- перевести `saved_collection_card` в `verified`.
+- `empty_collection` получает самостоятельную variant anatomy и action contract;
+- добавляется runtime zero-result scenario, E2E и visual baseline;
+- `saved_collection_card` переводится в `verified`.
 
 ## Решение 4. Ошибка и устаревшие данные каталога
 
@@ -93,7 +87,7 @@
 
 1. Signing — утверждено и реализовано в `DEC-012`.
 2. Favorites services — утверждено и реализовано в `DEC-013`.
-3. Empty collection — следующий локальный variant contract.
-4. Catalog error/stale — два независимых UI-state contract после empty collection.
+3. Empty collection — утверждено и реализуется в `DEC-014`.
+4. Catalog error/stale — следующий блок из двух независимых UI-state contracts.
 
 После утверждения каждого блока решения должны быть записаны отдельными DEC ID и связаны с rules, exceptions, scenarios, templates, observations и migration map до реализации UI.

@@ -26,3 +26,8 @@
 | signing.primary_action | Действие с документами | actions | computed | Нет | - | signing_card |
 | collection.filters_summary | Состав подборки | filters_summary | collection.filters | Да | Без дополнительных фильтров | saved_collection_card |
 | collection.location | Территория подборки | location | collection.location | Нет | Любая территория | saved_collection_card |
+| collection.empty_status | Статус пустой сохранённой подборки | status | computed | Нет | - | saved_collection_card |
+| collection.empty_description | Пояснение пустой сохранённой подборки | status | computed | Нет | - | saved_collection_card |
+| collection.apply | Показать задания подборки | actions | computed | Нет | - | saved_collection_card |
+| collection.edit | Изменить подборку | actions | computed | Нет | - | saved_collection_card |
+| collection.delete | Удалить подборку | actions | computed | Нет | - | saved_collection_card |

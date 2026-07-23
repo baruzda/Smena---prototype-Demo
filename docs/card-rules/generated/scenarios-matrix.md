@@ -21,6 +21,9 @@
 | SCN-FAVORITES-008 | verified |
 | SCN-FAVORITES-009 | verified |
 | SCN-FAVORITES-010 | verified |
+| SCN-FAVORITES-011 | verified |
+| SCN-FAVORITES-012 | verified |
+| SCN-FAVORITES-013 | verified |
 | SCN-MATCH-001 | declarative |
 | SCN-MATCH-002 | declarative |
 | SCN-MYTASKS-001 | declarative |

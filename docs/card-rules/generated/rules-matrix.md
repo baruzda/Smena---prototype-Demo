@@ -14,9 +14,11 @@
 | RULE-MYTASKS-001 | Принятая услуга появляется в Моих заданиях | active | service_offer | my_tasks | placement:upcoming | place | 800 | - |
 | RULE-MYTASKS-002 | Статус определяет секцию в Моих заданиях | provisional | service_offer | my_tasks | placement:map | place | 800 | - |
 | RULE-FAVORITES-001 | Сохранённая услуга показывается в Избранном | active | service_offer | favorites | placement:services_available | place | 700 | EXC-FAVORITES-001 |
-| RULE-FAVORITES-002 | Сохранённая подборка показывается в Избранном | active | saved_collection | favorites | placement:collections | place | 700 | - |
+| RULE-FAVORITES-002 | Сохранённая подборка показывается в Избранном | active | saved_collection | favorites | placement:collections | place | 700 | EXC-FAVORITES-002 |
 | RULE-FAVORITES-003 | Карточка избранного магазина показывается в Избранном | active | favorite_store | favorites | placement:stores | place | 700 | - |
 | RULE-FAVORITES-004 | Недоступную избранную услугу можно только удалить | active | service_offer | favorites | content_element:favorite.remove_action | enable | 900 | - |
+| RULE-FAVORITES-005 | Показать задания доступно только для непустой подборки | active | saved_collection | favorites | action:collection.apply | enable | 900 | - |
+| RULE-FAVORITES-006 | Сохранённую подборку можно изменить | active | saved_collection | favorites | action:collection.edit | enable | 900 | - |
 | RULE-SIGNING-001 | Документы пользователя показываются в табе На подписание | active | service_offer | signing | placement:waiting_user | place | 800 | EXC-SIGNING-001 |
 | RULE-SIGNING-002 | Документы на проверке остаются в табе Signing | active | service_offer | signing | placement:processing | place | 800 | - |
 | RULE-SIGNING-003 | Подписанные документы остаются в табе Signing | active | service_offer | signing | placement:signed | place | 800 | - |

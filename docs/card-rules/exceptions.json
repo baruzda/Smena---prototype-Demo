@@ -72,6 +72,21 @@
       "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-013" }
     },
     {
+      "id": "EXC-FAVORITES-002",
+      "name": "Пустая сохранённая подборка остаётся в Избранном",
+      "status": "active",
+      "relatedQuestion": "OPEN-QUESTION-027",
+      "baseRule": "RULE-FAVORITES-002",
+      "when": { "all": [
+        { "path": "collection.isSaved", "operator": "not_equals", "value": false },
+        { "path": "collection.resultCount", "operator": "equals", "value": 0 }
+      ] },
+      "override": { "action": "place", "surface": "favorites", "section": "collections", "variant": "empty_collection" },
+      "priority": 800,
+      "reason": "Нулевой результат не отменяет сохранённые пользователем условия; карточка остаётся и предлагает изменить подборку.",
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-014" }
+    },
+    {
       "id": "EXC-SIGNING-001",
       "name": "Документ без действия пользователя не показывается как ожидающий",
       "status": "active",

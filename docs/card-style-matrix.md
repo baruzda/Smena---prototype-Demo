@@ -33,7 +33,7 @@
 | `signing_card.signed` | `SigningCard` | `SigningCard.module.css` | verified; остаётся в Signing без CTA |
 | `signing_card.rejected` | `SigningCard` | `SigningCard.module.css` | verified; остаётся в Signing без CTA |
 | `saved_collection_card.active_collection` | `FavoriteCollectionCard` | `FavoriteCollectionCard.module.css` | verified |
-| `saved_collection_card.empty_collection` | `FavoriteCollectionCard` | `FavoriteCollectionCard.module.css` | migrated; exact empty-result anatomy unresolved |
+| `saved_collection_card.empty_collection` | `FavoriteCollectionCard` | `FavoriteCollectionCard.module.css` | verified; DEC-014 zero-result copy, edit recovery, apply hidden |
 | `favorite_store_card.default` | `FavoriteStoreCard` | `FavoriteStoreCard.module.css` | verified |
 
 Marker `suitable_for_you` — отдельная ось presentation model и не выбирает structural variant.

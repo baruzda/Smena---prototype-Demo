@@ -307,10 +307,10 @@
       "effect": { "action": "place" },
       "otherwise": { "action": "remove_from_surface" },
       "priority": 700,
-      "exceptions": [],
+      "exceptions": ["EXC-FAVORITES-002"],
       "supersedes": [],
-      "source": { "documents": ["README.md"], "decision": "DEC-001" },
-      "tests": ["SCN-FAVORITES-003", "SCN-FAVORITES-004"]
+      "source": { "documents": ["README.md", "AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-014" },
+      "tests": ["SCN-FAVORITES-003", "SCN-FAVORITES-004", "SCN-FAVORITES-011", "SCN-FAVORITES-012"]
     },
     {
       "id": "RULE-FAVORITES-003",
@@ -355,6 +355,55 @@
       "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-013" },
       "relatedQuestion": "OPEN-QUESTION-013",
       "tests": ["SCN-FAVORITES-002", "SCN-FAVORITES-008"]
+    },
+    {
+      "id": "RULE-FAVORITES-005",
+      "name": "Показать задания доступно только для непустой подборки",
+      "status": "active",
+      "scope": {
+        "entity": "saved_collection",
+        "surfaces": ["favorites"],
+        "templates": ["saved_collection_card"]
+      },
+      "target": { "type": "action", "id": "collection.apply" },
+      "when": {
+        "all": [
+          { "path": "collection.isSaved", "operator": "not_equals", "value": false },
+          { "path": "collection.resultCount", "operator": "greater_than", "value": 0 }
+        ]
+      },
+      "effect": { "action": "enable" },
+      "otherwise": { "action": "disable" },
+      "priority": 900,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-014" },
+      "relatedQuestion": "OPEN-QUESTION-027",
+      "tests": ["SCN-FAVORITES-011", "SCN-FAVORITES-012", "SCN-FAVORITES-013"]
+    },
+    {
+      "id": "RULE-FAVORITES-006",
+      "name": "Сохранённую подборку можно изменить",
+      "status": "active",
+      "scope": {
+        "entity": "saved_collection",
+        "surfaces": ["favorites"],
+        "templates": ["saved_collection_card"]
+      },
+      "target": { "type": "action", "id": "collection.edit" },
+      "when": {
+        "all": [
+          { "path": "collection.isSaved", "operator": "not_equals", "value": false }
+        ]
+      },
+      "effect": { "action": "enable" },
+      "otherwise": { "action": "disable" },
+      "priority": 900,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-014" },
+      "relatedQuestion": "OPEN-QUESTION-027",
+      "tests": ["SCN-FAVORITES-011", "SCN-FAVORITES-012", "SCN-FAVORITES-013"]
     },
     {
       "id": "RULE-SIGNING-001",
