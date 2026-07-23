@@ -576,26 +576,11 @@ h1 {
 }
 
 .filter-scroll-at-end::after,
-.filter-scroll-at-start::before,
-.filter-scroll-at-start::after {
+.filter-scroll-at-start::before {
   opacity: 0;
 }
 
-/* The fading edge belongs to the scroll viewport, so clipped labels soften too. */
-.filter-scroll-at-start {
-  -webkit-mask-image: none;
-  mask-image: none;
-}
-
-.filter-scroll-in-progress {
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 48px calc(100% - 48px), transparent);
-  mask-image: linear-gradient(to right, transparent, #000 48px calc(100% - 48px), transparent);
-}
-
-.filter-scroll-at-end {
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 48px);
-  mask-image: linear-gradient(to right, transparent, #000 48px);
-}
+/* Use pseudo-elements only: a mask would add a second fade at the same edge. */
 
 .filter-row {
   align-items: center;
@@ -1120,6 +1105,15 @@ h1 {
 
 .task-message-card-empty {
   gap: 2px;
+}
+
+.timeline-end-placeholder {
+  color: #6c737d;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 20px;
+  margin: 20px 0 12px;
+  text-align: center;
 }
 
 
@@ -1975,7 +1969,7 @@ h1 {
 }
 
 .filters-screen {
-  animation: screen-soft-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: screen-slide-in-right 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
   background: #fff;
   box-sizing: border-box;
   display: flex;
@@ -1984,6 +1978,28 @@ h1 {
   overflow: hidden;
   padding: 56px 16px 0;
   position: relative;
+}
+
+.filters-screen-exit {
+  animation: screen-slide-out-right 260ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes screen-slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes screen-slide-out-right {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filters-screen,
+  .filters-screen-exit {
+    animation-duration: 0s;
+  }
 }
 
 .location-picker-screen {
@@ -2883,6 +2899,59 @@ button.filter-field {
   width: 144px;
 }
 
+.collection-actions-sheet-layer {
+  align-items: end;
+  animation: sheet-backdrop-in 220ms ease;
+  background: rgb(0 0 0 / 32%);
+  display: flex;
+  inset: 0;
+  position: absolute;
+  z-index: 40;
+}
+
+.collection-actions-sheet {
+  animation: sheet-enter 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  box-sizing: border-box;
+  padding: 8px 16px 32px;
+  width: 100%;
+}
+
+.collection-actions-sheet-handle {
+  background: #b8b8b8;
+  border-radius: 100px;
+  display: block;
+  height: 4px;
+  margin: 0 auto 16px;
+  width: 48px;
+}
+
+.collection-actions-sheet button {
+  background: #fff;
+  border: 0;
+  border-radius: 14px;
+  color: #000;
+  display: block;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 20px;
+  line-height: 24px;
+  min-height: 56px;
+  padding: 0 16px;
+  text-align: left;
+  width: 100%;
+}
+
+.collection-actions-sheet .collection-actions-delete {
+  color: #e33a1d;
+}
+
+.collection-actions-sheet .collection-actions-cancel {
+  background: #f4f4f5;
+  margin-top: 8px;
+  text-align: center;
+}
+
 .collection-save-sheet-layer {
   align-items: end;
   animation: sheet-backdrop-in 220ms ease;
@@ -3399,6 +3468,13 @@ button.filter-field {
   margin-top: 12px;
 }
 
+.quick-radius-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 16px;
+}
+
 .card-sheet-link {
   background: transparent;
   border: 0;
@@ -3692,6 +3768,12 @@ button.filter-field {
   margin-top: 16px;
 }
 
+.favorite-stores-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
 .favorite-collection-card {
   background: #fff;
   border: 1px solid rgb(0 0 0 / 0.12);
@@ -3750,6 +3832,10 @@ button.filter-field {
   padding: 12px;
 }
 
+.favorite-stores-list .favorite-store-card {
+  margin-top: 0;
+}
+
 .favorite-store-details {
   display: flex;
   flex-direction: column;
@@ -3795,12 +3881,11 @@ button.filter-field {
   width: 32px;
 }
 
-.favorite-store-metro-icon {
-  display: inline-block;
+.favorite-store-header .metro-icon {
+  display: block;
   flex: 0 0 14px;
-  height: 9px;
+  height: 18px;
   margin: 0 2px 0 0;
-  object-fit: contain;
   width: 14px;
 }
 

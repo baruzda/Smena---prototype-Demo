@@ -29,6 +29,7 @@ const days = Array.from({ length: Math.round((timelineEnd - timelineToday) / 86_
   return {
     calendarDate,
     date: String(calendarDate.getDate()),
+    id: calendarDate.toISOString().slice(0, 10),
     isMonthStart: index === 0 || calendarDate.getDate() === 1,
     monthLabel: calendarDate.toLocaleDateString("ru-RU", { month: "short" }).replace(".", ""),
     weekday: ["вс", "пн", "вт", "ср", "чт", "пт", "сб"][calendarDate.getDay()],
@@ -91,6 +92,72 @@ const emptySearchLocation = {
 
 const emptyFilters = { brands: [], minimumPayment: "", service: [], stores: [] };
 
+const defaultFavoriteCollections = [
+  {
+    availability: {
+      dateKeys: [days[1].id, days[3].id],
+      labels: [days.slice(1, 4).map((day) => day.calendarDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })).join(", ")],
+    },
+    filters: { brands: ["pyaterochka"], minimumPayment: "1800", service: ["выкладка товара"], stores: [] },
+    id: "demo-collection-merchandising",
+    location: { coords: [55.7522, 37.6156], label: "улица Большая Дмитровка" },
+    notifications: { email: false, frequency: null, push: true, quietHours: true },
+    radius: 5,
+    title: "смены рядом с центром",
+  },
+  {
+    availability: {
+      dateKeys: [days[5].id],
+      labels: [days[5].calendarDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })],
+    },
+    filters: { brands: ["perekrestok", "vprok"], minimumPayment: "2200", service: ["сборка товара", "комплектация"], stores: [] },
+    id: "demo-collection-warehouse",
+    location: { coords: [55.7214, 37.6345], label: "Павелецкая площадь" },
+    notifications: { email: true, frequency: "daily", push: false, quietHours: false },
+    radius: 10,
+    title: "сборка и комплектация",
+  },
+  {
+    availability: {
+      dateKeys: [days[7].id, days[9].id],
+      labels: [days.slice(7, 10).filter((_, index) => index !== 1).map((day) => day.calendarDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })).join(", ")],
+    },
+    filters: { brands: ["chizhik"], minimumPayment: "", service: ["погрузка-разгрузка"], stores: [] },
+    id: "demo-collection-evening",
+    location: { coords: [55.7613, 37.6605], label: "улица Нижняя Красносельская" },
+    notifications: { email: false, frequency: null, push: false, quietHours: false },
+    radius: 2,
+    title: "смены на вечер",
+  },
+];
+
+const defaultFavoriteStores = [
+  {
+    address: "Площадь Восстания · Косой переулок 5, к. 8",
+    brand: "pyaterochka",
+    chips: ["выкладка товара", "Пн, Ср, Пт", "от 1500 ₽"],
+    id: "demo-store-vosstaniya",
+    metro: { city: "spb", color: "#d6083b", label: "Метро Санкт-Петербурга", station: "Площадь Восстания" },
+    title: "магазин у площади Восстания",
+  },
+  {
+    address: "Бауманская · улица Фридриха Энгельса, 31",
+    brand: "perekrestok",
+    chips: ["сборка товара", "Вт, Чт", "от 2000 ₽"],
+    id: "demo-store-baumanskaya",
+    metro: { city: "msk", color: "#006cb7", label: "Метро Москвы", station: "Бауманская" },
+    title: "перекрёсток на Бауманской",
+  },
+  {
+    address: "Петроградская · Каменноостровский проспект, 42",
+    brand: "chizhik",
+    chips: ["погрузка-разгрузка", "Сб, Вс", "от 1800 ₽"],
+    id: "demo-store-petrogradskaya",
+    metro: { city: "spb", color: "#d6083b", label: "Метро Санкт-Петербурга", station: "Петроградская" },
+    title: "чижик на Петроградской",
+  },
+];
+
 function normalizeSelectedServices(value) {
   const services = Array.isArray(value) ? value : typeof value === "string" && value.trim() ? [value] : [];
   return [...new Set(services.map((service) => service.trim()).filter(Boolean))];
@@ -110,7 +177,7 @@ function getServiceSelectionSummary(value, emptyLabel = "услуга") {
 
 const emptyAvailabilityTime = { from: "", to: "", preset: null, presets: [] };
 
-const prototypeDefaultStateVersion = 4;
+const prototypeDefaultStateVersion = 5;
 const availabilityTimePresets = [
   { id: "all-day", label: "весь день", from: "08:00", to: "22:00" },
   { id: "morning", label: "утро", from: "08:00", to: "12:00" },
@@ -893,6 +960,10 @@ function NoTasksForDayCard({ onSubscribe }) {
   );
 }
 
+function EndOfTimelinePlaceholder() {
+  return <p className="timeline-end-placeholder" role="status">Больше заданий нет</p>;
+}
+
 function CardFiltersSheet({ filters, onApply, onClose, onOpenFullFilters }) {
   const [brands, setBrands] = useState(filters.brands);
   const [minimumPayment, setMinimumPayment] = useState(filters.minimumPayment);
@@ -921,6 +992,7 @@ function CardFiltersSheet({ filters, onApply, onClose, onOpenFullFilters }) {
           {brandOptions.map((brand) => {
             const isSelected = brands.includes(brand.id);
             return <button
+              aria-label={brand.label}
               aria-pressed={isSelected}
               className={isSelected ? "brand-filter-chip brand-filter-chip-selected" : "brand-filter-chip"}
               key={brand.id}
@@ -935,6 +1007,64 @@ function CardFiltersSheet({ filters, onApply, onClose, onOpenFullFilters }) {
         </label>
         <button className="card-sheet-link" onClick={onOpenFullFilters} type="button">все фильтры</button>
         <button className="card-sheet-primary" onClick={() => onApply({ ...filters, brands, minimumPayment })} type="button">применить</button>
+      </section>
+    </div>
+  );
+}
+
+function QuickFilterSheet({ filters, onApply, onClose, radius, type }) {
+  const [brands, setBrands] = useState(filters.brands);
+  const [minimumPayment, setMinimumPayment] = useState(filters.minimumPayment);
+  const [selectedRadius, setSelectedRadius] = useState(radius);
+  const brandOptions = [
+    { id: "pyaterochka", label: "Пятёрочка" },
+    { id: "perekrestok", label: "Перекрёсток" },
+    { id: "chizhik", label: "Чижик" },
+  ];
+  const titles = { distance: "расстояние", network: "торговая сеть", payment: "оплата" };
+
+  function apply() {
+    onApply({
+      filters: { ...filters, brands, minimumPayment },
+      radius: selectedRadius,
+    });
+  }
+
+  return (
+    <div className="card-sheet-layer" onClick={onClose}>
+      <section aria-label={`Быстрый фильтр: ${titles[type]}`} aria-modal="true" className="card-sheet" onClick={(event) => event.stopPropagation()} role="dialog">
+        <span aria-hidden="true" className="card-sheet-handle" />
+        <div className="card-sheet-header">
+          <h2>{titles[type]}</h2>
+          <button aria-label={`Закрыть фильтр: ${titles[type]}`} className="card-sheet-close" onClick={onClose} type="button">×</button>
+        </div>
+        {type === "network" && <div className="card-sheet-brands">
+          {brandOptions.map((brand) => {
+            const isSelected = brands.includes(brand.id);
+            return <button
+              aria-label={brand.label}
+              aria-pressed={isSelected}
+              className={isSelected ? "brand-filter-chip brand-filter-chip-selected" : "brand-filter-chip"}
+              key={brand.id}
+              onClick={() => setBrands((current) => current.includes(brand.id) ? current.filter((id) => id !== brand.id) : [...current, brand.id])}
+              type="button"
+            ><BrandMark brand={brand.id} /><span>{brand.label}</span></button>;
+          })}
+        </div>}
+        {type === "payment" && <label className={minimumPayment ? "card-sheet-field card-sheet-field-filled" : "card-sheet-field"}>
+          <span>минимальная стоимость ₽</span>
+          <input aria-label="Минимальная стоимость в быстром фильтре" inputMode="numeric" onChange={(event) => setMinimumPayment(event.target.value)} placeholder="Не указана" type="text" value={minimumPayment} />
+        </label>}
+        {type === "distance" && <div aria-label="Радиус быстрого фильтра" className="quick-radius-options">
+          {[1, 2, 5, 10, 50].map((value) => <button
+            aria-pressed={selectedRadius === value}
+            className={selectedRadius === value ? "radius-chip radius-chip-selected" : "radius-chip"}
+            key={value}
+            onClick={() => setSelectedRadius(value)}
+            type="button"
+          >{value} км</button>)}
+        </div>}
+        <button className="card-sheet-primary" onClick={apply} type="button">применить</button>
       </section>
     </div>
   );
@@ -1072,7 +1202,24 @@ function MyTaskCard({ booking }) {
 
 function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollection, onRemoveCollection }) {
   const [section, setSection] = useState("stores");
-  const demoStoreChips = ["уборка урожая пшеницы", "1, 2, 3 июня", "Пн, Ср, Пт", "от 1500 ₽"];
+  const [actionsTarget, setActionsTarget] = useState(null);
+  const [stores, setStores] = useState(defaultFavoriteStores);
+  const targetLabel = actionsTarget?.type === "store" ? "магазин" : "подборку";
+
+  function closeActions() {
+    setActionsTarget(null);
+  }
+
+  function editTarget() {
+    if (actionsTarget?.type === "collection") onEditCollection(actionsTarget.collection);
+    closeActions();
+  }
+
+  function removeTarget() {
+    if (actionsTarget?.type === "collection") onRemoveCollection(actionsTarget.collection.id);
+    if (actionsTarget?.type === "store") setStores((current) => current.filter((store) => store.id !== actionsTarget.store.id));
+    closeActions();
+  }
 
   return (
     <div className="favorites-view">
@@ -1097,23 +1244,25 @@ function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollect
         </button>
       </div>
 
-      {section === "stores" ? (
-        <article className="favorite-store-card">
-          <div className="favorite-store-details">
-            <div className="favorite-store-header">
-              <div>
-                <h2>название подборки конкретного магазина</h2>
-                <p><BrandMark brand="pyaterochka" /><img alt="" aria-hidden="true" className="favorite-store-metro-icon" src={assetUrl("collection-metro.svg")} />Площадь Восстания · Косой переулок 5, к. 8</p>
+      {section === "stores" && stores.length > 0 ? (
+        <div className="favorite-stores-list">
+          {stores.map((store) => <article className="favorite-store-card" key={store.id}>
+            <div className="favorite-store-details">
+              <div className="favorite-store-header">
+                <div>
+                  <h2>{store.title}</h2>
+                  <p><BrandMark brand={store.brand} /><MetroIcon metro={store.metro} />{store.address}</p>
+                </div>
+                <button aria-label={`Настройки магазина ${store.title}`} className="card-kebab-button" onClick={() => setActionsTarget({ store, type: "store" })} type="button"><img alt="" src={assetUrl("kebab.svg")} /></button>
               </div>
-              <button aria-label="Настройки подборки магазина" className="card-kebab-button" type="button"><img alt="" src={assetUrl("kebab.svg")} /></button>
+              <div className="favorite-chip-row">
+                {store.chips.map((chip) => <span className="favorite-chip" key={chip}>{chip}</span>)}
+              </div>
             </div>
-            <div className="favorite-chip-row">
-              {demoStoreChips.map((chip) => <span className="favorite-chip" key={chip}>{chip}</span>)}
-            </div>
-          </div>
-          <button className="favorite-apply" onClick={() => setSection("collections")} type="button">показать задания</button>
-        </article>
-      ) : collections.length === 0 ? (
+            <button className="favorite-apply" onClick={() => setSection("collections")} type="button">показать задания</button>
+          </article>)}
+        </div>
+      ) : section === "stores" ? <p className="task-empty-state my-tasks-empty">Сохранённых магазинов пока нет</p> : collections.length === 0 ? (
         <p className="task-empty-state my-tasks-empty">Сохранённых подборок пока нет</p>
       ) : (
         <div className="favorite-collections-list">
@@ -1133,7 +1282,7 @@ function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollect
               <article className="favorite-collection-card" key={collection.id}>
                 <div className="favorite-collection-header">
                   <h2>{collection.title}</h2>
-                  <button aria-label={`Настройки подборки ${collection.title}`} className="card-kebab-button" onClick={() => onEditCollection(collection)} type="button"><img alt="" src={assetUrl("kebab.svg")} /></button>
+                  <button aria-label={`Настройки подборки ${collection.title}`} className="card-kebab-button" onClick={() => setActionsTarget({ collection, type: "collection" })} type="button"><img alt="" src={assetUrl("kebab.svg")} /></button>
                 </div>
                 <div className="favorite-brand-row">
                   {collectionBrands.slice(0, 4).map((brand) => <BrandMark brand={brand} key={brand} />)}
@@ -1142,14 +1291,20 @@ function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollect
                   {collectionChips.map((chip) => <span className="favorite-chip" key={chip}>{chip}</span>)}
                 </div>
                 <button className="favorite-apply" onClick={() => onApplyCollection(collection)} type="button">показать задания</button>
-                <button aria-label={`Удалить подборку ${collection.title}`} className="favorite-delete" onClick={() => onRemoveCollection(collection.id)} type="button">
-                  <img alt="" src={assetUrl("trash.svg")} />
-                </button>
               </article>
             );
           })}
         </div>
       )}
+
+      {actionsTarget && <div className="collection-actions-sheet-layer" onClick={closeActions}>
+        <section aria-label={`Действия: ${targetLabel}`} aria-modal="true" className="collection-actions-sheet" onClick={(event) => event.stopPropagation()} role="dialog">
+          <span aria-hidden="true" className="collection-actions-sheet-handle" />
+          <button className="collection-actions-edit" onClick={editTarget} type="button">редактировать {targetLabel}</button>
+          <button className="collection-actions-delete" onClick={removeTarget} type="button">удалить {targetLabel}</button>
+          <button className="collection-actions-cancel" onClick={closeActions} type="button">отмена</button>
+        </section>
+      </div>}
     </div>
   );
 }
@@ -1753,7 +1908,7 @@ function LocationPicker({ initialLocation, initialRadius, onApply, onBack }) {
   );
 }
 
-function FiltersScreen({ initialCollectionAvailability, initialFilters, initialLocation, initialRadius, isEditingCollection = false, onBack, onSave, onSaveCollection }) {
+function FiltersScreen({ initialCollectionAvailability, initialFilters, initialLocation, initialRadius, isClosing = false, isEditingCollection = false, onBack, onSave, onSaveCollection }) {
   const [selectedBrands, setSelectedBrands] = useState(initialFilters.brands);
   const initialStores = normalizeSelectedStores(initialFilters.stores);
   const [selectedStores, setSelectedStores] = useState(initialStores);
@@ -1916,7 +2071,7 @@ function FiltersScreen({ initialCollectionAvailability, initialFilters, initialL
   );
 
   return (
-    <section className="filters-screen">
+    <section className={isClosing ? "filters-screen filters-screen-exit" : "filters-screen"}>
       <header className="filters-header">
         <div className="filters-navigation-row">
           <IconButton alt="" label="Назад к заданиям" onClick={onBack} src={assetUrl("back.svg")} />
@@ -2171,7 +2326,7 @@ export function App() {
   const persistedStateRef = useRef(readPrototypeState());
   const persistedState = persistedStateRef.current;
   const [activeTab, setActiveTab] = useState(0);
-  const [activeDay, setActiveDay] = useState(days[0].date);
+  const [activeDay, setActiveDay] = useState(days[0].id);
   const [onlyMatching, setOnlyMatching] = useState(true);
   const [networkFilter, setNetworkFilter] = useState("торговая сеть");
   const [filterScrollState, setFilterScrollState] = useState("at-start");
@@ -2186,7 +2341,7 @@ export function App() {
   const [searchRadius, setSearchRadius] = useState(persistedState.searchRadius ?? null);
   const [searchLocation, setSearchLocation] = useState(persistedState.searchLocation || emptySearchLocation);
   const [appliedFilters, setAppliedFilters] = useState(persistedState.appliedFilters || emptyFilters);
-  const [favoriteCollections, setFavoriteCollections] = useState(persistedState.favoriteCollections || []);
+  const [favoriteCollections, setFavoriteCollections] = useState(persistedState.favoriteCollections || defaultFavoriteCollections);
   const [pendingCollectionAvailability, setPendingCollectionAvailability] = useState(null);
   const [editingCollection, setEditingCollection] = useState(null);
   const [catalogVersion, setCatalogVersion] = useState(persistedState.catalogVersion || 0);
@@ -2200,6 +2355,7 @@ export function App() {
   ));
   const [bookedTasks, setBookedTasks] = useState(persistedState.bookedTasks || []);
   const [currentView, setCurrentView] = useState("tasks");
+  const [isFiltersClosing, setIsFiltersClosing] = useState(false);
   const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(true);
   const [settingsOnboardingAnchor, setSettingsOnboardingAnchor] = useState(null);
   const [startupPhase, setStartupPhase] = useState("spinner");
@@ -2207,6 +2363,14 @@ export function App() {
   const [scrollTargetDay, setScrollTargetDay] = useState(null);
   const [isTimelineLoading, setIsTimelineLoading] = useState(false);
   const [expandedFilteredDays, setExpandedFilteredDays] = useState([]);
+
+  function closeFilters() {
+    setIsFiltersClosing(true);
+    window.setTimeout(() => {
+      setIsFiltersClosing(false);
+      setCurrentView("tasks");
+    }, 260);
+  }
   const hasFilterChangesFromDefault = appliedFilters.brands.length > 0
     || Boolean(appliedFilters.minimumPayment)
     || normalizeSelectedServices(appliedFilters.service).length > 0
@@ -2310,7 +2474,7 @@ export function App() {
     if (!scrollTargetDay) return;
 
     const screen = document.querySelector(".screen");
-    const section = screen?.querySelector(`[data-day="${scrollTargetDay}"]`);
+    const section = screen?.querySelector(`[data-day-key="${scrollTargetDay}"]`);
     if (screen && section) {
       screen.scrollTo({
         top: Math.max(0, section.offsetTop - (isControlsRevealed ? 226 : 154)),
@@ -2365,7 +2529,7 @@ export function App() {
 
     lastScrollTopRef.current = currentScrollTop;
     const activationLine = screen.getBoundingClientRect().top + 154;
-    let nextActiveDay = dayGroups[0].date;
+    let nextActiveDay = dayGroups[0].id;
     const targetDay = programmaticDayRef.current;
 
     if (targetDay) {
@@ -2379,9 +2543,9 @@ export function App() {
 
     if (!programmaticDayRef.current) {
       dayGroups.forEach((day) => {
-        const section = daySectionRefs.current[day.date];
+        const section = daySectionRefs.current[day.id];
         if (section && section.getBoundingClientRect().top <= activationLine) {
-          nextActiveDay = day.date;
+          nextActiveDay = day.id;
         }
       });
     }
@@ -2393,22 +2557,22 @@ export function App() {
     setIsScrollTopVisible((current) => current === (currentScrollTop >= 320) ? current : currentScrollTop >= 320);
   }
 
-  function scrollToDay(date) {
-    const distance = Math.abs(days.findIndex((day) => day.date === date) - days.findIndex((day) => day.date === activeDay));
-    programmaticDayRef.current = date;
-    setActiveDay(date);
+  function scrollToDay(dayId) {
+    const distance = Math.abs(days.findIndex((day) => day.id === dayId) - days.findIndex((day) => day.id === activeDay));
+    programmaticDayRef.current = dayId;
+    setActiveDay(dayId);
 
     if (distance > 4) {
       window.clearTimeout(timelineLoadTimerRef.current);
       setIsTimelineLoading(true);
       timelineLoadTimerRef.current = window.setTimeout(() => {
         setIsTimelineLoading(false);
-        setScrollTargetDay(date);
+        setScrollTargetDay(dayId);
       }, 100);
       return;
     }
 
-    setScrollTargetDay(date);
+    setScrollTargetDay(dayId);
   }
 
   function scrollToTop() {
@@ -2650,14 +2814,15 @@ export function App() {
 
         <div className="sticky-timeline">
           <div aria-label="Даты" className="date-timeline">
-            {days.map(({ date, isMonthStart, monthLabel, weekday }) => (
+            {days.map(({ date, id, isMonthStart, monthLabel, weekday }) => (
               <button
-                aria-pressed={activeDay === date}
-                className={activeDay === date ? "day-card day-card-active" : "day-card"}
+                aria-pressed={activeDay === id}
+                className={activeDay === id ? "day-card day-card-active" : "day-card"}
+                data-date-key={id}
                 data-month-start={isMonthStart || undefined}
-                key={`${date}-${weekday}-${monthLabel}`}
-                onClick={() => scrollToDay(date)}
-                ref={(node) => { timelineDayRefs.current[date] = node; }}
+                key={id}
+                onClick={() => scrollToDay(id)}
+                ref={(node) => { timelineDayRefs.current[id] = node; }}
                 type="button"
               >
                 <span>{date}</span>
@@ -2709,20 +2874,20 @@ export function App() {
                 <span aria-hidden="true" className="toggle" />
               </label>
               <button
-                aria-expanded={networkFilter !== "торговая сеть"}
+                aria-expanded={cardSheet === "network"}
                 className="network-filter"
-                onClick={() => setNetworkFilter(networkFilter === "торговая сеть" ? "все сети" : "торговая сеть")}
+                onClick={() => setCardSheet("network")}
                 type="button"
               >
-                <span>{networkFilter}</span>
+                <span>{appliedFilters.brands.length ? `${appliedFilters.brands.length} ${getRussianPlural(appliedFilters.brands.length, ["сеть", "сети", "сетей"])}` : "торговая сеть"}</span>
                 <span aria-hidden="true" className="filter-chevron" />
               </button>
-              <button aria-expanded="false" className="network-filter" type="button">
-                <span>оплата</span>
+              <button aria-expanded={cardSheet === "payment"} className="network-filter" onClick={() => setCardSheet("payment")} type="button">
+                <span>{appliedFilters.minimumPayment ? `от ${appliedFilters.minimumPayment} ₽` : "оплата"}</span>
                 <span aria-hidden="true" className="filter-chevron" />
               </button>
-              <button aria-expanded="false" className="network-filter" type="button">
-                <span>расстояние</span>
+              <button aria-expanded={cardSheet === "distance"} className="network-filter" onClick={() => setCardSheet("distance")} type="button">
+                <span>{searchRadius ? `до ${searchRadius} км` : "расстояние"}</span>
                 <span aria-hidden="true" className="filter-chevron" />
               </button>
             </div>
@@ -2764,8 +2929,9 @@ export function App() {
               <section
                 className="task-day-section"
                 data-day={day.date}
-                key={day.date}
-                ref={(node) => { daySectionRefs.current[day.date] = node; }}
+                data-day-key={day.id}
+                key={day.id}
+                ref={(node) => { daySectionRefs.current[day.id] = node; }}
               >
                 <h2 className="day-heading">{day.label}, <span>{day.secondaryLabel}</span></h2>
                 {employeeShifts.map((shift, index) => <EmployeeShiftCard day={day} key={`${day.date}-${shift.type}-${shift.hours}-${index}`} shift={shift} />)}
@@ -2791,6 +2957,7 @@ export function App() {
                   setPendingCollectionAvailability({ key: day.date, label: `${day.label}, ${day.secondaryLabel}` });
                   setCurrentView("filters");
                 }} />}
+                {dayIndex === dayGroups.length - 1 && <EndOfTimelinePlaceholder />}
               </section>
             );
           })}
@@ -2834,6 +3001,7 @@ export function App() {
         }}
         onBack={() => setCurrentView("tasks")}
       /> : <FiltersScreen
+        isClosing={isFiltersClosing}
         initialCollectionAvailability={pendingCollectionAvailability}
         initialFilters={editingCollection?.filters || appliedFilters}
         initialLocation={editingCollection?.location || searchLocation}
@@ -2842,7 +3010,7 @@ export function App() {
         onBack={() => {
           setEditingCollection(null);
           setPendingCollectionAvailability(null);
-          setCurrentView("tasks");
+          closeFilters();
         }}
         onSave={({ filters, location, radius }) => {
           if (editingCollection) {
@@ -2855,7 +3023,7 @@ export function App() {
             } : collection));
             setEditingCollection(null);
             setActiveTab(1);
-            setCurrentView("tasks");
+            closeFilters();
             return;
           }
           const hasLocationChanged = location.label !== searchLocation.label
@@ -2865,7 +3033,7 @@ export function App() {
           setSearchRadius(radius);
           setAppliedFilters(filters);
           if (hasLocationChanged) setCatalogVersion((current) => current + 1);
-          setCurrentView("tasks");
+          closeFilters();
         }}
         onSaveCollection={({ availability, filters, location, notifications, radius, title }) => {
           setFavoriteCollections((collections) => [
@@ -2952,6 +3120,18 @@ export function App() {
           </section>
         </div>
       )}
+
+      {currentView === "tasks" && ["network", "payment", "distance"].includes(cardSheet) && <QuickFilterSheet
+        filters={appliedFilters}
+        onApply={({ filters, radius }) => {
+          setAppliedFilters(filters);
+          setSearchRadius(radius);
+          setCardSheet(null);
+        }}
+        onClose={() => setCardSheet(null)}
+        radius={searchRadius}
+        type={cardSheet}
+      />}
 
       {currentView === "tasks" && cardSheet === "filters" && <CardFiltersSheet
         filters={appliedFilters}
