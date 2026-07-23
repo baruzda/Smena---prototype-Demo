@@ -81,6 +81,12 @@ function CardFixtures() {
           defaultBrands={["pyaterochka"]}
         />
       </Fixture>
+      <Fixture id="saved_collection_card:excluded">
+        <FavoriteCollectionCard
+          collection={{ filters: { brands: [], minimumPayment: "", service: "" }, id: "excluded", isSaved: false, location: { label: "" }, radius: 1, title: "несохранённая подборка" }}
+          defaultBrands={["pyaterochka"]}
+        />
+      </Fixture>
       <Fixture id="favorite_store_card:default"><FavoriteStoreCard store={{ isPresent: true }} /></Fixture>
     </main>
   );

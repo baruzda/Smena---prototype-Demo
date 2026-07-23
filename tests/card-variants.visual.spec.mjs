@@ -33,4 +33,6 @@ test("every registered structural variant has visual evidence", async ({ page })
       mask: id === "service_offer_card:special" ? [fixture.getByLabel(/До окончания предложения/)] : [],
     });
   }
+
+  await expect(page.locator('[data-fixture="saved_collection_card:excluded"] [data-card-template="saved_collection_card"]')).toHaveCount(0);
 });

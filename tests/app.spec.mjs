@@ -280,7 +280,7 @@ test("сохранённая подборка открывает выдачу и
   await expect(collectionCard.getByRole("img", { name: "Пятёрочка", exact: true })).toBeVisible();
 
   await collectionCard.getByRole("button", { name: "Настройки подборки новая подборка", exact: true }).click();
-  await collectionCard.getByRole("menuitem", { name: "изменить подборку", exact: true }).click();
+  await collectionCard.getByRole("button", { name: "изменить подборку", exact: true }).click();
   await page.getByRole("button", { name: "Перекрёсток", exact: true }).click();
   await page.getByRole("button", { name: "применить", exact: true }).click();
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
@@ -294,7 +294,7 @@ test("сохранённая подборка открывает выдачу и
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
   const removableCollection = page.locator('[data-card-template="saved_collection_card"]').filter({ has: page.getByRole("heading", { name: "новая подборка", exact: true }) });
   await removableCollection.getByRole("button", { name: "Настройки подборки новая подборка", exact: true }).click();
-  await removableCollection.getByRole("menuitem", { name: "удалить подборку", exact: true }).click();
+  await removableCollection.getByRole("button", { name: "удалить подборку", exact: true }).click();
   await expect(page.getByText("Сохранённых подборок пока нет", { exact: true })).toBeVisible();
 });
 
