@@ -441,6 +441,40 @@
       "executionStatus": "declarative"
     },
     {
+      "id": "SCN-FAVORITES-005",
+      "name": "Карточка магазина показана в разделе магазинов",
+      "given": {
+        "surface": "favorites",
+        "favoriteStore": {
+          "isPresent": true
+        }
+      },
+      "expected": {
+        "template": "favorite_store_card",
+        "section": "stores",
+        "appliedRules": [
+          "RULE-FAVORITES-003"
+        ]
+      },
+      "executionStatus": "declarative"
+    },
+    {
+      "id": "SCN-FAVORITES-006",
+      "name": "Карточка магазина отсутствует без записи магазина",
+      "given": {
+        "surface": "favorites"
+      },
+      "expected": {
+        "notInSections": [
+          "stores"
+        ],
+        "appliedRules": [
+          "RULE-FAVORITES-003"
+        ]
+      },
+      "executionStatus": "declarative"
+    },
+    {
       "id": "SCN-SIGNING-001",
       "name": "Документы ждут подписи пользователя",
       "given": {

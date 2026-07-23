@@ -156,7 +156,7 @@
       "name": "Карточка избранного магазина",
       "description": "Существующая демонстрационная карточка магазина.",
       "slots": ["title", "location", "filters_summary", "actions"],
-      "supportedSurfaces": [],
+      "supportedSurfaces": ["favorites"],
       "variants": [{ "id": "default", "name": "Базовая" }]
     },
     {

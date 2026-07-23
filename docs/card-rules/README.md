@@ -152,7 +152,7 @@ npm run test:card-rules-validator
 - cross-registry связи, questions/backlinks, bindings и migration safety;
 - генерацию человекочитаемых матриц.
 
-`test:card-rules` выполняет 5 valid и 18 invalid isolated fixtures через alternate rules directory. Это фактическое число всех обязательных именованных negative cases (их перечень содержит 18 пунктов). `test:card-rules-validator` проверяет повторную генерацию и побайтовую детерминированность generated reports.
+`test:card-rules` выполняет 6 valid и 20 invalid isolated fixtures через alternate rules directory. Это фактическое число всех обязательных именованных negative cases (их перечень содержит 20 пунктов). `test:card-rules-validator` проверяет повторную генерацию и побайтовую детерминированность generated reports.
 
 ## Сгенерированные документы
 
@@ -175,3 +175,5 @@ npm run test:card-rules-validator
 - `generated/open-blockers.md`.
 
 Сгенерированные файлы не редактируются вручную.
+
+Матрицы approved и provisional содержат отдельные разделы для exceptions: статус, base rule, приоритет, вопрос, решение и причину.

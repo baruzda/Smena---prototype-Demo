@@ -26,13 +26,13 @@ Workflow `Card rules validation` запускает базовую и cross-regi
 - `общий каталог сохраняет дальние задания после подходящих` — `.gig-task-card` не найден;
 - `в моих заданиях показаны демо-записи с разными статусами` — `.my-task-card` не найден.
 
-Первичная гипотеза о UI-регрессии не подтвердилась. На `4173` уже слушал PID `69818`: `node …/gig-schedule-prototype/node_modules/.bin/vite --host 127.0.0.1 --port 4173`, cwd `/Users/baruzdinalexey/Documents/Projects/gig-schedule-prototype`. Это основной worktree, а не `/private/tmp/smena-card-rules`; `reuseExistingServer: true` позволял Playwright подключиться к нему.
+Первичная гипотеза о UI-регрессии не подтвердилась. На `4173` уже работал Vite из main worktree, а не из review worktree; `reuseExistingServer: true` позволял Playwright подключиться к нему.
 
 ## Изоляция и подтверждение текущего HEAD
 
 `playwright.config.mjs` теперь использует `E2E_PORT` (по умолчанию `4187`) для обоих `baseURL` и `webServer`, а `reuseExistingServer` установлен в `false`. Занятый выделенный порт теперь даёт явную ошибку вместо переиспользования чужого сервера.
 
-Отдельный Vite runtime из `/private/tmp/smena-card-rules` на `http://127.0.0.1:4187/` подтвердил текущий bundle: `document.title === "Prototype"`, URL — `http://127.0.0.1:4187/`, в каталоге найдено 65 `.gig-task-card`. Затем Playwright создал собственный сервер на том же порту и успешно выполнил три ранее падавших теста: **3/3 passed**.
+Отдельный Vite runtime из temporary isolated worktree на `http://127.0.0.1:4187/` подтвердил текущий bundle: `document.title === "Prototype"`, URL — `http://127.0.0.1:4187/`, в каталоге найдено 65 `.gig-task-card`. Затем Playwright создал собственный сервер на том же порту и успешно выполнил три ранее падавших теста: **3/3 passed**.
 
 Финальный аудит повторил полный gate дважды на чистом Playwright-сервере:
 

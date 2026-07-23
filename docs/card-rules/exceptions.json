@@ -42,7 +42,8 @@
     {
       "id": "EXC-SPECIAL-001",
       "name": "Специальное предложение не показывается как special при ограничениях",
-      "status": "active",
+      "status": "provisional",
+      "relatedQuestion": "OPEN-QUESTION-008",
       "baseRule": "RULE-SPECIAL-001",
       "when": { "any": [
         { "path": "service.restrictionTags.length", "operator": "greater_than", "value": 0 },

@@ -29,14 +29,14 @@ function pass(name, callback = () => {}) {
   try { callback(fixture.rulesDir); const result = run(fixture.rulesDir); assert.equal(result.status, 0, `${name}\n${result.stderr}`); console.log(`✓ ${name}`); }
   finally { fs.rmSync(fixture.root, { recursive: true, force: true }); }
 }
-function fail(name, category, id, callback) {
+function fail(name, category, ids, callback) {
   const fixture = createFixture();
   try {
     callback(fixture.rulesDir);
     const result = run(fixture.rulesDir); const output = `${result.stdout}\n${result.stderr}`;
     assert.notEqual(result.status, 0, `${name}: fixture unexpectedly passed`);
     assert.match(output, new RegExp(`\\[${category}\\]`), `${name}\n${output}`);
-    assert.match(output, new RegExp(id), `${name}\n${output}`);
+    for (const id of Array.isArray(ids) ? ids : [ids]) assert.match(output, new RegExp(id), `${name}\n${output}`);
     console.log(`✓ ${name}`);
   } finally { fs.rmSync(fixture.root, { recursive: true, force: true }); }
 }
@@ -65,7 +65,8 @@ function prepareMinimal(dir) {
 
 pass("valid-current-registry");
 pass("valid-minimal", prepareMinimal);
-pass("valid-provisional-rule", (dir) => mutate(dir, "rules.json", (doc) => { doc.rules.find((item) => item.id === "RULE-VARIANT-001").name = "Проверяемое provisional правило"; }));
+pass("valid-provisional-rule-and-exception", (dir) => mutate(dir, "rules.json", (doc) => { doc.rules.find((item) => item.id === "RULE-VARIANT-001").name = "Проверяемое provisional правило"; }));
+pass("valid-bound-legacy-template-placement");
 pass("valid-marker-with-structural-variant", (dir) => mutate(dir, "rules.json", (doc) => { doc.rules.find((item) => item.id === "RULE-SPECIAL-001").otherwise = { action: "set_variant", value: "default" }; }));
 pass("valid-legacy-migration", (dir) => mutate(dir, "migration-map.json", (doc) => { doc.sources[0].status = "partially_mapped"; }));
 
@@ -73,6 +74,7 @@ fail("duplicate-id", "SCHEMA_ERROR", "RULE-PLACEMENT-001", (dir) => mutate(dir, 
 fail("unknown-reference", "REFERENCE_ERROR", "RULE-PLACEMENT-001", (dir) => mutate(dir, "rules.json", (doc) => { doc.rules[0].scope.templates = ["ghost_template"]; }));
 fail("provisional-without-question", "APPROVAL_ERROR", "RULE-VARIANT-001", (dir) => mutate(dir, "rules.json", (doc) => { delete doc.rules.find((rule) => rule.id === "RULE-VARIANT-001").relatedQuestion; }));
 fail("approved-with-blocking-question", "APPROVAL_ERROR", "RULE-PLACEMENT-001", (dir) => mutate(dir, "rules.json", (doc) => { const rule = doc.rules.find((item) => item.id === "RULE-PLACEMENT-001"); rule.relatedQuestion = "OPEN-QUESTION-008"; }));
+fail("active-exception-on-provisional-rule", "APPROVAL_ERROR", ["EXC-SPECIAL-001", "RULE-SPECIAL-001"], (dir) => mutate(dir, "exceptions.json", (doc) => { doc.exceptions.find((item) => item.id === "EXC-SPECIAL-001").status = "active"; }));
 fail("question-missing-backlink", "QUESTION_LINK_ERROR", "OPEN-QUESTION-008", (dir) => mutate(dir, "open-questions.json", (doc) => { doc.questions.find((item) => item.id === "OPEN-QUESTION-008").relatedRules = []; }));
 fail("marker-as-structural-variant", "VARIANT_CONFLICT", "RULE-VARIANT-001", (dir) => mutate(dir, "rules.json", (doc) => { const rule = doc.rules.find((item) => item.id === "RULE-VARIANT-001"); rule.target = { type: "card_variant", template: "service_offer_card", id: "marker.suitable_for_you" }; rule.effect = { action: "set_variant", value: "marker.suitable_for_you" }; rule.otherwise = { action: "set_variant", value: "default" }; }));
 fail("variant-otherwise-default", "VARIANT_CONFLICT", "RULE-SPECIAL-001", (dir) => mutate(dir, "rules.json", (doc) => { doc.rules.find((item) => item.id === "RULE-SPECIAL-001").otherwise = { action: "no_op" }; }));
@@ -84,8 +86,9 @@ fail("binding-unknown-template", "BINDING_ERROR", "ghost_template", (dir) => mut
 fail("binding-verified-missing-source", "BINDING_ERROR", "service_offer_card", (dir) => mutate(dir, "component-bindings.json", (doc) => { const binding = doc.templates.service_offer_card; binding.migrationStatus = "verified"; binding.currentSource = null; }));
 fail("migration-deprecated-before-verified", "MIGRATION_GAP", "docs/catalog-rules-matrix.md", (dir) => mutate(dir, "migration-map.json", (doc) => { const source = doc.sources[0]; source.status = "deprecated"; delete source.verifiedBeforeDeprecation; }));
 fail("migration-verified-without-evidence", "MIGRATION_GAP", "docs/catalog-rules-matrix.md", (dir) => mutate(dir, "migration-map.json", (doc) => { const source = doc.sources[0]; source.status = "verified"; delete source.evidence; }));
+fail("bound-template-without-surface", "MIGRATION_GAP", "favorite_store_card", (dir) => mutate(dir, "templates.json", (doc) => { doc.templates.find((item) => item.id === "favorite_store_card").supportedSurfaces = []; }));
 fail("scenario-without-execution-status", "SCENARIO_ERROR", "SCN-CATALOG-001", (dir) => mutate(dir, "scenarios.json", (doc) => { delete doc.scenarios.find((item) => item.id === "SCN-CATALOG-001").executionStatus; }));
 fail("scenario-verified-without-test", "SCENARIO_ERROR", "SCN-CATALOG-001", (dir) => mutate(dir, "scenarios.json", (doc) => { doc.scenarios.find((item) => item.id === "SCN-CATALOG-001").executionStatus = "verified"; }));
 fail("observation-without-question", "OBSERVATION_ERROR", "OBS-CARD-VARIANT-001", (dir) => mutate(dir, "implementation-observations.json", (doc) => { delete doc.observations[0].relatedQuestion; }));
 
-console.log("Validator fixtures passed: 5 valid, 18 invalid.");
+console.log("Validator fixtures passed: 6 valid, 20 invalid.");

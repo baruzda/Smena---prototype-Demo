@@ -213,6 +213,24 @@ for (const observation of list(observationsDoc.observations)) {
   }
 }
 for (const exception of exceptions) {
+  const baseRule = ruleMap.get(exception.baseRule);
+  if (!baseRule) continue;
+  const approvalRank = { draft: 0, deprecated: 0, superseded: 0, provisional: 1, active: 2 };
+  if (exception.status === "provisional" && !exception.relatedQuestion) {
+    fail("APPROVAL_ERROR", `${exception.id}: provisional exception requires relatedQuestion`);
+  }
+  if (exception.status === "provisional" && questionMap.get(exception.relatedQuestion)?.status !== "unresolved") {
+    fail("APPROVAL_ERROR", `${exception.id}: provisional exception requires an unresolved question`);
+  }
+  if (exception.status === "active" && baseRule.status === "provisional") {
+    fail("APPROVAL_ERROR", `${exception.id}: active exception cannot override provisional base rule ${baseRule.id} without an approved decision`);
+  }
+  if (approvalRank[exception.status] > approvalRank[baseRule.status] && !(exception.status === "active" && baseRule.status === "provisional")) {
+    fail("APPROVAL_ERROR", `${exception.id}: exception status ${exception.status} cannot be stronger than base rule ${baseRule.id} status ${baseRule.status}`);
+  }
+  if (exception.status === "provisional" && baseRule.status === "provisional" && exception.relatedQuestion !== baseRule.relatedQuestion) {
+    fail("APPROVAL_ERROR", `${exception.id}: provisional exception must link the base rule question ${baseRule.relatedQuestion}`);
+  }
   if (exception.relatedQuestion && !list(questionMap.get(exception.relatedQuestion)?.relatedExceptions).includes(exception.id)) {
     fail("QUESTION_LINK_ERROR", `${exception.relatedQuestion}: missing backlink for ${exception.id}`);
   }
@@ -258,9 +276,15 @@ for (const [templateId, binding] of Object.entries(bindingsDoc.templates ?? {}))
 for (const template of templates) if (!bindingsDoc.templates?.[template.id]) fail("BINDING_ERROR", `${template.id}: template binding is required`);
 for (const uiState of list(uiStatesDoc.uiStates)) if (!bindingsDoc.uiStates?.[uiState.id]) fail("BINDING_ERROR", `${uiState.id}: UI state binding is required`);
 for (const template of templates) {
+  const binding = bindingsDoc.templates?.[template.id];
+  const sourceExists = binding?.currentSource && fs.existsSync(path.resolve(repoRoot, binding.currentSource));
+  if (binding?.currentComponent && sourceExists && !list(template.supportedSurfaces).length && template.migrationScope !== "out_of_scope") {
+    fail("MIGRATION_GAP", `${template.id}: bound current implementation requires supportedSurfaces or migrationScope out_of_scope`);
+  }
   for (const surfaceId of list(template.supportedSurfaces)) {
     const hasPlacement = rules.some((rule) => list(rule.scope?.templates).includes(template.id)
       && list(rule.scope?.surfaces).includes(surfaceId)
+      && ["active", "provisional"].includes(rule.status)
       && ["placement", "surface_visibility"].includes(rule.target?.type));
     if (!hasPlacement) fail("SURFACE_CONFLICT", `${template.id}: ${surfaceId} lacks a placement rule`);
   }

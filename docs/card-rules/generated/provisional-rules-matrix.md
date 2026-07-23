@@ -11,3 +11,10 @@
 | RULE-SPECIAL-001 | OPEN-QUESTION-008 | OBS-CARD-VARIANT-001 |
 | RULE-SPECIAL-002 | OPEN-QUESTION-024 | OBS-CARD-ORDER-001 |
 | RULE-VARIANT-001 | OPEN-QUESTION-008 | OBS-CARD-VARIANT-001 |
+
+## Provisional exceptions
+
+| Exception ID | Name | Status | Base rule | Base rule status | Priority | Open question | Decision | Reason |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| EXC-SIGNING-001 | Документ без действия пользователя не показывается как ожидающий | provisional | RULE-SIGNING-001 | provisional | 900 | OPEN-QUESTION-011 | - | Секция ожидания должна содержать только документы, по которым пользователь может совершить действие. |
+| EXC-SPECIAL-001 | Специальное предложение не показывается как special при ограничениях | provisional | RULE-SPECIAL-001 | provisional | 900 | OPEN-QUESTION-008 | - | Персональный акцент не должен перекрывать ограничения или недоступность. |

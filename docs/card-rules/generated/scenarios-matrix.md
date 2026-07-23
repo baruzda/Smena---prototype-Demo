@@ -12,6 +12,8 @@
 | SCN-FAVORITES-002 | declarative |
 | SCN-FAVORITES-003 | declarative |
 | SCN-FAVORITES-004 | declarative |
+| SCN-FAVORITES-005 | declarative |
+| SCN-FAVORITES-006 | declarative |
 | SCN-MATCH-001 | declarative |
 | SCN-MATCH-002 | declarative |
 | SCN-MYTASKS-001 | declarative |

@@ -301,8 +301,22 @@ write("rules-matrix.md", `# Матрица правил\n\n${table(
   rules.map((rule) => [rule.id, rule.name, rule.status, rule.scope?.entity, list(rule.scope?.surfaces).join(", "), `${rule.target?.type}:${rule.target?.id ?? rule.target?.section ?? "map"}`, rule.effect?.action, rule.priority, list(rule.exceptions).join(", ")])
 )}`);
 
-write("approved-rules-matrix.md", `# Approved rules\n\n${table(["Rule ID", "Name"], rules.filter((rule) => rule.status === "active").sort((a, b) => a.id.localeCompare(b.id)).map((rule) => [rule.id, rule.name]))}`);
-write("provisional-rules-matrix.md", `# Provisional rules\n\n${table(["Rule ID", "Question", "Source"], rules.filter((rule) => rule.status === "provisional").sort((a, b) => a.id.localeCompare(b.id)).map((rule) => [rule.id, rule.relatedQuestion, rule.source?.observation ?? rule.source?.code ?? list(rule.source?.documents).join(", ")]))}`);
+const exceptionTable = (status) => table(
+  ["Exception ID", "Name", "Status", "Base rule", "Base rule status", "Priority", "Open question", "Decision", "Reason"],
+  exceptions.filter((exception) => exception.status === status).sort((a, b) => a.id.localeCompare(b.id)).map((exception) => [
+    exception.id,
+    exception.name,
+    exception.status,
+    exception.baseRule,
+    ruleMap.get(exception.baseRule)?.status,
+    exception.priority,
+    exception.relatedQuestion,
+    exception.source?.decision,
+    exception.reason,
+  ])
+);
+write("approved-rules-matrix.md", `# Approved rules\n\n${table(["Rule ID", "Name"], rules.filter((rule) => rule.status === "active").sort((a, b) => a.id.localeCompare(b.id)).map((rule) => [rule.id, rule.name]))}\n\n## Approved exceptions\n\n${exceptionTable("active")}`);
+write("provisional-rules-matrix.md", `# Provisional rules\n\n${table(["Rule ID", "Question", "Source"], rules.filter((rule) => rule.status === "provisional").sort((a, b) => a.id.localeCompare(b.id)).map((rule) => [rule.id, rule.relatedQuestion, rule.source?.observation ?? rule.source?.code ?? list(rule.source?.documents).join(", ")]))}\n\n## Provisional exceptions\n\n${exceptionTable("provisional")}`);
 write("implementation-observations.md", `# Implementation observations\n\n${table(["ID", "Source", "Approval", "Question"], observations.sort((a, b) => a.id.localeCompare(b.id)).map((item) => [item.id, item.source, item.approvalStatus, item.relatedQuestion]))}`);
 write("ui-states-matrix.md", `# UI states\n\n${table(["ID", "Surface", "Implementation", "Status"], uiStates.sort((a, b) => a.id.localeCompare(b.id)).map((item) => [item.id, list(item.usedOn).join(', '), item.currentImplementation, item.implementationStatus]))}`);
 const bindingRows = [

@@ -312,6 +312,25 @@
       "tests": ["SCN-FAVORITES-003", "SCN-FAVORITES-004"]
     },
     {
+      "id": "RULE-FAVORITES-003",
+      "name": "Карточка избранного магазина показывается в Избранном",
+      "status": "active",
+      "scope": {
+        "entity": "favorite_store",
+        "surfaces": ["favorites"],
+        "templates": ["favorite_store_card"]
+      },
+      "target": { "type": "placement", "surface": "favorites", "section": "stores" },
+      "when": { "all": [{ "path": "favoriteStore", "operator": "exists" }] },
+      "effect": { "action": "place" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 700,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["docs/card-style-matrix.md"], "decision": "DEC-001" },
+      "tests": ["SCN-FAVORITES-005", "SCN-FAVORITES-006"]
+    },
+    {
       "id": "RULE-SIGNING-001",
       "name": "Документы пользователя показываются в табе На подписание",
       "status": "provisional",

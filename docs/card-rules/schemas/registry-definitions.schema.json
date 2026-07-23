@@ -59,6 +59,7 @@
       "properties": {
         "id": { "$ref": "#/$defs/id" }, "entity": { "$ref": "#/$defs/id" }, "name": { "$ref": "#/$defs/id" },
         "slots": { "$ref": "#/$defs/stringArray" }, "supportedSurfaces": { "$ref": "#/$defs/stringArray" },
+        "migrationScope": { "enum": ["tracked", "out_of_scope"] },
         "variants": { "type": "array", "items": { "$ref": "#/$defs/namedId" }, "minItems": 1 }
       },
       "additionalProperties": true
@@ -136,9 +137,9 @@
     "exception": {
       "type": "object", "required": ["id", "name", "status", "baseRule", "when", "override", "priority", "reason"],
       "properties": {
-        "id": { "type": "string", "pattern": "^EXC-[A-Z]+-[0-9]{3}$" }, "name": { "$ref": "#/$defs/id" }, "status": { "$ref": "#/$defs/id" },
+        "id": { "type": "string", "pattern": "^EXC-[A-Z]+-[0-9]{3}$" }, "name": { "$ref": "#/$defs/id" }, "status": { "enum": ["active", "provisional"] },
         "baseRule": { "$ref": "#/$defs/id" }, "when": { "$ref": "#/$defs/when" }, "override": { "$ref": "#/$defs/effect" },
-        "priority": { "type": "integer" }, "reason": { "$ref": "#/$defs/id" }
+        "priority": { "type": "integer" }, "reason": { "$ref": "#/$defs/id" }, "relatedQuestion": { "$ref": "#/$defs/id" }
       }, "additionalProperties": true
     },
     "precedence": {
