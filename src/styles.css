@@ -27,6 +27,21 @@
 }
 
 :root {
+  --color-accent-primary: #6458ff;
+  --color-text-primary: #000;
+  --color-text-secondary: #6c737d;
+  --color-surface-primary: #fff;
+  --color-surface-secondary: #f4f4f5;
+  --radius-card: 16px;
+  --radius-control: 999px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --shadow-card: 0 4px 12px rgb(0 0 0 / 0.06);
+  --focus-ring: 0 0 0 2px rgb(100 88 255 / 0.45);
+  --duration-fast: 150ms;
+  --duration-standard: 180ms;
   color: var(--color-text-primary, #000);
   background: #b7b7b7;
   font-family: "X5 Sans", Arial, sans-serif;
