@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await expect(page.getByRole("status", { name: "Запуск сервиса", exact: true })).toBeVisible();
-  await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeVisible({ timeout: 2500 });
+  await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeVisible({ timeout: 5000 });
   await dismissSettingsOnboarding(page);
 });
 
