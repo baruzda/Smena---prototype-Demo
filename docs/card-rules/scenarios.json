@@ -564,6 +564,54 @@
       "executionStatus": "declarative"
     },
     {
+      "id": "SCN-CATALOG-003",
+      "name": "Отфильтрованная услуга не попадает в список скрытых",
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "matchesFilters": false,
+          "overlapsPrimarySchedule": false
+        },
+        "catalog": {
+          "otherOffersExpanded": true
+        }
+      },
+      "expected": {
+        "notInSections": [
+          "other_offers"
+        ],
+        "appliedRules": [
+          "RULE-HIDDEN-001"
+        ]
+      },
+      "executionStatus": "declarative"
+    },
+    {
+      "id": "SCN-CATALOG-004",
+      "name": "Конфликт с основной сменой не попадает в список скрытых",
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "matchesFilters": true,
+          "overlapsPrimarySchedule": true
+        },
+        "catalog": {
+          "otherOffersExpanded": true
+        }
+      },
+      "expected": {
+        "notInSections": [
+          "other_offers"
+        ],
+        "appliedRules": [
+          "RULE-HIDDEN-001"
+        ]
+      },
+      "executionStatus": "declarative"
+    },
+    {
       "id": "SCN-ACTION-001",
       "name": "Услуга пересекается с основной сменой",
       "given": {

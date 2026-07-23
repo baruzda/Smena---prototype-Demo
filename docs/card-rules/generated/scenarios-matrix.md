@@ -6,6 +6,8 @@
 | SCN-ACTION-002 | declarative |
 | SCN-CATALOG-001 | declarative |
 | SCN-CATALOG-002 | declarative |
+| SCN-CATALOG-003 | declarative |
+| SCN-CATALOG-004 | declarative |
 | SCN-CONTENT-001 | declarative |
 | SCN-CONTENT-002 | declarative |
 | SCN-FAVORITES-001 | declarative |

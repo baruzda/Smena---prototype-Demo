@@ -6,7 +6,7 @@
 | tasks | Задания | special_offers | Специально для вас | 100 | - |
 | tasks | Задания | suitable_offers | Подходит вам | 200 | - |
 | tasks | Задания | available_offers | Другие доступные услуги | 300 | RULE-PLACEMENT-001 |
-| tasks | Задания | other_offers | Другие услуги | 400 | - |
+| tasks | Задания | other_offers | Другие услуги | 400 | RULE-HIDDEN-001 |
 | my_tasks | Мои задания | pending_confirmation | На подтверждении | 100 | - |
 | my_tasks | Мои задания | signing_required | Нужно подписать | 150 | - |
 | my_tasks | Мои задания | upcoming | Предстоящие | 200 | RULE-MYTASKS-001 |

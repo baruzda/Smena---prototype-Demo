@@ -18,4 +18,5 @@
 | RULE-FAVORITES-003 | Карточка избранного магазина показывается в Избранном | active | favorite_store | favorites | placement:stores | place | 700 | - |
 | RULE-SIGNING-001 | Документы пользователя показываются в табе На подписание | provisional | service_offer | signing | placement:waiting_user | place | 800 | EXC-SIGNING-001 |
 | RULE-CONTENT-001 | Метро показывается только при наличии данных | provisional | service_offer | tasks, favorites | content_element:service.metro | show | 100 | - |
+| RULE-HIDDEN-001 | Список скрытых услуг исключает фильтры и основную смену | active | service_offer | tasks | placement:other_offers | place | 700 | - |
 | RULE-ACTION-001 | Недоступную услугу нельзя принять | active | service_offer | tasks, favorites | action:service.primary_action | disable | 900 | - |

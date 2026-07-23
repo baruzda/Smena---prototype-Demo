@@ -17,6 +17,8 @@
       "id": "EXC-PLACEMENT-002",
       "name": "Скрытая фильтрами услуга не попадает в основную секцию",
       "status": "active",
+      "relatedQuestion": "OPEN-QUESTION-014",
+      "decision": "DEC-009",
       "baseRule": "RULE-PLACEMENT-001",
       "when": { "all": [
         { "path": "service", "operator": "not_equals", "reference": "catalog.appliedFiltersResult" },

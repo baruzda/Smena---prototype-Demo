@@ -376,6 +376,31 @@
       "tests": ["SCN-CONTENT-001", "SCN-CONTENT-002"]
     },
     {
+      "id": "RULE-HIDDEN-001",
+      "name": "Список скрытых услуг исключает фильтры и основную смену",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["tasks"],
+        "templates": ["service_offer_card"]
+      },
+      "target": { "type": "placement", "surface": "tasks", "section": "other_offers" },
+      "when": {
+        "all": [
+          { "path": "service", "operator": "matches_filters", "reference": "catalog.appliedFilters" },
+          { "path": "service.dateTime", "operator": "not_overlaps", "reference": "user.primarySchedule" }
+        ]
+      },
+      "effect": { "action": "place" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 700,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md"], "decision": "DEC-009" },
+      "relatedQuestion": "OPEN-QUESTION-014",
+      "tests": ["SCN-CATALOG-003", "SCN-CATALOG-004"]
+    },
+    {
       "id": "RULE-ACTION-001",
       "name": "Недоступную услугу нельзя принять",
       "status": "active",
