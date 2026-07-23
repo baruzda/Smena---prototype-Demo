@@ -1,0 +1,12 @@
+.badge { display: inline-flex; align-items: center; gap: var(--space-1); font-family: "X5 Sans", Arial, sans-serif; font-weight: 400; }
+.size-small { font-size: 12px; line-height: 14px; padding: 2px 6px; border-radius: 6px; }
+.size-medium { font-size: 14px; line-height: 18px; padding: 2px 6px; border-radius: 6px; }
+.variant-solid.tone-neutral { color: #fff; background: #6c737d; }
+.variant-solid.tone-accent { color: #fff; background: #6446ff; }
+.variant-soft.tone-accent { color: #6446ff; background: rgb(100 70 255 / 10%); }
+.variant-soft.tone-warning { color: #ff7a32; background: #fff0e8; }
+.variant-solid.tone-neutral { background: rgb(0 0 0 / 20%); }
+.variant-plain { padding: 0; background: transparent; }
+.variant-plain.tone-success { color: #28a975; }
+.icon { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; }
+.icon > img { display: block; }

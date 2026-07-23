@@ -1,0 +1,8 @@
+.card { box-sizing: border-box; border-radius: var(--radius-card); color: var(--color-text-primary); }
+.variant-outlined { border: 1px solid rgb(0 0 0 / 12%); background: var(--color-surface-primary); }
+.variant-filled { border: 0; background: var(--color-surface-secondary); }
+.padding-none { padding: 0; }.padding-medium { padding: var(--space-3); }
+.interactive { cursor: pointer; transition: box-shadow var(--duration-standard) ease, transform var(--duration-standard) ease; }
+.interactive:focus-visible { outline: 0; box-shadow: 0 0 0 2px rgb(102 70 255 / 20%); }
+.selected { box-shadow: var(--focus-ring); }.disabled { opacity: .5; pointer-events: none; }
+@media (hover: hover) { .interactive:hover { box-shadow: var(--shadow-card); transform: translateY(-1px); } }

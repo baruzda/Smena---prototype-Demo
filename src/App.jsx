@@ -1,5 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getTaskHours, shiftsOverlap } from "./schedule-utils.js";
+import { Badge, Button } from "./shared/ui/index.js";
+import { MyTaskCard as MyTaskCardView } from "./features/my-tasks/components/MyTaskCard/index.js";
+import { EmployeeShiftCard as EmployeeShiftCardView } from "./features/schedule/components/EmployeeShiftCard/index.js";
+import { TaskCardShell } from "./features/tasks/components/TaskCardShell/index.js";
+import { taskCardStyles } from "./features/tasks/components/TaskCard/index.js";
 
 const assetUrl = (name) => `${import.meta.env.BASE_URL}figma-assets/${name}`;
 const cssAssetUrl = (name) => {
@@ -15,22 +20,20 @@ const metroIconAssets = {
 };
 
 const defaultCollectionBrands = ["pyaterochka", "perekrestok", "vprok", "chizhik"];
-const days = [
-  { date: "1", weekday: "пн" },
-  { date: "2", weekday: "вт" },
-  { date: "3", weekday: "ср" },
-  { date: "4", weekday: "чт" },
-  { date: "5", weekday: "пт" },
-  { date: "6", weekday: "сб" },
-  { date: "7", weekday: "вс" },
-  { date: "8", weekday: "пн" },
-  { date: "9", weekday: "вт" },
-  { date: "10", weekday: "ср" },
-  { date: "11", weekday: "чт" },
-  { date: "12", weekday: "пт" },
-  { date: "13", weekday: "сб" },
-  { date: "14", weekday: "вс" },
-];
+const timelineToday = new Date();
+timelineToday.setHours(12, 0, 0, 0);
+const timelineEnd = new Date(timelineToday.getFullYear(), timelineToday.getMonth() + 2, 0, 12);
+const days = Array.from({ length: Math.round((timelineEnd - timelineToday) / 86_400_000) + 1 }, (_, index) => {
+  const calendarDate = new Date(timelineToday);
+  calendarDate.setDate(timelineToday.getDate() + index);
+  return {
+    calendarDate,
+    date: String(calendarDate.getDate()),
+    isMonthStart: index === 0 || calendarDate.getDate() === 1,
+    monthLabel: calendarDate.toLocaleDateString("ru-RU", { month: "short" }).replace(".", ""),
+    weekday: ["вс", "пн", "вт", "ср", "чт", "пт", "сб"][calendarDate.getDay()],
+  };
+});
 
 const calendarWeekdays = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"];
 const weekdayNames = {
@@ -43,23 +46,37 @@ const weekdayNames = {
   "вс": "Вс",
 };
 
-const juneCalendarDays = Array.from({ length: 35 }, (_, index) => {
-  const day = index < 2 ? 29 + index : index < 32 ? index - 1 : index - 31;
-  const month = index < 2 ? "previous" : index < 32 ? "current" : "next";
-  const currentMonthDate = month === "current" ? day : null;
-  const isFree = currentMonthDate !== null && (currentMonthDate - 1) % 4 < 2;
+const prototypeToday = new Date();
+prototypeToday.setHours(12, 0, 0, 0);
 
-  return {
-    id: `${month}-${day}`,
-    day,
-    month,
-    status: isFree ? "free" : "busy",
-    weekday: calendarWeekdays[index % calendarWeekdays.length],
-  };
-});
+function buildAvailabilityCalendar(monthOffset) {
+  const shownMonth = new Date(prototypeToday.getFullYear(), prototypeToday.getMonth() + monthOffset, 1);
+  const firstWeekday = (shownMonth.getDay() + 6) % 7;
+  const gridStart = new Date(shownMonth);
+  gridStart.setDate(1 - firstWeekday);
+
+  const cells = Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(gridStart);
+    date.setDate(gridStart.getDate() + index);
+    const isCurrentMonth = date.getMonth() === shownMonth.getMonth();
+    const isPast = date < prototypeToday;
+    const day = date.getDate();
+    const isFree = isCurrentMonth && !isPast && (day - 1) % 4 < 2;
+    return {
+      id: date.toISOString().slice(0, 10),
+      day,
+      month: isCurrentMonth ? "current" : "outside",
+      selectionKey: monthOffset === 0 ? String(day) : `next-${day}`,
+      status: isFree ? "free" : "busy",
+      weekday: calendarWeekdays[(date.getDay() + 6) % 7],
+    };
+  });
+
+  return cells.slice(-7).some((day) => day.month === "current") ? cells : cells.slice(0, -7);
+}
 
 const availabilityByDate = Object.fromEntries(
-  days.map(({ date }) => [date, (Number(date) - 1) % 4 < 2 ? "free" : "busy"]),
+  days.map(({ date }, index) => [date, index % 5 === 4 ? "busy" : "free"]),
 );
 
 const defaultSearchLocation = {
@@ -72,18 +89,44 @@ const emptySearchLocation = {
   label: "",
 };
 
-const emptyFilters = { brands: [], minimumPayment: "", service: "" };
+const emptyFilters = { brands: [], minimumPayment: "", service: [], stores: [] };
+
+function normalizeSelectedServices(value) {
+  const services = Array.isArray(value) ? value : typeof value === "string" && value.trim() ? [value] : [];
+  return [...new Set(services.map((service) => service.trim()).filter(Boolean))];
+}
+
+function normalizeSelectedStores(value) {
+  const stores = Array.isArray(value) ? value : typeof value === "string" && value.trim() ? [value] : [];
+  return [...new Set(stores.map((store) => store.trim()).filter(Boolean))];
+}
+
+function getServiceSelectionSummary(value, emptyLabel = "услуга") {
+  const services = normalizeSelectedServices(value);
+  if (services.length === 0) return emptyLabel;
+  if (services.length === 1) return services[0];
+  return `${services.length} ${getRussianPlural(services.length, ["услуга выбрана", "услуги выбраны", "услуг выбрано"])}`;
+}
 
 const emptyAvailabilityTime = { from: "", to: "", preset: null, presets: [] };
 
 const prototypeDefaultStateVersion = 4;
 const availabilityTimePresets = [
-  { id: "all-day", label: "весь день", from: "8:00", to: "22:00" },
-  { id: "morning", label: "утро", from: "8:00", to: "12:00" },
+  { id: "all-day", label: "весь день", from: "08:00", to: "22:00" },
+  { id: "morning", label: "утро", from: "08:00", to: "12:00" },
   { id: "afternoon", label: "день", from: "12:00", to: "16:00" },
   { id: "evening", label: "вечер", from: "16:00", to: "22:00" },
   { id: "night", label: "ночью", from: "22:00", to: "6:00" },
 ];
+const defaultAvailabilityTime = { from: "08:00", to: "22:00", preset: "all-day", presets: ["all-day"] };
+
+function isVisualDefaultAvailability({ from, preset, presets, to }) {
+  const presetIds = Array.isArray(presets) ? presets : preset ? [preset] : [];
+  return from === defaultAvailabilityTime.from
+    && to === defaultAvailabilityTime.to
+    && presetIds.length === 1
+    && presetIds[0] === "all-day";
+}
 
 const prototypeStorageKey = "x5-shift-prototype-state";
 
@@ -184,6 +227,26 @@ const DEMO_SERVICE_TITLES = [
   "зона бананов: приёмка, размещение и перемещение ТМЦ",
   "дозревание бананов",
 ];
+
+const DEMO_STORES = [
+  { id: "store-8", building: 8 },
+  { id: "store-40", building: 40 },
+  { id: "store-67", building: 67 },
+  { id: "store-12", building: 12 },
+  { id: "store-1", building: 1 },
+  { id: "store-86", building: 86 },
+  { id: "store-44", building: 44 },
+  { id: "store-51", building: 51 },
+  { id: "store-7", building: 7 },
+  { id: "store-53", building: 53 },
+  { id: "store-27", building: 27 },
+  { id: "store-36", building: 36 },
+];
+
+function getStoreAddress(locationLabel, store) {
+  const location = (locationLabel || defaultSearchLocation.label).replace(/, Россия$/u, "");
+  return `${location}, д. ${store.building}`;
+}
 
 const taskTemplates = [
   {
@@ -517,27 +580,18 @@ taskTemplates.forEach((template, index) => {
   template.title = DEMO_SERVICE_TITLES[index % DEMO_SERVICE_TITLES.length];
 });
 
-const dayLabels = [
-  ["сегодня, 1 июня", "понедельник"],
-  ["завтра, 2 июня", "вторник"],
-  ["среда", "3 июня"],
-  ["четверг", "4 июня"],
-  ["пятница", "5 июня"],
-  ["суббота", "6 июня"],
-  ["воскресенье", "7 июня"],
-  ["понедельник", "8 июня"],
-  ["вторник", "9 июня"],
-  ["среда", "10 июня"],
-  ["четверг", "11 июня"],
-  ["пятница", "12 июня"],
-  ["суббота", "13 июня"],
-  ["воскресенье", "14 июня"],
-];
+const weekdayLongNames = { "пн": "понедельник", "вт": "вторник", "ср": "среда", "чт": "четверг", "пт": "пятница", "сб": "суббота", "вс": "воскресенье" };
+const dayLabels = days.map((day, index) => {
+  const dateLabel = day.calendarDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+  if (index === 0) return [`сегодня, ${dateLabel}`, weekdayLongNames[day.weekday]];
+  if (index === 1) return [`завтра, ${dateLabel}`, weekdayLongNames[day.weekday]];
+  return [weekdayLongNames[day.weekday], dateLabel];
+});
 
 const dayGroups = days.map((day, dayIndex) => {
   const [label, secondaryLabel] = dayLabels[dayIndex];
-  const firstTemplate = taskTemplates[dayIndex * 2];
-  const secondTemplate = taskTemplates[dayIndex * 2 + 1];
+  const firstTemplate = taskTemplates[(dayIndex * 2) % taskTemplates.length];
+  const secondTemplate = taskTemplates[(dayIndex * 2 + 1) % taskTemplates.length];
   const thirdTemplate = taskTemplates[(dayIndex * 2 + 11) % taskTemplates.length];
 
   return {
@@ -575,6 +629,7 @@ const sortOptions = [
   { id: "nearby", label: "сначала ближайшие" },
   { id: "recommended", label: "рекомендуемые" },
   { id: "earnings", label: "выше заработок" },
+  { id: "hourly-rate", label: "выше цена за час" },
 ];
 
 function getDistanceInMeters(distance) {
@@ -584,6 +639,10 @@ function getDistanceInMeters(distance) {
 
 function getPaymentValue(payment) {
   return Number(payment.replace(/[^\d]/g, ""));
+}
+
+function getHourlyRateValue(rate) {
+  return Number(rate.replace(/[^\d]/g, ""));
 }
 
 function getTaskDuration(task) {
@@ -657,6 +716,10 @@ function getSortedTasks(tasks, sortBy) {
       return getDistanceInMeters(first.distance) - getDistanceInMeters(second.distance);
     }
 
+    if (sortBy === "hourly-rate") {
+      return getHourlyRateValue(second.rate) - getHourlyRateValue(first.rate);
+    }
+
     return getPaymentValue(second.payment) - getPaymentValue(first.payment);
   });
 }
@@ -701,7 +764,7 @@ function formatCountdown(seconds) {
   return [hours, minutes, remainingSeconds].map((unit) => String(unit).padStart(2, "0")).join(":");
 }
 
-function OfferCountdown({ initialSeconds = 19936 }) {
+function OfferCountdown({ initialSeconds = 19936, render }) {
   const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
 
   useEffect(() => {
@@ -709,7 +772,9 @@ function OfferCountdown({ initialSeconds = 19936 }) {
     return () => window.clearInterval(interval);
   }, []);
 
-  return <span aria-label={`До окончания предложения ${formatCountdown(secondsLeft)}`} className="special-card-timer">{formatCountdown(secondsLeft)}</span>;
+  const value = formatCountdown(secondsLeft);
+  const ariaLabel = `До окончания предложения ${value}`;
+  return render ? render({ value, ariaLabel }) : <span aria-label={ariaLabel} className="special-card-timer">{value}</span>;
 }
 
 function getShortDayLabel(day) {
@@ -730,60 +795,35 @@ function TaskCard({ day, revealRestrictionTags = false, task, onOpen }) {
   const showMatchBadge = cardVariant === "match";
   const showStatus = cardVariant === "status" || cardVariant === "status-plus";
   const showRestrictionTags = cardVariant === "bottom-tags";
-  const cardClassName = [
-    "gig-task-card",
-    `gig-task-card-${cardVariant}`,
-    onOpen ? "gig-task-card-clickable" : "",
-  ].filter(Boolean).join(" ");
-  const handleKeyDown = (event) => {
-    if (!onOpen || (event.key !== "Enter" && event.key !== " ")) return;
-    event.preventDefault();
-    onOpen();
-  };
-
   return (
-    <article
-      aria-label={onOpen ? `Подробнее: ${task.title}` : undefined}
-      className={cardClassName}
-      onClick={onOpen}
-      onKeyDown={handleKeyDown}
-      role={onOpen ? "button" : undefined}
-      tabIndex={onOpen ? 0 : undefined}
-    >
-      <div className="gig-task-card-top">
-        <div className="gig-task-card-copy">
-          {showMatchBadge && <span className="gig-task-badge">подходит вам</span>}
-          {showStatus && <span className="gig-task-status-label"><i aria-hidden="true" />{cardVariant === "status-plus" ? "есть ограничения" : "не подходит"}</span>}
-          {isPersonalOffer && <span className="special-card-badges"><span className="special-card-badge">специально для вас</span><OfferCountdown /></span>}
-          <h2>{task.title}</h2>
-          <p className={task.metro ? "gig-task-address gig-task-address-with-metro" : "gig-task-address"}>
+    <TaskCardShell
+      ariaLabel={onOpen ? `Подробнее: ${task.title}` : undefined}
+      className={isPersonalOffer ? taskCardStyles.special : undefined}
+      onOpen={onOpen}
+      brand={<BrandMark brand={task.brand} />}
+      header={<>
+          {showMatchBadge && <Badge className="gig-task-badge" tone="accent" variant="soft">подходит вам</Badge>}
+          {showStatus && <Badge className="gig-task-status-label" leadingIcon={<i />} tone="success" variant="plain">{cardVariant === "status-plus" ? "есть ограничения" : "не подходит"}</Badge>}
+          {isPersonalOffer && <span className="special-card-badges"><Badge tone="accent">специально для вас</Badge><OfferCountdown render={({ value, ariaLabel }) => <Badge aria-label={ariaLabel} tone="accent">{value}</Badge>} /></span>}
+          <h2 className={taskCardStyles.title}>{task.title}</h2>
+          <p className={taskCardStyles.address}>
             {task.metro && <MetroIcon metro={task.metro} />}
-            <span className="gig-task-address-text">
+            <span>
               {task.metro && <>{task.metro.station} · </>}
               {task.address} · <img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />{task.distance}
             </span>
           </p>
-        </div>
-        <BrandMark brand={task.brand} />
-      </div>
-      <div className="gig-task-divider" />
-      <div className="gig-task-card-bottom">
-        <div className="gig-task-payment">
+      </>}
+      details={<><div className={taskCardStyles.payment}>
           <p>{task.payment}</p>
           <p>{task.rate}</p>
-        </div>
-        <div className="gig-task-time">
+        </div><div className={taskCardStyles.time}>
           <p>{task.hours}</p>
           <p>{task.breakInfo}</p>
-        </div>
-      </div>
-      {showRestrictionTags && (
-        <div className="gig-task-restrictions">
-          {task.restrictionTags.map((tag) => <span key={tag}>{tag}</span>)}
-        </div>
-      )}
-      {isPersonalOffer && <button className="special-task-action" onClick={(event) => { event.stopPropagation(); onOpen?.(); }} type="button">принять задание</button>}
-    </article>
+        </div></>}
+      restrictions={showRestrictionTags && task.restrictionTags.map((tag) => <Badge key={tag} size="small" tone="warning" variant="soft">{tag}</Badge>)}
+      action={isPersonalOffer && <Button fullWidth onClick={(event) => { event.stopPropagation(); onOpen?.(); }} size="small" variant="secondary">принять задание</Button>}
+    />
   );
 }
 
@@ -825,26 +865,20 @@ function getRussianPlural(count, forms) {
   return forms[2];
 }
 
-function getHiddenReasonText(hiddenReason) {
-  if (hiddenReason === "filters") return "фильтров";
-  if (hiddenReason === "availability") return "настроек доступности";
-  return "фильтров или выбранного времени";
-}
-
-function TaskMessageCard({ hiddenCount, hiddenReason = "mixed", onShowAll, variant = "no-more" }) {
+function TaskMessageCard({ hiddenCount, onShowAll, variant = "no-more" }) {
   const isDayEmpty = variant === "empty-day-filtered";
   const title = isDayEmpty ? "в этот день нет подходящих услуг" : "подходящих услуг больше нет";
-  const hiddenReasonText = getHiddenReasonText(hiddenReason);
+  const servicesLabel = `${hiddenCount} ${getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"])}`;
   const subtitle = isDayEmpty
-    ? `${hiddenCount} ${getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"])} скрыты из-за ${hiddenReasonText}`
-    : `ещё ${hiddenCount} ${getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"])} скрыты из-за ${hiddenReasonText}`;
+    ? `есть ещё ${servicesLabel} по другим условиям`
+    : `ещё ${servicesLabel} по другим условиям`;
   return (
     <article className={`task-message-card ${isDayEmpty ? "task-message-card-filtered-day" : "task-message-card-no-more"}`}>
       <h3>{title}</h3>
       <p>{subtitle}</p>
       <div className="task-message-actions">
-        <button className="task-message-subscribe" type="button"><img alt="" src={assetUrl("task-hidden-star.svg")} />подписаться на новые задания</button>
-        <button className="task-message-show-all" onClick={onShowAll} type="button">показать остальные <img alt="" src={assetUrl("task-hidden-chevron-down.svg")} /></button>
+        <Button className="task-message-subscribe" fullWidth leadingIcon={<img alt="" src={assetUrl("task-hidden-star.svg")} />} variant="ghost">подписаться на новые задания</Button>
+        <Button className="task-message-show-all" fullWidth onClick={onShowAll} trailingIcon={<img alt="" src={assetUrl("task-hidden-chevron-down.svg")} />} variant="primary">показать остальные</Button>
       </div>
     </article>
   );
@@ -854,7 +888,7 @@ function NoTasksForDayCard() {
   return (
     <article className="task-message-card task-message-card-empty">
       <h3>в этот день услуг нет</h3>
-      <button className="task-message-subscribe" type="button"><img alt="" src={assetUrl("task-hidden-star.svg")} />подписаться на новые задания</button>
+      <Button className="task-message-subscribe" fullWidth leadingIcon={<img alt="" src={assetUrl("task-hidden-star.svg")} />} variant="ghost">подписаться на новые задания</Button>
     </article>
   );
 }
@@ -907,10 +941,13 @@ function CardFiltersSheet({ filters, onApply, onClose, onOpenFullFilters }) {
 }
 
 function CardAvailabilitySheet({ availability, onApply, onClose, onOpenFullSettings }) {
-  const [from, setFrom] = useState(availability.from);
-  const [to, setTo] = useState(availability.to);
+  const hasAvailabilitySelection = Boolean(availability.from || availability.to || availability.preset || availability.presets?.length);
+  const [from, setFrom] = useState(availability.from || defaultAvailabilityTime.from);
+  const [to, setTo] = useState(availability.to || defaultAvailabilityTime.to);
   const [presets, setPresets] = useState(() => (
-    Array.isArray(availability.presets) ? availability.presets : availability.preset ? [availability.preset] : []
+    hasAvailabilitySelection
+      ? (Array.isArray(availability.presets) ? availability.presets : availability.preset ? [availability.preset] : [])
+      : defaultAvailabilityTime.presets
   ));
 
   function togglePreset(preset) {
@@ -959,7 +996,7 @@ function TaskDetailsScreen({ task, day, onBack, onBook, bookingState }) {
       </header>
       <main className="details-content">
         <div className="details-brand"><BrandMark brand={task.brand} /></div>
-        {!task.restrictionTags?.length && task.badge && <span className="details-match-badge">{task.badge}</span>}
+        {!task.restrictionTags?.length && task.badge && <Badge className="details-match-badge" size="small" tone="accent" variant="soft">{task.badge}</Badge>}
         <h2>{task.title}</h2>
         <p className="details-payment">{task.payment}</p>
         <p className="details-rate">{task.rate}</p>
@@ -1018,35 +1055,19 @@ function MyTaskCard({ booking }) {
   const date = dateFragment ? `${dateFragment}, 2025` : `${day.label}, ${day.secondaryLabel}`;
   const status = myTaskStatuses[booking.status] ?? myTaskStatuses.booked;
 
-  return (
-    <article className="my-task-card">
-      <div className="my-task-card-top">
-        <div className="my-task-card-copy">
-          <p className={`my-task-status my-task-status-${status.tone}`}><span aria-hidden="true" />{status.label}</p>
-          <h2>{task.title}</h2>
-          <p className={task.metro ? "my-task-address my-task-address-with-metro" : "my-task-address"}>
-            {task.metro && <MetroIcon metro={task.metro} />}
-            <span>
-              {task.metro && <>{task.metro.station} · </>}
-              {task.address} · <img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />{task.distance}
-            </span>
-          </p>
-        </div>
-        <BrandMark brand={task.brand} />
-      </div>
-      <div className="my-task-divider" />
-      <div className="my-task-card-bottom">
-        <div>
-          <p className="my-task-payment">{task.payment}</p>
-          <p className="my-task-rate">{task.rate}</p>
-        </div>
-        <div className="my-task-date">
-          <p>{date}</p>
-          <p>{task.hours}</p>
-        </div>
-      </div>
-    </article>
-  );
+  return <MyTaskCardView
+    address={task.metro ? <>{task.metro.station} · {task.address}</> : task.address}
+    brand={<BrandMark brand={task.brand} />}
+    date={date}
+    distance={task.distance}
+    distanceMark={<img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />}
+    hours={task.hours}
+    metro={task.metro && <MetroIcon metro={task.metro} />}
+    payment={task.payment}
+    rate={task.rate}
+    status={status}
+    title={task.title}
+  />;
 }
 
 function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollection, onRemoveCollection }) {
@@ -1098,8 +1119,9 @@ function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollect
         <div className="favorite-collections-list">
           {collections.map((collection) => {
             const collectionBrands = collection.filters.brands.length ? collection.filters.brands : defaultCollectionBrands;
+            const collectionServices = normalizeSelectedServices(collection.filters.service);
             const collectionChips = [
-              collection.filters.service || "уборка урожая пшеницы",
+              collectionServices.length ? getServiceSelectionSummary(collectionServices) : "уборка урожая пшеницы",
               "1, 2, 3 июня",
               "Пн, Ср, Пт",
               collection.filters.minimumPayment ? `от ${collection.filters.minimumPayment} ₽` : "от 1500 ₽",
@@ -1136,32 +1158,19 @@ function EmployeeShiftCard({ day, shift }) {
   const isPrimaryShift = shift.type === "primary";
   const shiftTitle = isPrimaryShift ? "основная смена" : "сверхурочная смена";
 
-  return (
-    <article className="employee-shift-card">
-      <div className="employee-shift-heading">
-        <div>
-          <span className="employee-shift-badge">{shiftTitle}</span>
-          <h3>{shift.title}</h3>
-          <p>
-            {shift.metro && <span className="employee-shift-metro"><MetroIcon metro={shift.metro} />{shift.metro.station} ·</span>}
-            {shift.address} · <img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />{shift.distance}
-          </p>
-        </div>
-        <BrandMark brand={shift.brand} />
-      </div>
-      <div className="employee-shift-divider" />
-      <div className="employee-shift-details">
-        <div className="employee-shift-date">
-          <p>{getShortDayLabel(day)}</p>
-          <p>{day.secondaryLabel}</p>
-        </div>
-        <div className="employee-shift-hours">
-          <p>{shift.hours}</p>
-          <p>{shift.breakInfo ?? "11 ч + 1 ч перерыв"}</p>
-        </div>
-      </div>
-    </article>
-  );
+  return <EmployeeShiftCardView
+    address={shift.address}
+    brand={<BrandMark brand={shift.brand} />}
+    breakInfo={shift.breakInfo ?? "11 ч + 1 ч перерыв"}
+    date={day.secondaryLabel}
+    distance={shift.distance}
+    distanceMark={<img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />}
+    hours={shift.hours}
+    metro={shift.metro && <><MetroIcon metro={shift.metro} />{shift.metro.station} ·</>}
+    shiftTitle={shiftTitle}
+    title={shift.title}
+    weekday={getShortDayLabel(day)}
+  />;
 }
 
 function IconButton({ alt, src, label, onClick }) {
@@ -1175,38 +1184,102 @@ function IconButton({ alt, src, label, onClick }) {
 function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initialSelectedWeekdays, initialSelectedDuration, onBack, onSave }) {
   const [selectedDates, setSelectedDates] = useState(initialSelectedDates);
   const [selectedWeekdays, setSelectedWeekdays] = useState(initialSelectedWeekdays);
-  const [availableFrom, setAvailableFrom] = useState(initialAvailabilityTime.from);
-  const [availableTo, setAvailableTo] = useState(initialAvailabilityTime.to);
-  const [selectedTimePresets, setSelectedTimePresets] = useState(() => (
-    Array.isArray(initialAvailabilityTime.presets)
+  const hasInitialAvailabilitySelection = Boolean(
+    initialAvailabilityTime.from
+    || initialAvailabilityTime.to
+    || initialAvailabilityTime.preset
+    || initialAvailabilityTime.presets?.length,
+  );
+  const initialAvailableFrom = initialAvailabilityTime.from || defaultAvailabilityTime.from;
+  const initialAvailableTo = initialAvailabilityTime.to || defaultAvailabilityTime.to;
+  const initialTimePresets = hasInitialAvailabilitySelection
+    ? (Array.isArray(initialAvailabilityTime.presets)
       ? initialAvailabilityTime.presets
-      : initialAvailabilityTime.preset ? [initialAvailabilityTime.preset] : []
+      : initialAvailabilityTime.preset ? [initialAvailabilityTime.preset] : [])
+    : defaultAvailabilityTime.presets;
+  const [availableFrom, setAvailableFrom] = useState(initialAvailableFrom);
+  const [availableTo, setAvailableTo] = useState(initialAvailableTo);
+  const [selectedTimePresets, setSelectedTimePresets] = useState(() => (
+    initialTimePresets
   ));
   const [selectedDuration, setSelectedDuration] = useState(() => (
     Array.isArray(initialSelectedDuration) ? initialSelectedDuration : initialSelectedDuration ? [initialSelectedDuration] : []
   ));
   const [isDaysPickerOpen, setIsDaysPickerOpen] = useState(false);
+  const [availabilityMonthOffset, setAvailabilityMonthOffset] = useState(0);
   const hasSelection = selectedDates.length > 0 || selectedWeekdays.length > 0;
+  const initialDuration = Array.isArray(initialSelectedDuration) ? initialSelectedDuration : initialSelectedDuration ? [initialSelectedDuration] : [];
   const hasChanges = selectedDates.join(",") !== initialSelectedDates.join(",")
     || selectedWeekdays.join(",") !== initialSelectedWeekdays.join(",")
-    || availableFrom !== initialAvailabilityTime.from
-    || availableTo !== initialAvailabilityTime.to
-    || selectedTimePresets.join(",") !== (Array.isArray(initialAvailabilityTime.presets)
-      ? initialAvailabilityTime.presets
-      : initialAvailabilityTime.preset ? [initialAvailabilityTime.preset] : []).join(",");
+    || availableFrom !== initialAvailableFrom
+    || availableTo !== initialAvailableTo
+    || selectedTimePresets.join(",") !== initialTimePresets.join(",")
+    || selectedDuration.join(",") !== initialDuration.join(",");
+  const hasAppliedSettings = initialSelectedDates.length > 0
+    || initialSelectedWeekdays.length > 0
+    || (hasInitialAvailabilitySelection && !isVisualDefaultAvailability(initialAvailabilityTime))
+    || initialDuration.length > 0;
+  const isDraftEmpty = selectedDates.length === 0
+    && selectedWeekdays.length === 0
+    && ((!availableFrom && !availableTo && selectedTimePresets.length === 0)
+      || isVisualDefaultAvailability({ from: availableFrom, presets: selectedTimePresets, to: availableTo }))
+    && selectedDuration.length === 0;
+
+  function saveSettings() {
+    onSave({
+      selectedDates,
+      selectedWeekdays,
+      availabilityTime: {
+        from: availableFrom,
+        to: availableTo,
+        preset: selectedTimePresets[0] ?? null,
+        presets: selectedTimePresets,
+      },
+      selectedDuration,
+    });
+  }
+
+  function resetAllSettings() {
+    onSave({
+      selectedDates: [],
+      selectedWeekdays: [],
+      availabilityTime: emptyAvailabilityTime,
+      selectedDuration: [],
+    });
+  }
 
   function toggleDate(day) {
     if (day.status !== "free") return;
 
-    setSelectedDates((current) => current.includes(String(day.day))
-      ? current.filter((date) => date !== String(day.day))
-      : [...current, String(day.day)]);
+    setSelectedDates((current) => {
+      const next = current.includes(day.selectionKey)
+        ? current.filter((date) => date !== day.selectionKey)
+        : [...current, day.selectionKey];
+
+      setSelectedWeekdays((weekdays) => weekdays.filter((weekday) => {
+        const matchingFreeDays = availabilityCalendarDays.filter((calendarDay) => (
+          calendarDay.month === "current" && calendarDay.status === "free" && calendarDay.weekday === weekday
+        ));
+        return matchingFreeDays.every((calendarDay) => next.includes(calendarDay.selectionKey));
+      }));
+
+      return next;
+    });
   }
 
   function toggleWeekday(weekday) {
-    setSelectedWeekdays((current) => current.includes(weekday)
-      ? current.filter((item) => item !== weekday)
-      : [...current, weekday]);
+    const matchingFreeDays = availabilityCalendarDays.filter((day) => (
+      day.month === "current" && day.status === "free" && day.weekday === weekday
+    ));
+    const keys = matchingFreeDays.map((day) => day.selectionKey);
+
+    setSelectedWeekdays((current) => {
+      const isSelected = current.includes(weekday);
+      setSelectedDates((dates) => isSelected
+        ? dates.filter((date) => !keys.includes(date))
+        : [...new Set([...dates, ...keys])]);
+      return isSelected ? current.filter((item) => item !== weekday) : [...current, weekday];
+    });
   }
 
   function resetSelection() {
@@ -1231,10 +1304,10 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
         }
 
         const starts = selected.map((item) => Number.parseInt(item.from, 10));
-        setAvailableFrom(`${Math.min(...starts)}:00`);
+        setAvailableFrom(`${String(Math.min(...starts)).padStart(2, "0")}:00`);
         setAvailableTo(selected.some((item) => item.id === "night")
           ? "6:00"
-          : `${Math.max(...selected.map((item) => Number.parseInt(item.to, 10)))}:00`);
+          : `${String(Math.max(...selected.map((item) => Number.parseInt(item.to, 10)))).padStart(2, "0")}:00`);
       }
 
       return next;
@@ -1248,34 +1321,47 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
     };
   }
 
+  const availabilityCalendarDays = buildAvailabilityCalendar(availabilityMonthOffset);
+  const availabilityMonthLabel = new Date(prototypeToday.getFullYear(), prototypeToday.getMonth() + availabilityMonthOffset, 1)
+    .toLocaleDateString("ru-RU", { month: "long" });
+
   if (isDaysPickerOpen) return (
-    <section className="availability-screen">
+    <div className="availability-sheet-backdrop">
+    <section aria-modal="true" className="availability-screen" role="dialog" aria-labelledby="availability-sheet-title">
       <header className="availability-header">
         <span aria-hidden="true" className="availability-handle" />
-        <button aria-label="Закрыть выбор дней" className="availability-close" onClick={() => setIsDaysPickerOpen(false)} type="button">×</button>
-        <h1>в какие дни вы готовы<br />выходить на подработки</h1>
+        <div className="availability-heading">
+          <div>
+            <h1 id="availability-sheet-title">укажите свою доступность</h1>
+            <p>выберите дни недели или даты, когда вы готовы оказывать услуги</p>
+          </div>
+          <button aria-label="Закрыть выбор дней" className="availability-close" onClick={() => setIsDaysPickerOpen(false)} type="button">×</button>
+        </div>
       </header>
 
       <main className="availability-content">
-        <div className="availability-legend" aria-label="Обозначения календаря">
-          <span><i className="legend-swatch legend-busy" />занято</span>
-          <span><i className="legend-swatch legend-free" />свободно</span>
-          <span><i className="legend-swatch legend-selected" />выбрано</span>
-        </div>
-
-        <section className="availability-calendar-section" aria-label="Календарь июня">
-          <h2>июнь</h2>
-          <div className="calendar-weekdays">
-            {calendarWeekdays.map((weekday) => <span key={weekday}>{weekday}</span>)}
+        <section className="availability-calendar-section" aria-label={`Календарь ${availabilityMonthLabel}`}>
+          <div className="availability-month-nav">
+            <button aria-label="Предыдущий месяц" disabled={availabilityMonthOffset === 0} onClick={() => setAvailabilityMonthOffset(0)} type="button">‹</button>
+            <h2>{availabilityMonthLabel}</h2>
+            <button aria-label="Следующий месяц" disabled={availabilityMonthOffset === 1} onClick={() => setAvailabilityMonthOffset(1)} type="button">›</button>
+          </div>
+          <div className="regular-days-options availability-weekday-chips">
+            {calendarWeekdays.map((weekday) => {
+              const isSelected = selectedWeekdays.includes(weekday);
+              return <button aria-pressed={isSelected} className={isSelected ? "regular-day regular-day-selected" : "regular-day"} key={weekday} onClick={() => toggleWeekday(weekday)} type="button">{weekday}</button>;
+            })}
           </div>
           <div className="availability-calendar">
-            {juneCalendarDays.map((day) => {
-              const isSelected = day.month === "current" && selectedDates.includes(String(day.day));
+            {availabilityCalendarDays.map((day) => {
+              const isSelected = day.month === "current" && selectedDates.includes(day.selectionKey);
+              const isPast = day.month === "current" && new Date(`${day.id}T12:00:00`) < prototypeToday;
               const isDisabled = day.status !== "free";
               const className = [
                 "availability-day",
                 `availability-day-${day.status}`,
-                day.month !== "current" ? "availability-day-outside" : "",
+                day.status === "busy" && day.day % 3 === 0 ? "availability-day-overtime" : "",
+                day.month !== "current" || isPast ? "availability-day-outside" : "",
                 isSelected ? "availability-day-selected" : "",
               ].filter(Boolean).join(" ");
 
@@ -1283,6 +1369,7 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
                 <button
                   aria-pressed={isSelected}
                   className={className}
+                  data-weekday={day.weekday}
                   disabled={isDisabled}
                   key={day.id}
                   onClick={() => toggleDate(day)}
@@ -1295,41 +1382,21 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
               );
             })}
           </div>
-        </section>
-
-        <section className="regular-days-section">
-          <h2>в какие дни недели вы готовы<br />регулярно выполнять задания</h2>
-          <div className="regular-days-options">
-            {calendarWeekdays.map((weekday) => {
-              const isSelected = selectedWeekdays.includes(weekday);
-
-              return (
-                <button
-                  aria-pressed={isSelected}
-                  className={isSelected ? "regular-day regular-day-selected" : "regular-day"}
-                  key={weekday}
-                  onClick={() => toggleWeekday(weekday)}
-                  type="button"
-                >
-                  {weekdayNames[weekday]}
-                </button>
-              );
-            })}
+          <div className="availability-legend" aria-label="Обозначения календаря">
+            <span><i className="legend-swatch legend-busy" />занято</span>
+            <span><i className="legend-swatch legend-overtime" />сверхурочные</span>
+            <span><i className="legend-swatch legend-free" />свободно</span>
+            <span><i className="legend-swatch legend-selected" />выбрано</span>
           </div>
         </section>
       </main>
 
       <footer className="availability-actions">
-        {hasSelection || hasChanges ? (
-          <>
-            <button className="availability-reset" onClick={resetSelection} type="button">сбросить</button>
-            <button className="availability-save" onClick={() => setIsDaysPickerOpen(false)} type="button">готово</button>
-          </>
-        ) : (
-          <button className="availability-cancel" onClick={() => setIsDaysPickerOpen(false)} type="button">отмена</button>
-        )}
+        <button className="availability-reset" onClick={resetSelection} type="button">сбросить</button>
+        <button className="availability-save" onClick={() => setIsDaysPickerOpen(false)} type="button">готово</button>
       </footer>
     </section>
+    </div>
   );
 
   const selectedDaysSummary = `выбрано дней: ${selectedDates.length + selectedWeekdays.length}`;
@@ -1352,7 +1419,7 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
 
       <main className="settings-content">
         <section className="availability-section">
-          <button aria-expanded={isDaysPickerOpen} className="settings-select" onClick={() => setIsDaysPickerOpen(true)} type="button">
+          <button aria-expanded={isDaysPickerOpen} className="settings-select" onClick={() => { setAvailabilityMonthOffset(0); setIsDaysPickerOpen(true); }} type="button">
             <span className="settings-select-copy">
               {hasSelection ? <><small>выберите дни</small><strong>{selectedDaysSummary}</strong></> : <strong className="settings-select-placeholder">выберите дни</strong>}
             </span>
@@ -1412,24 +1479,19 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
       </main>
 
       <footer className="settings-actions">
-        <button className="availability-reset" onClick={() => {
-          resetSelection();
-          setAvailableFrom("");
-          setAvailableTo("");
-          setSelectedTimePresets([]);
-          setSelectedDuration([]);
-        }} type="button">сбросить</button>
-        <button className="availability-save" onClick={() => onSave({
-          selectedDates,
-          selectedWeekdays,
-          availabilityTime: {
-            from: availableFrom,
-            to: availableTo,
-            preset: selectedTimePresets[0] ?? null,
-            presets: selectedTimePresets,
-          },
-          selectedDuration,
-        })} type="button">сохранить</button>
+        {!hasChanges && !hasAppliedSettings ? (
+          <button className="availability-reset availability-action-single" onClick={onBack} type="button">закрыть</button>
+        ) : !hasChanges ? (
+          <>
+            <button className="availability-reset" onClick={onBack} type="button">закрыть</button>
+            <button className="availability-reset" onClick={resetAllSettings} type="button">сбросить</button>
+          </>
+        ) : (
+          <>
+            <button className="availability-reset" onClick={onBack} type="button">отмена</button>
+            <button className="availability-save" onClick={saveSettings} type="button">{isDraftEmpty ? "показать все" : "применить"}</button>
+          </>
+        )}
       </footer>
     </section>
   );
@@ -1693,7 +1755,14 @@ function LocationPicker({ initialLocation, initialRadius, onApply, onBack }) {
 
 function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditingCollection = false, onBack, onSave, onSaveCollection }) {
   const [selectedBrands, setSelectedBrands] = useState(initialFilters.brands);
-  const [service, setService] = useState(initialFilters.service);
+  const initialStores = normalizeSelectedStores(initialFilters.stores);
+  const [selectedStores, setSelectedStores] = useState(initialStores);
+  const [isStorePickerOpen, setIsStorePickerOpen] = useState(false);
+  const [storeSearch, setStoreSearch] = useState("");
+  const initialServices = normalizeSelectedServices(initialFilters.service);
+  const [selectedServices, setSelectedServices] = useState(initialServices);
+  const [isServicePickerOpen, setIsServicePickerOpen] = useState(false);
+  const [serviceSearch, setServiceSearch] = useState("");
   const [minimumPayment, setMinimumPayment] = useState(initialFilters.minimumPayment);
   const [radius, setRadius] = useState(initialRadius);
   const [location, setLocation] = useState(initialLocation);
@@ -1710,8 +1779,18 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
     { id: "perekrestok", label: "Перекрёсток" },
     { id: "chizhik", label: "Чижик" },
   ];
+  const stores = DEMO_STORES.map((store) => ({ ...store, address: getStoreAddress(location.label, store) }));
+  const normalizedStoreQuery = storeSearch.trim().toLocaleLowerCase("ru-RU");
+  const visibleStores = normalizedStoreQuery
+    ? stores.filter((store) => store.address.toLocaleLowerCase("ru-RU").includes(normalizedStoreQuery))
+    : stores;
+  const normalizedServiceQuery = serviceSearch.trim().toLocaleLowerCase("ru-RU");
+  const visibleServices = normalizedServiceQuery
+    ? DEMO_SERVICE_TITLES.filter((service) => service.toLocaleLowerCase("ru-RU").includes(normalizedServiceQuery))
+    : DEMO_SERVICE_TITLES;
   const isDirty = selectedBrands.join(",") !== initialFilters.brands.join(",")
-    || service !== initialFilters.service
+    || [...selectedStores].sort().join("\u0000") !== [...initialStores].sort().join("\u0000")
+    || [...selectedServices].sort().join("\u0000") !== [...initialServices].sort().join("\u0000")
     || minimumPayment !== initialFilters.minimumPayment
     || radius !== initialRadius
     || location.label !== initialLocation.label
@@ -1726,9 +1805,22 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
     location: { coords: location.coords, label: location.label },
     minimumPayment,
     radius,
-    service,
+    service: [...selectedServices].sort(),
+    stores: [...selectedStores].sort(),
   });
   const isCollectionSaved = savedCollectionSnapshot === collectionSnapshot;
+  const hasAppliedFilters = initialFilters.brands.length > 0
+    || initialStores.length > 0
+    || initialServices.length > 0
+    || Boolean(initialFilters.minimumPayment)
+    || initialRadius !== null
+    || Boolean(initialLocation.label);
+  const isDraftEmpty = selectedBrands.length === 0
+    && selectedStores.length === 0
+    && selectedServices.length === 0
+    && !minimumPayment
+    && radius === null
+    && !location.label;
 
   function toggleBrand(brand) {
     setSelectedBrands((current) => current.includes(brand)
@@ -1736,12 +1828,38 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
       : [...current, brand]);
   }
 
-  function resetFilters() {
-    setSelectedBrands([]);
-    setService("");
-    setMinimumPayment("");
-    setRadius(null);
-    setLocation(emptySearchLocation);
+  function toggleService(service) {
+    setSelectedServices((current) => current.includes(service)
+      ? current.filter((item) => item !== service)
+      : [...current, service]);
+  }
+
+  function toggleStore(storeId) {
+    setSelectedStores((current) => current.includes(storeId)
+      ? current.filter((item) => item !== storeId)
+      : [...current, storeId]);
+  }
+
+  function getStoreSelectionSummary() {
+    const selected = stores.filter((store) => selectedStores.includes(store.id));
+    if (selected.length === 1) return selected[0].address;
+    return `${selected.length} ${getRussianPlural(selected.length, ["магазин выбран", "магазина выбраны", "магазинов выбрано"])}`;
+  }
+
+  function saveFilters() {
+    onSave({
+      filters: { brands: selectedBrands, minimumPayment, service: selectedServices, stores: selectedStores },
+      location,
+      radius,
+    });
+  }
+
+  function resetAllFilters() {
+    onSave({
+      filters: { ...emptyFilters, brands: [], service: [], stores: [] },
+      location: { ...emptySearchLocation, coords: [...emptySearchLocation.coords] },
+      radius: null,
+    });
   }
 
   function getDefaultCollectionName() {
@@ -1761,7 +1879,7 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
   function saveCollection() {
     const title = collectionName.trim() || getDefaultCollectionName();
     onSaveCollection({
-      filters: { brands: selectedBrands, minimumPayment, service },
+      filters: { brands: selectedBrands, minimumPayment, service: selectedServices, stores: selectedStores },
       location: { ...location, coords: [...location.coords] },
       notifications: {
         email: emailUpdates,
@@ -1798,7 +1916,7 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
         <h1>фильтры</h1>
       </header>
 
-      <main className="filters-content">
+      <main className="filters-content filters-content-with-actions">
         <section className="filter-section">
           <h2>торговая сеть</h2>
           <div className="brand-filter-options">
@@ -1823,18 +1941,98 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
         </section>
 
         <section className="filter-fields">
-          <button className="filter-field filter-field-placeholder" type="button">
-            <span>адрес магазина</span>
-            <img alt="" src={assetUrl("chevron-down.svg")} />
-          </button>
-          <button
-            className={service ? "filter-field filter-field-filled" : "filter-field filter-field-placeholder"}
-            onClick={() => setService((current) => current ? "" : "сборка урожая пшеницы")}
-            type="button"
-          >
-            {service ? <span className="filter-field-content"><small>услуга</small><strong>{service}</strong></span> : <span>услуга</span>}
-            <img alt="" src={assetUrl("chevron-down.svg")} />
-          </button>
+          <div className={isStorePickerOpen ? "filter-picker filter-picker-open" : "filter-picker"}>
+            <button
+              aria-controls="store-filter-options"
+              aria-expanded={isStorePickerOpen}
+              aria-label="Выбрать адреса магазинов"
+              className={selectedStores.length ? "filter-field filter-field-filled filter-picker-trigger" : "filter-field filter-field-placeholder filter-picker-trigger"}
+              onClick={() => setIsStorePickerOpen((current) => !current)}
+              type="button"
+            >
+              {selectedStores.length ? (
+                <span className="filter-field-content">
+                  <small>адреса магазинов</small>
+                  <strong>{getStoreSelectionSummary()}</strong>
+                </span>
+              ) : <span>адрес магазина</span>}
+              <img alt="" className="filter-picker-chevron" src={assetUrl("chevron-down.svg")} />
+            </button>
+            {isStorePickerOpen && (
+              <div className="filter-picker-panel" id="store-filter-options">
+                <label className="filter-picker-search-field">
+                  <img alt="" aria-hidden="true" src={assetUrl("search.svg")} />
+                  <input
+                    aria-label="Поиск по адресу магазина"
+                    autoComplete="off"
+                    className="filter-picker-search"
+                    onChange={(event) => setStoreSearch(event.target.value)}
+                    placeholder="найти адрес"
+                    type="search"
+                    value={storeSearch}
+                  />
+                </label>
+                <div aria-label="Список адресов магазинов" className="filter-picker-options">
+                  {visibleStores.length ? visibleStores.map((store) => (
+                    <label className={selectedStores.includes(store.id) ? "filter-picker-option filter-picker-option-selected" : "filter-picker-option"} key={store.id}>
+                      <span>{store.address}</span>
+                      <input
+                        checked={selectedStores.includes(store.id)}
+                        onChange={() => toggleStore(store.id)}
+                        type="checkbox"
+                      />
+                    </label>
+                  )) : <p className="filter-picker-empty" role="status">ничего не найдено</p>}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className={isServicePickerOpen ? "filter-picker filter-picker-open" : "filter-picker"}>
+            <button
+              aria-controls="service-filter-options"
+              aria-expanded={isServicePickerOpen}
+              aria-label="Выбрать услуги"
+              className={selectedServices.length ? "filter-field filter-field-filled filter-picker-trigger" : "filter-field filter-field-placeholder filter-picker-trigger"}
+              onClick={() => setIsServicePickerOpen((current) => !current)}
+              type="button"
+            >
+              {selectedServices.length ? (
+                <span className="filter-field-content">
+                  <small>услуги</small>
+                  <strong>{getServiceSelectionSummary(selectedServices)}</strong>
+                </span>
+              ) : <span>услуга</span>}
+              <img alt="" className="filter-picker-chevron" src={assetUrl("chevron-down.svg")} />
+            </button>
+            {isServicePickerOpen && (
+              <div className="filter-picker-panel" id="service-filter-options">
+                <label className="filter-picker-search-field">
+                  <img alt="" aria-hidden="true" src={assetUrl("search.svg")} />
+                  <input
+                    aria-label="Поиск по услугам"
+                    autoComplete="off"
+                    className="filter-picker-search"
+                    onChange={(event) => setServiceSearch(event.target.value)}
+                    placeholder="найти услугу"
+                    type="search"
+                    value={serviceSearch}
+                  />
+                </label>
+                <div aria-label="Список услуг" className="filter-picker-options">
+                  {visibleServices.length ? visibleServices.map((service) => (
+                    <label className={selectedServices.includes(service) ? "filter-picker-option filter-picker-option-selected" : "filter-picker-option"} key={service}>
+                      <span>{service}</span>
+                      <input
+                        checked={selectedServices.includes(service)}
+                        onChange={() => toggleService(service)}
+                        type="checkbox"
+                      />
+                    </label>
+                  )) : <p className="filter-picker-empty" role="status">ничего не найдено</p>}
+                </div>
+              </div>
+            )}
+          </div>
           <label className={minimumPayment ? "filter-field filter-field-filled" : "filter-field filter-field-placeholder"}>
             {minimumPayment && <small>мин. стоимость ₽</small>}
             <input
@@ -1880,26 +2078,37 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
         </section>
       </main>
 
-      {isDirty && (
-        <div className="filter-actions">
-          {!isEditingCollection && <button
-            className="filter-collection-save"
-            disabled={isCollectionSaved}
-            onClick={openCollectionSaveSheet}
-            type="button"
-          >
-            {isCollectionSaved ? "подборка сохранена" : "сохранить подборку"}
-          </button>}
-          <div className="filter-actions-row">
-            <button className="filter-action-reset" onClick={resetFilters} type="button">сбросить</button>
-            <button className="filter-action-save" onClick={() => onSave({
-              filters: { brands: selectedBrands, minimumPayment, service },
-              location,
-              radius,
-            })} type="button">применить</button>
+      <div className={isDirty ? "filter-actions" : "filter-actions filter-actions-compact"}>
+          <div className="filter-actions-content">
+            {isDirty && !isEditingCollection && <button
+              className="filter-collection-save"
+              disabled={isCollectionSaved}
+              onClick={openCollectionSaveSheet}
+              type="button"
+            >
+              <span aria-hidden="true" className="filter-collection-save-icon">
+                <img alt="" src={assetUrl("save-collection-star.svg")} />
+              </span>
+              <span>{isCollectionSaved ? "подборка сохранена" : "сохранить в подборку"}</span>
+            </button>}
+            {!isDirty && !hasAppliedFilters ? (
+              <div className="filter-actions-row">
+                <button className="filter-action-reset filter-action-single" onClick={onBack} type="button">закрыть</button>
+              </div>
+            ) : !isDirty ? (
+              <div className="filter-actions-row">
+                <button className="filter-action-reset" onClick={onBack} type="button">закрыть</button>
+                <button className="filter-action-reset" onClick={resetAllFilters} type="button">сбросить</button>
+              </div>
+            ) : (
+              <div className="filter-actions-row">
+                <button className="filter-action-reset" onClick={onBack} type="button">отмена</button>
+                <button className="filter-action-save" onClick={saveFilters} type="button">{isDraftEmpty ? "показать все" : "применить"}</button>
+              </div>
+            )}
           </div>
+          <span aria-hidden="true" className="filter-actions-home-indicator" />
         </div>
-      )}
 
       {isCollectionSaveSheetOpen && <div className="collection-save-sheet-layer" onClick={() => setIsCollectionSaveSheetOpen(false)}>
         <section
@@ -1952,7 +2161,7 @@ export function App() {
   const persistedStateRef = useRef(readPrototypeState());
   const persistedState = persistedStateRef.current;
   const [activeTab, setActiveTab] = useState(0);
-  const [activeDay, setActiveDay] = useState("1");
+  const [activeDay, setActiveDay] = useState(days[0].date);
   const [onlyMatching, setOnlyMatching] = useState(true);
   const [networkFilter, setNetworkFilter] = useState("торговая сеть");
   const [filterScrollState, setFilterScrollState] = useState("at-start");
@@ -1962,18 +2171,22 @@ export function App() {
   const [isScrollTopVisible, setIsScrollTopVisible] = useState(false);
   const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
   const [cardSheet, setCardSheet] = useState(null);
-  const [sortBy, setSortBy] = useState("recommended");
-  const [hasAppliedSort, setHasAppliedSort] = useState(false);
-  const [searchRadius, setSearchRadius] = useState(null);
-  const [searchLocation, setSearchLocation] = useState(emptySearchLocation);
-  const [appliedFilters, setAppliedFilters] = useState(emptyFilters);
+  const [sortBy, setSortBy] = useState(persistedState.sortBy || "recommended");
+  const [hasAppliedSort, setHasAppliedSort] = useState(Boolean(persistedState.hasAppliedSort));
+  const [searchRadius, setSearchRadius] = useState(persistedState.searchRadius ?? null);
+  const [searchLocation, setSearchLocation] = useState(persistedState.searchLocation || emptySearchLocation);
+  const [appliedFilters, setAppliedFilters] = useState(persistedState.appliedFilters || emptyFilters);
   const [favoriteCollections, setFavoriteCollections] = useState(persistedState.favoriteCollections || []);
   const [editingCollection, setEditingCollection] = useState(null);
-  const [catalogVersion, setCatalogVersion] = useState(0);
-  const [selectedAvailabilityDates, setSelectedAvailabilityDates] = useState([]);
-  const [selectedAvailabilityWeekdays, setSelectedAvailabilityWeekdays] = useState([]);
-  const [availabilityTime, setAvailabilityTime] = useState(emptyAvailabilityTime);
-  const [selectedAvailabilityDuration, setSelectedAvailabilityDuration] = useState([]);
+  const [catalogVersion, setCatalogVersion] = useState(persistedState.catalogVersion || 0);
+  const [selectedAvailabilityDates, setSelectedAvailabilityDates] = useState(persistedState.selectedAvailabilityDates || []);
+  const [selectedAvailabilityWeekdays, setSelectedAvailabilityWeekdays] = useState(persistedState.selectedAvailabilityWeekdays || []);
+  const [availabilityTime, setAvailabilityTime] = useState(persistedState.availabilityTime || emptyAvailabilityTime);
+  const [selectedAvailabilityDuration, setSelectedAvailabilityDuration] = useState(() => (
+    Array.isArray(persistedState.selectedAvailabilityDuration)
+      ? persistedState.selectedAvailabilityDuration
+      : persistedState.selectedAvailabilityDuration ? [persistedState.selectedAvailabilityDuration] : []
+  ));
   const [bookedTasks, setBookedTasks] = useState(persistedState.bookedTasks || []);
   const [currentView, setCurrentView] = useState("tasks");
   const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(true);
@@ -1983,6 +2196,17 @@ export function App() {
   const [scrollTargetDay, setScrollTargetDay] = useState(null);
   const [isTimelineLoading, setIsTimelineLoading] = useState(false);
   const [expandedFilteredDays, setExpandedFilteredDays] = useState([]);
+  const hasFilterChangesFromDefault = appliedFilters.brands.length > 0
+    || Boolean(appliedFilters.minimumPayment)
+    || normalizeSelectedServices(appliedFilters.service).length > 0
+    || normalizeSelectedStores(appliedFilters.stores).length > 0
+    || searchRadius !== null
+    || searchLocation.label !== emptySearchLocation.label;
+  const hasAvailabilityChangesFromDefault = Boolean(selectedAvailabilityDates.length > 0
+    || selectedAvailabilityWeekdays.length > 0
+    || selectedAvailabilityDuration.length > 0
+    || ((availabilityTime.from || availabilityTime.to || availabilityTime.preset || availabilityTime.presets?.length)
+      && !isVisualDefaultAvailability(availabilityTime)));
   const screenRef = useRef(null);
   const scheduleSettingsButtonRef = useRef(null);
   const daySectionRefs = useRef({});
@@ -2038,11 +2262,21 @@ export function App() {
 
   useEffect(() => {
     window.localStorage.setItem(prototypeStorageKey, JSON.stringify({
+      appliedFilters,
+      availabilityTime,
       bookedTasks,
+      catalogVersion,
       defaultStateVersion: prototypeDefaultStateVersion,
       favoriteCollections,
+      hasAppliedSort,
+      searchLocation,
+      searchRadius,
+      selectedAvailabilityDates,
+      selectedAvailabilityDuration,
+      selectedAvailabilityWeekdays,
+      sortBy,
     }));
-  }, [bookedTasks, favoriteCollections]);
+  }, [appliedFilters, availabilityTime, bookedTasks, catalogVersion, favoriteCollections, hasAppliedSort, searchLocation, searchRadius, selectedAvailabilityDates, selectedAvailabilityDuration, selectedAvailabilityWeekdays, sortBy]);
 
   useEffect(() => {
     const timeline = document.querySelector(".date-timeline");
@@ -2149,7 +2383,7 @@ export function App() {
   }
 
   function scrollToDay(date) {
-    const distance = Math.abs(Number(date) - Number(activeDay));
+    const distance = Math.abs(days.findIndex((day) => day.date === date) - days.findIndex((day) => day.date === activeDay));
     programmaticDayRef.current = date;
     setActiveDay(date);
 
@@ -2238,14 +2472,16 @@ export function App() {
       [1200, 1900],
       [320, 880],
       [15000, 47000],
+      [52000, 72000],
     ];
     const locationAddress = effectiveSearchLocation.label.replace(/, Россия$/, "");
 
     return distanceBands.map(([minDistance, maxDistance], taskIndex) => {
       const seed = `${locationKey}-${day.date}-${taskIndex}`;
       const source = taskTemplates[Math.floor(seededValue(`${seed}-template`) * taskTemplates.length)];
+      const store = DEMO_STORES[(dayIndex * distanceBands.length + taskIndex) % DEMO_STORES.length];
       const rate = 210 + Math.floor(seededValue(`${seed}-rate`) * 151);
-      const startHour = 8 + Math.floor(seededValue(`${seed}-start`) * 4);
+      const startHour = taskIndex === 5 ? 23 : 8 + Math.floor(seededValue(`${seed}-start`) * 4);
       const duration = 7 + Math.floor(seededValue(`${seed}-duration`) * 3);
       const endHour = (startHour + duration) % 24;
       const distanceInMeters = minDistance + Math.floor(seededValue(`${seed}-distance`) * (maxDistance - minDistance));
@@ -2255,8 +2491,8 @@ export function App() {
       return {
         ...source,
         title: DEMO_SERVICE_TITLES[(dayIndex * distanceBands.length + taskIndex) % DEMO_SERVICE_TITLES.length],
-        address: `${locationAddress}, д. ${1 + Math.floor(seededValue(`${seed}-building`) * 96)}`,
-        badge: taskIndex < 2 ? "подходит вам" : undefined,
+        address: getStoreAddress(locationAddress, store),
+        badge: undefined,
         breakInfo: hasBreak ? `${duration - 1} ч + 1 ч перерыв` : `${duration} ч без перерыва`,
         distance: distanceInMeters >= 1000 ? `${(distanceInMeters / 1000).toFixed(1).replace(".", ",")} км` : `${distanceInMeters} м`,
         hours: `${String(startHour).padStart(2, "0")}:00 – ${String(endHour).padStart(2, "0")}:00`,
@@ -2266,7 +2502,8 @@ export function App() {
         recommendation: Math.floor(seededValue(`${seed}-recommendation`) * 100),
         rate: `${rate} ₽/час`,
         mismatchHints: taskIndex === 2 ? ["Пересекается со сменой"] : [],
-        variant: taskIndex === 3 ? "special" : undefined,
+        variant: taskIndex === 3 && [0, 1, 4].includes(dayIndex) ? "special" : undefined,
+        storeId: store.id,
       };
     });
   }
@@ -2274,17 +2511,20 @@ export function App() {
   function getTaskMismatchReasons(task, date) {
     const maximumDistance = Number.isFinite(searchRadius) ? searchRadius * 1000 : Infinity;
     const minimumPayment = Number.parseInt(appliedFilters.minimumPayment.replace(/\D/g, ""), 10) || 0;
-    const selectedService = appliedFilters.service.trim().toLocaleLowerCase("ru-RU");
+    const selectedServices = normalizeSelectedServices(appliedFilters.service)
+      .map((service) => service.toLocaleLowerCase("ru-RU"));
+    const selectedStores = normalizeSelectedStores(appliedFilters.stores);
+    const taskService = task.title.toLocaleLowerCase("ru-RU");
     const isSuggested = Boolean(task.badge || task.variant === "special");
     const reasons = [];
-    const hasAvailabilityMismatch = !matchesDurationPreference(task, selectedAvailabilityDuration);
     const hasFilterMismatch = (appliedFilters.brands.length > 0 && !appliedFilters.brands.includes(task.brand))
-      || (selectedService && !task.title.toLocaleLowerCase("ru-RU").includes(selectedService))
-      || getPaymentValue(task.payment) < minimumPayment;
+      || (selectedStores.length > 0 && !selectedStores.includes(task.storeId))
+      || (selectedServices.length > 0 && !selectedServices.some((service) => taskService.includes(service)))
+      || getPaymentValue(task.payment) < minimumPayment
+      || !matchesDurationPreference(task, selectedAvailabilityDuration);
 
     if (!isAvailableForMatching(date)) reasons.push("Вне доступности");
     if (!isTaskWithinAvailability(task, availabilityTime)) reasons.push("Пересекается со сменой");
-    if (hasAvailabilityMismatch) reasons.push("Вне доступности");
     if (Number.isFinite(maximumDistance) && getDistanceInMeters(task.distance) > maximumDistance) reasons.push("Вне радиуса");
     if (hasFilterMismatch || (!isSuggested && reasons.length === 0)) reasons.push("Не совпадает с фильтрами");
     reasons.push(...task.mismatchHints);
@@ -2292,44 +2532,66 @@ export function App() {
     return [...new Set(reasons)];
   }
 
-  function getHiddenReason(hiddenTasks) {
-    const reasonKinds = new Set();
-    hiddenTasks.forEach((task) => {
-      task.restrictionTags.forEach((reason) => {
-        if (reason === "Вне доступности" || reason === "Пересекается со сменой") {
-          reasonKinds.add("availability");
-          return;
-        }
-        reasonKinds.add("filters");
-      });
-    });
+  function matchesCatalogFilters(task) {
+    const minimumPayment = Number.parseInt(appliedFilters.minimumPayment.replace(/\D/g, ""), 10) || 0;
+    const selectedServices = normalizeSelectedServices(appliedFilters.service)
+      .map((service) => service.toLocaleLowerCase("ru-RU"));
+    const selectedStores = normalizeSelectedStores(appliedFilters.stores);
+    const taskService = task.title.toLocaleLowerCase("ru-RU");
+    const maximumDistance = Number.isFinite(searchRadius) ? searchRadius * 1000 : Infinity;
 
-    if (reasonKinds.size === 1) return [...reasonKinds][0];
-    return "mixed";
+    return !(
+      (appliedFilters.brands.length > 0 && !appliedFilters.brands.includes(task.brand))
+      || (selectedStores.length > 0 && !selectedStores.includes(task.storeId))
+      || (selectedServices.length > 0 && !selectedServices.some((service) => taskService.includes(service)))
+      || getPaymentValue(task.payment) < minimumPayment
+      || getDistanceInMeters(task.distance) > maximumDistance
+      || !matchesDurationPreference(task, selectedAvailabilityDuration)
+    );
+  }
+
+  function overlapsBookedShift(task, date) {
+    const primaryShift = availabilityByDate[date] === "busy" ? [{ hours: "10:00 – 22:00" }] : [];
+    const acceptedShifts = [
+      ...(acceptedGigByDate[date] ? [acceptedGigByDate[date]] : []),
+      ...bookedTasks
+        .filter((booking) => booking.day.date === date)
+        .map((booking) => booking.task),
+    ];
+
+    return [...primaryShift, ...acceptedShifts].some((shift) => shiftsOverlap(task, shift));
+  }
+
+  function matchesDefaultAvailability(task, date) {
+    const hasExplicitAvailability = Boolean(
+      availabilityTime.from || availabilityTime.to || availabilityTime.preset || availabilityTime.presets?.length,
+    );
+    return isAvailableForMatching(date)
+      && (!hasExplicitAvailability || isTaskWithinAvailability(task, availabilityTime));
   }
 
   function getTasksForFeed(tasks, date) {
-    const decoratedTasks = tasks.map((task) => ({
+    const availableCatalogTasks = tasks.filter((task) => (
+      matchesCatalogFilters(task) && !overlapsBookedShift(task, date)
+    ));
+    const matchingTasks = availableCatalogTasks.filter((task) => matchesDefaultAvailability(task, date));
+    const visibleTasks = (onlyMatching ? matchingTasks : availableCatalogTasks).map((task) => ({
       ...task,
-      restrictionTags: getTaskMismatchReasons(task, date),
+      badge: onlyMatching ? "подходит вам" : undefined,
     }));
-    const suitableTasks = decoratedTasks.filter((task) => task.restrictionTags.length === 0);
-    const suggestedTasks = suitableTasks.filter((task) => task.badge || task.variant === "special");
-    const restrictedTasks = decoratedTasks.filter((task) => task.restrictionTags.length > 0);
-
-    const matchingTasks = getOrderedTasks(suggestedTasks, sortBy, hasAppliedSort);
-    const hiddenTasks = getSortedTasks(restrictedTasks, sortBy);
-    const hiddenReason = getHiddenReason(hiddenTasks);
-
-    if (onlyMatching) return { hiddenReason, hiddenTasks, visibleTasks: matchingTasks };
+    const hiddenTasks = onlyMatching
+      ? availableCatalogTasks
+        .filter((task) => !matchingTasks.some((matchingTask) => matchingTask.id === task.id))
+        .map((task) => ({
+          ...task,
+          badge: undefined,
+          restrictionTags: ["Не совпадает с доступностью"],
+        }))
+      : [];
 
     return {
-      hiddenReason: "mixed",
-      hiddenTasks: [],
-      visibleTasks: [
-        ...getOrderedTasks(suitableTasks, sortBy, hasAppliedSort),
-        ...hiddenTasks,
-      ],
+      hiddenTasks: getSortedTasks(hiddenTasks, sortBy),
+      visibleTasks: getOrderedTasks(visibleTasks, sortBy, hasAppliedSort),
     };
   }
 
@@ -2377,17 +2639,18 @@ export function App() {
 
         <div className="sticky-timeline">
           <div aria-label="Даты" className="date-timeline">
-            {days.map(({ date, weekday }) => (
+            {days.map(({ date, isMonthStart, monthLabel, weekday }) => (
               <button
                 aria-pressed={activeDay === date}
                 className={activeDay === date ? "day-card day-card-active" : "day-card"}
-                key={`${date}-${weekday}`}
+                data-month-start={isMonthStart || undefined}
+                key={`${date}-${weekday}-${monthLabel}`}
                 onClick={() => scrollToDay(date)}
                 ref={(node) => { timelineDayRefs.current[date] = node; }}
                 type="button"
               >
                 <span>{date}</span>
-                <small>{weekday}</small>
+                <small>{isMonthStart ? monthLabel : weekday}</small>
               </button>
             ))}
           </div>
@@ -2409,6 +2672,7 @@ export function App() {
                 </button>
                 <button aria-label="Открыть фильтры" className="filter-icon-button" onClick={() => setCurrentView("filters")} type="button">
                   <img alt="" src={assetUrl("funnel.svg")} />
+                  {hasFilterChangesFromDefault && <span aria-hidden="true" className="filter-settings-badge" />}
                 </button>
                 <button
                   aria-label="Открыть настройки доступности"
@@ -2421,6 +2685,7 @@ export function App() {
                   type="button"
                 >
                   <img alt="" src={assetUrl("schedule_ic.svg")} />
+                  {hasAvailabilityChangesFromDefault && <span aria-hidden="true" className="filter-settings-badge" />}
                 </button>
               </div>
               <label className="toggle-label">
@@ -2473,13 +2738,15 @@ export function App() {
             onRemoveCollection={(id) => setFavoriteCollections((collections) => collections.filter((collection) => collection.id !== id))}
           /> : activeTab === 2 ? <MyTasksView bookedTasks={bookedTasks} /> : activeTab === 3 ? <SigningTasksView /> : isTaskListLoading ? <TimelineLoadingState /> : dayGroups.map((day, dayIndex) => {
             const employeeShifts = getEmployeeShifts(day);
-            const hasDemoEmptyDay = day.date === "14";
+            const hasDemoEmptyDay = day.date === "5" || day.date === "14";
             const dayTasks = hasDemoEmptyDay ? [] : getLocationTasks(day, dayIndex);
             const taskFeed = getTasksForFeed(dayTasks, day.date);
             const isFilteredDayExpanded = expandedFilteredDays.includes(day.date);
             const visibleTasks = taskFeed.visibleTasks;
             const hasFilteredOutTasks = taskFeed.hiddenTasks.length > 0 && !isFilteredDayExpanded;
-            const hasNoTasks = dayTasks.length === 0;
+            const hasNoFeedContent = employeeShifts.length === 0
+              && visibleTasks.length === 0
+              && taskFeed.hiddenTasks.length === 0;
 
             return (
               <section
@@ -2501,11 +2768,10 @@ export function App() {
                 {isFilteredDayExpanded && taskFeed.hiddenTasks.map((task) => <TaskCard day={day} key={task.id} onOpen={() => openTaskDetails(task, day)} revealRestrictionTags task={task} />)}
                 {hasFilteredOutTasks && <TaskMessageCard
                   hiddenCount={taskFeed.hiddenTasks.length}
-                  hiddenReason={taskFeed.hiddenReason}
                   variant={visibleTasks.length === 0 ? "empty-day-filtered" : "no-more"}
                   onShowAll={() => setExpandedFilteredDays((current) => [...current, day.date])}
                 />}
-                {hasNoTasks && <NoTasksForDayCard />}
+                {hasNoFeedContent && <NoTasksForDayCard />}
               </section>
             );
           })}
@@ -2707,8 +2973,8 @@ export function App() {
             type="button"
           />
           <aside aria-hidden="true" className="settings-onboarding-tooltip">
-            <strong>настройте выдачу под себя</strong>
-            <span>Укажите свободное время и место поиска. Покажем задания без пересечений с основным графиком</span>
+            <strong>настройте дни и часы доступности к подработкам</strong>
+            <span>Покажем задания без пересечений с основным графиком работы, учитывая ваши пожелания</span>
           </aside>
           <button
             aria-label="Открыть настройки расписания"
