@@ -186,7 +186,9 @@
   height: 32px;
   line-height: 18px;
   margin-top: 2px;
+  position: relative;
   width: 100%;
+  z-index: 2;
 }
 
 .primaryAction:disabled {
@@ -198,9 +200,19 @@
   cursor: pointer;
 }
 
-.clickable:focus-visible {
-  border-color: #6646ff;
-  box-shadow: 0 0 0 2px rgb(102 70 255 / 0.2);
+.openButton {
+  background: transparent;
+  border: 0;
+  border-radius: 16px;
+  cursor: pointer;
+  inset: 0;
+  padding: 0;
+  position: absolute;
+  z-index: 1;
+}
+
+.openButton:focus-visible {
+  box-shadow: inset 0 0 0 2px #6646ff, 0 0 0 2px rgb(102 70 255 / 0.2);
   outline: 0;
 }
 

@@ -213,7 +213,7 @@
     },
     "templateBinding": {
       "type": "object", "required": ["currentComponent", "currentSource", "targetComponent", "migrationStatus"],
-      "properties": { "currentComponent": { "type": ["string", "null"] }, "currentSource": { "type": ["string", "null"] }, "targetComponent": { "$ref": "#/$defs/id" }, "migrationStatus": { "enum": ["planned", "legacy", "migrated", "verified"] } },
+      "properties": { "currentComponent": { "type": ["string", "null"] }, "currentSource": { "type": ["string", "null"] }, "targetComponent": { "$ref": "#/$defs/id" }, "migrationStatus": { "enum": ["planned", "legacy", "migrated", "verified"] }, "evidence": { "$ref": "#/$defs/stringArray" } },
       "additionalProperties": false
     },
     "contentBinding": {
@@ -223,7 +223,7 @@
     },
     "uiStateBinding": {
       "type": "object", "required": ["currentComponent", "targetComponent", "migrationStatus"],
-      "properties": { "currentComponent": { "type": ["string", "null"] }, "targetComponent": { "$ref": "#/$defs/id" }, "migrationStatus": { "enum": ["planned", "legacy", "migrated", "verified"] } },
+      "properties": { "currentComponent": { "type": ["string", "null"] }, "currentSource": { "type": ["string", "null"] }, "targetComponent": { "$ref": "#/$defs/id" }, "migrationStatus": { "enum": ["planned", "legacy", "migrated", "verified"] }, "evidence": { "$ref": "#/$defs/stringArray" } },
       "additionalProperties": false
     },
     "migrationMap": {

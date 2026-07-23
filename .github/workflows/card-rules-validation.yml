@@ -45,11 +45,17 @@ jobs:
       - name: Check deterministic generation
         run: npm run test:card-rules-validator
 
-      - name: Build production bundle
-        run: npm run build
+      - name: Run resolver and component coverage tests
+        run: npm run test:unit
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
+
+      - name: Run visual regression tests
+        run: npm run test:visual
+
+      - name: Build production bundle
+        run: npm run build
 
       - name: Run E2E
         env:

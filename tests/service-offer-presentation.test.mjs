@@ -10,6 +10,8 @@ import {
   serviceOfferResolverCoverage,
 } from "../src/entities/service-offer/model/resolveServiceOfferPresentation.js";
 import { resolveSigningPresentation } from "../src/entities/signing/model/resolveSigningPresentation.js";
+import { resolveTaskFeed } from "../src/features/catalog-feed/model/resolveTaskFeed.js";
+import { resolveEmployeeShiftsForDay } from "../src/features/employee-schedule/model/resolveEmployeeShiftsForDay.js";
 
 const baseService = Object.freeze({
   address: "Лефортовский Вал, 1",
@@ -29,7 +31,7 @@ function resolve(service = {}, context = {}) {
   return resolveServiceOfferPresentation({ ...baseService, ...service }, { surface: "tasks", ...context });
 }
 
-test("[RULE-PLACEMENT-001] available filtered service is placed in tasks", () => {
+test("[SCN-CATALOG-001][RULE-PLACEMENT-001] available filtered service is placed in tasks", () => {
   const result = resolve();
   assert.equal(result.placement, "tasks");
   assert.equal(result.section, "available_offers");
@@ -42,16 +44,18 @@ test("[EXC-PLACEMENT-001] accepted service leaves the catalog", () => {
   assert.ok(result.appliedExceptionIds.includes("EXC-PLACEMENT-001"));
 });
 
-test("[EXC-PLACEMENT-002] filtered service cannot return through hidden services", () => {
+test("[SCN-CATALOG-002][EXC-PLACEMENT-002] filtered service cannot return through hidden services", () => {
   const result = resolve({ matchesFilters: false }, { section: "other_offers" });
   assert.equal(result.placement, "excluded");
   assert.ok(result.appliedExceptionIds.includes("EXC-PLACEMENT-002"));
 });
 
-test("[RULE-HIDDEN-001] primary-shift conflicts stay outside hidden services", () => {
-  const result = resolve({ overlapsPrimarySchedule: true }, { section: "other_offers" });
-  assert.equal(result.placement, "excluded");
-  assert.ok(result.appliedRuleIds.includes("RULE-HIDDEN-001"));
+test("[SCN-CATALOG-003][SCN-CATALOG-004][RULE-HIDDEN-001] filtered and primary-shift conflicts stay outside hidden services", () => {
+  const filtered = resolve({ matchesFilters: false }, { section: "other_offers" });
+  const primary = resolve({ overlapsPrimarySchedule: true }, { section: "other_offers" });
+  assert.equal(filtered.placement, "excluded");
+  assert.equal(primary.placement, "excluded");
+  assert.ok(primary.appliedRuleIds.includes("RULE-HIDDEN-001"));
 });
 
 test("[RULE-MARKER-001] suitable marker is independent from structural variant", () => {
@@ -66,15 +70,62 @@ test("[EXC-MARKER-001] restriction hides suitable marker", () => {
   assert.ok(result.appliedExceptionIds.includes("EXC-MARKER-001"));
 });
 
-test("[RULE-ACTION-001] availability and accepted-service overlaps disable the action", () => {
+test("[SCN-ACTION-001][RULE-ACTION-001] availability and accepted-service overlaps disable the action", () => {
   const primary = resolve({ overlapsPrimarySchedule: true });
   const accepted = resolve({ overlapsAcceptedServices: true });
   assert.deepEqual(primary.disabledActions, ["service.primary_action"]);
   assert.deepEqual(accepted.disabledActions, ["service.primary_action"]);
 });
 
-test("[RULE-ACTION-001] available service enables the primary action", () => {
+test("[SCN-ACTION-002][RULE-ACTION-001] available service enables the primary action", () => {
   assert.deepEqual(resolve().enabledActions, ["service.primary_action"]);
+});
+
+test("[RULE-ACTION-001] feed decoration passes accepted-service overlaps into presentation", () => {
+  const context = {
+    acceptedGigByDate: { "1": { ...baseService, hours: "10:00 – 18:00" } },
+    appliedFilters: { brands: [], minimumPayment: "", service: "" },
+    availabilityByDate: { "1": "free" },
+    availabilityTime: { from: "08:00", presets: ["all-day"], to: "22:00" },
+    bookedTasks: [],
+    days: [{ date: "1", weekday: "пн" }],
+    hasAppliedSort: false,
+    onlyMatching: true,
+    searchRadius: 50,
+    selectedAvailabilityDates: [],
+    selectedAvailabilityDuration: [],
+    selectedAvailabilityWeekdays: [],
+    sortBy: "recommended",
+  };
+  const feed = resolveTaskFeed([{ ...baseService, badge: "подходит вам", id: "candidate" }], "1", context);
+  const candidate = feed.hiddenTasks[0];
+  const presentation = resolveServiceOfferPresentation(candidate, { surface: "tasks" });
+
+  assert.equal(candidate.overlapsAcceptedServices, true);
+  assert.ok(candidate.restrictionTags.includes("Пересекается с принятой услугой"));
+  assert.deepEqual(presentation.disabledActions, ["service.primary_action"]);
+});
+
+test("[EXC-PLACEMENT-001] feed excludes an already booked service", () => {
+  const context = {
+    acceptedGigByDate: {},
+    appliedFilters: { brands: [], minimumPayment: "", service: "" },
+    availabilityByDate: { "1": "free" },
+    availabilityTime: { from: "08:00", presets: ["all-day"], to: "22:00" },
+    bookedTasks: [{ day: { date: "1" }, id: "candidate", task: { ...baseService, id: "candidate" } }],
+    days: [{ date: "1", weekday: "пн" }],
+    hasAppliedSort: false,
+    onlyMatching: false,
+    searchRadius: 50,
+    selectedAvailabilityDates: [],
+    selectedAvailabilityDuration: [],
+    selectedAvailabilityWeekdays: [],
+    sortBy: "recommended",
+  };
+  const feed = resolveTaskFeed([{ ...baseService, badge: "подходит вам", id: "candidate" }], "1", context);
+
+  assert.equal(feed.visibleTasks.length, 0);
+  assert.equal(feed.excludedTasks[0].state, "booked");
 });
 
 test("structural variants are deterministic and exclusive", () => {
@@ -104,7 +155,7 @@ test("metro content uses address fallback when data is absent", () => {
   assert.ok(withMetro.visibleContent.includes("service.metro"));
 });
 
-test("[RULE-FAVORITES-001] favorite placement and [EXC-FAVORITES-001] unavailable section", () => {
+test("[SCN-FAVORITES-001][SCN-FAVORITES-002][RULE-FAVORITES-001] favorite placement and [EXC-FAVORITES-001] unavailable section", () => {
   const available = resolveServiceOfferPresentation({ ...baseService, isFavorite: true }, { surface: "favorites" });
   const unavailable = resolveServiceOfferPresentation({ ...baseService, isFavorite: true, state: "expired" }, { surface: "favorites" });
   assert.equal(available.section, "services_available");
@@ -135,17 +186,37 @@ test("[RULE-SHIFT-001] employee shift placement and order are deterministic", ()
   assert.equal(result.order, 50);
 });
 
-test("[RULE-FAVORITES-002] saved collection placement is resolved", () => {
-  const result = resolveFavoriteCollectionPresentation({
+test("[SCN-SHIFT-001][SCN-SHIFT-002] shifts are scoped to the selected day outside App JSX", () => {
+  const primary = resolveEmployeeShiftsForDay({
+    acceptedGigByDate: {},
+    availabilityByDate: { "1": "busy" },
+    bookedTasks: [],
+    day: { date: "1" },
+  });
+  const otherDay = resolveEmployeeShiftsForDay({
+    acceptedGigByDate: {},
+    availabilityByDate: { "1": "busy", "2": "free" },
+    bookedTasks: [],
+    day: { date: "2" },
+  });
+  assert.equal(primary[0].type, "primary");
+  assert.deepEqual(otherDay, []);
+});
+
+test("[SCN-FAVORITES-003][SCN-FAVORITES-004][RULE-FAVORITES-002] saved collection placement is resolved", () => {
+  const collection = {
     filters: { brands: [], minimumPayment: "", service: "" },
     location: { label: "" },
     radius: 1,
-  }, ["pyaterochka"]);
-  assert.equal(result.section, "collections");
-  assert.ok(result.appliedRuleIds.includes("RULE-FAVORITES-002"));
+  };
+  const saved = resolveFavoriteCollectionPresentation(collection, ["pyaterochka"]);
+  const unsaved = resolveFavoriteCollectionPresentation({ ...collection, isSaved: false }, ["pyaterochka"]);
+  assert.equal(saved.section, "collections");
+  assert.equal(unsaved.placement, "excluded");
+  assert.ok(saved.appliedRuleIds.includes("RULE-FAVORITES-002"));
 });
 
-test("[RULE-FAVORITES-003] favorite store placement is resolved", () => {
+test("[SCN-FAVORITES-005][SCN-FAVORITES-006][RULE-FAVORITES-003] favorite store placement is resolved", () => {
   assert.equal(resolveFavoriteStorePresentation({ isPresent: true }).section, "stores");
   assert.equal(resolveFavoriteStorePresentation({ isPresent: false }).placement, "excluded");
 });

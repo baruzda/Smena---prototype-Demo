@@ -1763,27 +1763,6 @@ export function App() {
     return selectedAvailabilityDates.includes(date) || selectedAvailabilityWeekdays.includes(weekday);
   }
 
-  function getEmployeeShifts(day) {
-    const acceptedShifts = [
-      ...(acceptedGigByDate[day.date] ? [{ ...acceptedGigByDate[day.date], type: "gig" }] : []),
-      ...bookedTasks
-        .filter((booking) => booking.day.date === day.date)
-        .map((booking) => ({ ...booking.task, type: "gig" })),
-    ];
-    if (acceptedShifts.length) return acceptedShifts;
-    if (availabilityByDate[day.date] !== "busy") return [];
-
-    return [{
-      address: "Косой переулок, 550, к. 8",
-      brand: "pyaterochka",
-      distance: "350 м",
-      hours: "10:00 – 22:00",
-      metro: { city: "spb", color: "#d6083b", label: "Метро Санкт-Петербурга", station: "Площадь Восстания" },
-      title: "управление транспортом",
-      type: "primary",
-    }];
-  }
-
   function getLocationTasks(day, dayIndex) {
     const effectiveSearchLocation = searchLocation.label ? searchLocation : defaultSearchLocation;
     const locationKey = `${effectiveSearchLocation.coords.join(",")}-${catalogVersion}-${dayIndex}`;
@@ -1973,11 +1952,14 @@ export function App() {
               : isTaskListLoading ? <CatalogLoadingState />
                 : <TaskFeed
                   dayGroups={dayGroups}
+                  employeeShiftContext={{ acceptedGigByDate, availabilityByDate, bookedTasks }}
                   expandedFilteredDays={expandedFilteredDays}
                   feedContext={{
+                    acceptedGigByDate,
                     appliedFilters,
                     availabilityByDate,
                     availabilityTime,
+                    bookedTasks,
                     days,
                     hasAppliedSort,
                     onlyMatching,
@@ -1987,7 +1969,6 @@ export function App() {
                     selectedAvailabilityWeekdays,
                     sortBy,
                   }}
-                  getEmployeeShifts={getEmployeeShifts}
                   getLocationTasks={getLocationTasks}
                   onCollapseDay={(date) => setExpandedFilteredDays((current) => current.filter((item) => item !== date))}
                   onExpandDay={(date) => setExpandedFilteredDays((current) => [...current, date])}

@@ -50,11 +50,11 @@ export function FilteredServicesState(props) {
 }
 
 export function PartiallyHiddenState(props) {
-  return <CatalogMessage {...props} type="partially_hidden" />;
+  return <HiddenServicesState {...props} type="partially_hidden" />;
 }
 
-export function HiddenServicesState(props) {
-  return <CatalogMessage {...props} type="hidden_services" />;
+export function HiddenServicesState({ type = "hidden_services", ...props }) {
+  return <CatalogMessage {...props} type={type} />;
 }
 
 export function EmptyDayState() {

@@ -1,4 +1,4 @@
-import { getTaskHours } from "../../../schedule-utils.js";
+import { getTaskHours, shiftsOverlap } from "../../../schedule-utils.js";
 
 export function getDistanceInMeters(distance) {
   const value = Number.parseFloat(distance.replace(",", "."));
@@ -105,6 +105,16 @@ function decorateTask(task, date, context) {
     || getPaymentValue(task.payment) < minimumPayment;
   const hasRadiusMismatch = Number.isFinite(maximumDistance) && getDistanceInMeters(task.distance) > maximumDistance;
   const overlapsPrimarySchedule = context.availabilityByDate[date] === "busy";
+  const isBookedService = (context.bookedTasks ?? []).some((booking) => (
+    booking.id === task.id || booking.task?.id === task.id
+  ));
+  const acceptedServices = [
+    ...(context.acceptedGigByDate?.[date] ? [context.acceptedGigByDate[date]] : []),
+    ...(context.bookedTasks ?? [])
+      .filter((booking) => booking.day.date === date)
+      .map((booking) => booking.task),
+  ];
+  const overlapsAcceptedServices = acceptedServices.some((acceptedService) => shiftsOverlap(task, acceptedService));
   const reasons = [];
 
   if (!isDayAvailable(date, context)) reasons.push("Вне доступности");
@@ -112,13 +122,15 @@ function decorateTask(task, date, context) {
   if (hasAvailabilityMismatch) reasons.push("Вне доступности");
   if (hasRadiusMismatch) reasons.push("Вне радиуса");
   if (hasFilterMismatch || (!isSuggested && reasons.length === 0)) reasons.push("Не совпадает с фильтрами");
+  if (overlapsAcceptedServices) reasons.push("Пересекается с принятой услугой");
   reasons.push(...(task.mismatchHints ?? []));
 
   return {
     ...task,
-    state: "available",
+    state: isBookedService ? "booked" : "available",
     isSpecialOffer: task.variant === "special",
     matchesFilters: !hasFilterMismatch && !hasRadiusMismatch,
+    overlapsAcceptedServices,
     overlapsPrimarySchedule,
     restrictionTags: [...new Set(reasons)],
   };
@@ -126,8 +138,12 @@ function decorateTask(task, date, context) {
 
 export function resolveTaskFeed(tasks, date, context) {
   const decoratedTasks = tasks.map((task) => decorateTask(task, date, context));
-  const catalogEligibleTasks = decoratedTasks.filter((task) => task.matchesFilters && !task.overlapsPrimarySchedule);
-  const excludedTasks = decoratedTasks.filter((task) => !task.matchesFilters || task.overlapsPrimarySchedule);
+  const catalogEligibleTasks = decoratedTasks.filter((task) => (
+    task.state === "available" && task.matchesFilters && !task.overlapsPrimarySchedule
+  ));
+  const excludedTasks = decoratedTasks.filter((task) => (
+    task.state !== "available" || !task.matchesFilters || task.overlapsPrimarySchedule
+  ));
   const suitableTasks = catalogEligibleTasks.filter((task) => task.restrictionTags.length === 0);
   const suggestedTasks = suitableTasks.filter((task) => task.badge || task.isSpecialOffer);
   const restrictedTasks = catalogEligibleTasks.filter((task) => task.restrictionTags.length > 0);

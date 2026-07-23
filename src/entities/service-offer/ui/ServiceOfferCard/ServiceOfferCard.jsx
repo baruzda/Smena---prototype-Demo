@@ -40,12 +40,6 @@ export function ServiceOfferCard({
   const showSuitableMarker = presentation.markers.includes("suitable_for_you");
   const actionDisabled = presentation.disabledActions.includes("service.primary_action");
 
-  function handleKeyDown(event) {
-    if (!onOpen || (event.key !== "Enter" && event.key !== " ")) return;
-    event.preventDefault();
-    onOpen();
-  }
-
   function handlePrimaryAction(event) {
     event.stopPropagation();
     if (!actionDisabled) onOpen?.();
@@ -53,7 +47,6 @@ export function ServiceOfferCard({
 
   return (
     <article
-      aria-label={onOpen ? `Подробнее: ${service.title}` : undefined}
       className={[
         styles.card,
         styles[presentation.structuralVariant],
@@ -61,11 +54,15 @@ export function ServiceOfferCard({
       ].filter(Boolean).join(" ")}
       data-card-template={presentation.templateId}
       data-card-variant={presentation.structuralVariant}
-      onClick={onOpen}
-      onKeyDown={handleKeyDown}
-      role={onOpen ? "button" : undefined}
-      tabIndex={onOpen ? 0 : undefined}
     >
+      {onOpen && (
+        <button
+          aria-label={`Подробнее: ${service.title}`}
+          className={styles.openButton}
+          onClick={onOpen}
+          type="button"
+        />
+      )}
       <div className={styles.top}>
         <div className={styles.copy}>
           {showSuitableMarker && <span className={styles.suitableMarker}>подходит вам</span>}

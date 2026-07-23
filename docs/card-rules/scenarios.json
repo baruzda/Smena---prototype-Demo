@@ -18,7 +18,8 @@
           "RULE-PLACEMENT-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-CATALOG-002",
@@ -41,7 +42,8 @@
           "EXC-PLACEMENT-002"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-MATCH-001",
@@ -284,7 +286,8 @@
           "RULE-SHIFT-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-SHIFT-002",
@@ -304,7 +307,8 @@
           "RULE-SHIFT-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-MYTASKS-001",
@@ -381,7 +385,8 @@
           "RULE-FAVORITES-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-FAVORITES-002",
@@ -401,7 +406,8 @@
           "EXC-FAVORITES-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-FAVORITES-003",
@@ -419,7 +425,8 @@
           "RULE-FAVORITES-002"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-FAVORITES-004",
@@ -438,7 +445,8 @@
           "RULE-FAVORITES-002"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-FAVORITES-005",
@@ -456,7 +464,8 @@
           "RULE-FAVORITES-003"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-FAVORITES-006",
@@ -472,7 +481,8 @@
           "RULE-FAVORITES-003"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-SIGNING-001",
@@ -585,7 +595,8 @@
           "RULE-HIDDEN-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-CATALOG-004",
@@ -609,7 +620,8 @@
           "RULE-HIDDEN-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-ACTION-001",
@@ -629,7 +641,8 @@
           "RULE-ACTION-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-ACTION-002",
@@ -650,7 +663,8 @@
           "RULE-ACTION-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     }
   ]
 }

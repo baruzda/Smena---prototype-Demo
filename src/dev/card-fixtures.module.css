@@ -1,0 +1,21 @@
+:global(*) {
+  box-sizing: border-box;
+}
+
+:global(body) {
+  background: #ececef;
+  margin: 0;
+}
+
+.gallery {
+  display: grid;
+  gap: 16px;
+  margin: 0 auto;
+  padding: 16px;
+  width: 393px;
+}
+
+.fixture {
+  background: #fff;
+  padding: 8px;
+}

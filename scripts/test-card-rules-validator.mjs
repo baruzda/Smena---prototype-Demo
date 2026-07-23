@@ -88,7 +88,11 @@ fail("migration-deprecated-before-verified", "MIGRATION_GAP", "docs/catalog-rule
 fail("migration-verified-without-evidence", "MIGRATION_GAP", "docs/catalog-rules-matrix.md", (dir) => mutate(dir, "migration-map.json", (doc) => { const source = doc.sources[0]; source.status = "verified"; delete source.evidence; }));
 fail("bound-template-without-surface", "MIGRATION_GAP", "favorite_store_card", (dir) => mutate(dir, "templates.json", (doc) => { doc.templates.find((item) => item.id === "favorite_store_card").supportedSurfaces = []; }));
 fail("scenario-without-execution-status", "SCENARIO_ERROR", "SCN-CATALOG-001", (dir) => mutate(dir, "scenarios.json", (doc) => { delete doc.scenarios.find((item) => item.id === "SCN-CATALOG-001").executionStatus; }));
-fail("scenario-verified-without-test", "SCENARIO_ERROR", "SCN-CATALOG-001", (dir) => mutate(dir, "scenarios.json", (doc) => { doc.scenarios.find((item) => item.id === "SCN-CATALOG-001").executionStatus = "verified"; }));
+fail("scenario-verified-without-test", "SCENARIO_ERROR", "SCN-CATALOG-001", (dir) => mutate(dir, "scenarios.json", (doc) => {
+  const scenario = doc.scenarios.find((item) => item.id === "SCN-CATALOG-001");
+  scenario.executionStatus = "verified";
+  delete scenario.testEvidence;
+}));
 fail("observation-without-question", "OBSERVATION_ERROR", "OBS-CARD-VARIANT-001", (dir) => mutate(dir, "implementation-observations.json", (doc) => { delete doc.observations[0].relatedQuestion; }));
 
 console.log("Validator fixtures passed: 6 valid, 20 invalid.");

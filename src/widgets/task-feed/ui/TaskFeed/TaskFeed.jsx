@@ -6,14 +6,15 @@ import {
 } from "../../../../entities/catalog-state/ui/CatalogStates/CatalogStates.jsx";
 import { ServiceOfferCard } from "../../../../entities/service-offer/ui/ServiceOfferCard/ServiceOfferCard.jsx";
 import { resolveTaskFeed } from "../../../../features/catalog-feed/model/resolveTaskFeed.js";
+import { resolveEmployeeShiftsForDay } from "../../../../features/employee-schedule/model/resolveEmployeeShiftsForDay.js";
 import { assetUrl } from "../../../../shared/lib/assets.js";
 import styles from "./TaskFeed.module.css";
 
 export function TaskFeed({
   dayGroups,
+  employeeShiftContext,
   expandedFilteredDays,
   feedContext,
-  getEmployeeShifts,
   getLocationTasks,
   onCollapseDay,
   onExpandDay,
@@ -21,7 +22,7 @@ export function TaskFeed({
   registerDaySection,
 }) {
   return dayGroups.map((day, dayIndex) => {
-    const employeeShifts = getEmployeeShifts(day);
+    const employeeShifts = resolveEmployeeShiftsForDay({ ...employeeShiftContext, day });
     const hasDemoEmptyDay = day.date === "14";
     const dayTasks = hasDemoEmptyDay ? [] : getLocationTasks(day, dayIndex);
     const feed = resolveTaskFeed(dayTasks, day.date, feedContext);

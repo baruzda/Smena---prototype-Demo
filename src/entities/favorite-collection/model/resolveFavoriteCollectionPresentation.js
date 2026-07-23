@@ -3,6 +3,19 @@ export function getShortLocationLabel(label) {
 }
 
 export function resolveFavoriteCollectionPresentation(collection, defaultBrands) {
+  if (collection.isSaved === false) {
+    return Object.freeze({
+      templateId: "saved_collection_card",
+      structuralVariant: "empty_collection",
+      brands: Object.freeze([]),
+      chips: Object.freeze([]),
+      enabledActions: Object.freeze([]),
+      placement: "excluded",
+      section: null,
+      appliedRuleIds: Object.freeze(["RULE-FAVORITES-002"]),
+    });
+  }
+
   const brands = collection.filters.brands.length ? collection.filters.brands : defaultBrands;
   const chips = [
     collection.filters.service || "уборка урожая пшеницы",
@@ -15,7 +28,7 @@ export function resolveFavoriteCollectionPresentation(collection, defaultBrands)
 
   return Object.freeze({
     templateId: "saved_collection_card",
-    structuralVariant: chips.length ? "active_collection" : "empty_collection",
+    structuralVariant: collection.resultCount === 0 ? "empty_collection" : "active_collection",
     brands: Object.freeze(brands.slice(0, 4)),
     chips: Object.freeze(chips),
     enabledActions: Object.freeze(["collection.edit", "collection.apply", "collection.delete"]),

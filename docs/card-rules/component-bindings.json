@@ -1,22 +1,22 @@
 {
   "version": 1,
   "templates": {
-    "service_offer_card": { "currentComponent": "TaskCard", "currentSource": "src/App.jsx", "targetComponent": "ServiceOfferCard", "migrationStatus": "legacy" },
-    "employee_shift_card": { "currentComponent": "EmployeeShiftCard", "currentSource": "src/App.jsx", "targetComponent": "EmployeeShiftCard", "migrationStatus": "migrated" },
-    "my_service_card": { "currentComponent": "MyTaskCard", "currentSource": "src/App.jsx", "targetComponent": "MyTaskCard", "migrationStatus": "migrated" },
-    "signing_card": { "currentComponent": null, "currentSource": "src/App.jsx", "targetComponent": "SigningCard", "migrationStatus": "planned" },
-    "saved_collection_card": { "currentComponent": "FavoriteCollectionsView", "currentSource": "src/App.jsx", "targetComponent": "FavoriteCollectionCard", "migrationStatus": "legacy" },
-    "favorite_store_card": { "currentComponent": "FavoriteCollectionsView", "currentSource": "src/App.jsx", "targetComponent": "FavoriteStoreCard", "migrationStatus": "legacy" }
+    "service_offer_card": { "currentComponent": "ServiceOfferCard", "currentSource": "src/entities/service-offer/ui/ServiceOfferCard/ServiceOfferCard.jsx", "targetComponent": "ServiceOfferCard", "migrationStatus": "verified", "evidence": ["tests/service-offer-presentation.test.mjs", "tests/card-visual.spec.mjs", "tests/card-variants.visual.spec.mjs", "tests/app.spec.mjs"] },
+    "employee_shift_card": { "currentComponent": "EmployeeShiftCard", "currentSource": "src/entities/employee-shift/ui/EmployeeShiftCard/EmployeeShiftCard.jsx", "targetComponent": "EmployeeShiftCard", "migrationStatus": "verified", "evidence": ["tests/service-offer-presentation.test.mjs", "tests/card-visual.spec.mjs", "tests/card-variants.visual.spec.mjs", "tests/app.spec.mjs"] },
+    "my_service_card": { "currentComponent": "MyServiceCard", "currentSource": "src/entities/my-service/ui/MyServiceCard/MyServiceCard.jsx", "targetComponent": "MyServiceCard", "migrationStatus": "verified", "evidence": ["tests/service-offer-presentation.test.mjs", "tests/card-visual.spec.mjs", "tests/card-variants.visual.spec.mjs", "tests/app.spec.mjs"] },
+    "signing_card": { "currentComponent": "SigningCard", "currentSource": "src/entities/signing/ui/SigningCard/SigningCard.jsx", "targetComponent": "SigningCard", "migrationStatus": "migrated", "evidence": ["tests/service-offer-presentation.test.mjs", "tests/card-visual.spec.mjs", "tests/card-variants.visual.spec.mjs", "tests/app.spec.mjs"] },
+    "saved_collection_card": { "currentComponent": "FavoriteCollectionCard", "currentSource": "src/entities/favorite-collection/ui/FavoriteCollectionCard/FavoriteCollectionCard.jsx", "targetComponent": "FavoriteCollectionCard", "migrationStatus": "verified", "evidence": ["tests/service-offer-presentation.test.mjs", "tests/card-visual.spec.mjs", "tests/card-variants.visual.spec.mjs", "tests/app.spec.mjs"] },
+    "favorite_store_card": { "currentComponent": "FavoriteStoreCard", "currentSource": "src/entities/favorite-store/ui/FavoriteStoreCard/FavoriteStoreCard.jsx", "targetComponent": "FavoriteStoreCard", "migrationStatus": "verified", "evidence": ["tests/service-offer-presentation.test.mjs", "tests/card-visual.spec.mjs", "tests/card-variants.visual.spec.mjs", "tests/app.spec.mjs"] }
   },
-  "contentElements": { "marker.suitable_for_you": { "currentImplementation": "gig-task-badge", "targetComponent": "Badge" }, "marker.specially_for_you": { "currentImplementation": "special-card-badges", "targetComponent": "Badge" } },
+  "contentElements": { "marker.suitable_for_you": { "currentImplementation": "ServiceOfferCard.suitableMarker", "targetComponent": "ServiceOfferCard" }, "marker.specially_for_you": { "currentImplementation": "ServiceOfferCard.specialMarkers", "targetComponent": "ServiceOfferCard" } },
   "uiStates": {
-    "catalog.loading": { "currentComponent": "TimelineLoadingState", "targetComponent": "CatalogLoadingState", "migrationStatus": "legacy" },
-    "catalog.filtered_empty": { "currentComponent": "TaskMessageCard", "targetComponent": "FilteredServicesState", "migrationStatus": "legacy" },
-    "catalog.empty_day": { "currentComponent": "NoTasksForDayCard", "targetComponent": "EmptyDayState", "migrationStatus": "legacy" },
-    "catalog.partially_hidden": { "currentComponent": "TaskMessageCard", "targetComponent": "PartiallyHiddenState", "migrationStatus": "legacy" },
+    "catalog.loading": { "currentComponent": "CatalogLoadingState", "currentSource": "src/entities/catalog-state/ui/CatalogStates/CatalogStates.jsx", "targetComponent": "CatalogLoadingState", "migrationStatus": "verified", "evidence": ["tests/card-visual.spec.mjs", "tests/app.spec.mjs"] },
+    "catalog.filtered_empty": { "currentComponent": "FilteredServicesState", "currentSource": "src/entities/catalog-state/ui/CatalogStates/CatalogStates.jsx", "targetComponent": "FilteredServicesState", "migrationStatus": "verified", "evidence": ["tests/card-visual.spec.mjs", "tests/app.spec.mjs"] },
+    "catalog.empty_day": { "currentComponent": "EmptyDayState", "currentSource": "src/entities/catalog-state/ui/CatalogStates/CatalogStates.jsx", "targetComponent": "EmptyDayState", "migrationStatus": "verified", "evidence": ["tests/card-visual.spec.mjs", "tests/app.spec.mjs"] },
+    "catalog.partially_hidden": { "currentComponent": "PartiallyHiddenState", "currentSource": "src/entities/catalog-state/ui/CatalogStates/CatalogStates.jsx", "targetComponent": "PartiallyHiddenState", "migrationStatus": "verified", "evidence": ["tests/card-visual.spec.mjs", "tests/app.spec.mjs"] },
     "catalog.error": { "currentComponent": null, "targetComponent": "CatalogErrorState", "migrationStatus": "planned" },
     "catalog.stale": { "currentComponent": null, "targetComponent": "CatalogStaleState", "migrationStatus": "planned" },
-    "service_offer.skeleton": { "currentComponent": "TaskSkeletonCard", "targetComponent": "ServiceCardSkeleton", "migrationStatus": "legacy" },
-    "hidden_services.message": { "currentComponent": "TaskMessageCard", "targetComponent": "HiddenServicesState", "migrationStatus": "legacy" }
+    "service_offer.skeleton": { "currentComponent": "ServiceCardSkeleton", "currentSource": "src/entities/catalog-state/ui/CatalogStates/CatalogStates.jsx", "targetComponent": "ServiceCardSkeleton", "migrationStatus": "verified", "evidence": ["tests/card-visual.spec.mjs", "tests/app.spec.mjs"] },
+    "hidden_services.message": { "currentComponent": "HiddenServicesState", "currentSource": "src/entities/catalog-state/ui/CatalogStates/CatalogStates.jsx", "targetComponent": "HiddenServicesState", "migrationStatus": "verified", "evidence": ["tests/card-visual.spec.mjs", "tests/app.spec.mjs"] }
   }
 }
