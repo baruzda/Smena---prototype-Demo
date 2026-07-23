@@ -47,11 +47,12 @@
       "id": "signing",
       "name": "Задания на подписание",
       "canonicalName": "На подписание",
-      "description": "Документы, требующие действия пользователя или находящиеся на проверке.",
+      "description": "Документы, ожидающие пользователя, находящиеся на проверке или завершившие подписание.",
       "sections": [
         { "id": "waiting_user", "name": "Ожидают подписания", "order": 100 },
         { "id": "processing", "name": "На проверке", "order": 200 },
-        { "id": "signed", "name": "Подписано", "order": 300 }
+        { "id": "signed", "name": "Подписано", "order": 300 },
+        { "id": "rejected", "name": "Отклонено", "order": 400 }
       ],
       "emptyStateId": "signing.empty"
     }

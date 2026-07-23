@@ -28,9 +28,10 @@
 | `my_service_card.active` | `MyServiceCard` | `MyServiceCard.module.css` | verified |
 | `my_service_card.completed` | `MyServiceCard` | `MyServiceCard.module.css` | verified |
 | `my_service_card.cancelled` | `MyServiceCard` | `MyServiceCard.module.css` | verified |
-| `signing_card.waiting_user` | `SigningCard` | `SigningCard.module.css` | migrated; product contract unresolved |
-| `signing_card.processing` | `SigningCard` | `SigningCard.module.css` | migrated; product contract unresolved |
-| `signing_card.signed` | `SigningCard` | `SigningCard.module.css` | migrated; product contract unresolved |
+| `signing_card.waiting_user` | `SigningCard` | `SigningCard.module.css` | verified; единственный variant с CTA `подписать` |
+| `signing_card.processing` | `SigningCard` | `SigningCard.module.css` | verified; остаётся в Signing без CTA |
+| `signing_card.signed` | `SigningCard` | `SigningCard.module.css` | verified; остаётся в Signing без CTA |
+| `signing_card.rejected` | `SigningCard` | `SigningCard.module.css` | verified; остаётся в Signing без CTA |
 | `saved_collection_card.active_collection` | `FavoriteCollectionCard` | `FavoriteCollectionCard.module.css` | verified |
 | `saved_collection_card.empty_collection` | `FavoriteCollectionCard` | `FavoriteCollectionCard.module.css` | migrated; exact empty-result anatomy unresolved |
 | `favorite_store_card.default` | `FavoriteStoreCard` | `FavoriteStoreCard.module.css` | verified |

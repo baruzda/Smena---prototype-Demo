@@ -17,6 +17,7 @@
 | favorites | Избранное | services_unavailable | Больше недоступны | 200 | - |
 | favorites | Избранное | stores | Магазины | 300 | RULE-FAVORITES-003 |
 | favorites | Избранное | collections | Подборки | 400 | RULE-FAVORITES-002 |
-| signing | Задания на подписание | waiting_user | Ожидают подписания | 100 | - |
-| signing | Задания на подписание | processing | На проверке | 200 | - |
-| signing | Задания на подписание | signed | Подписано | 300 | - |
+| signing | Задания на подписание | waiting_user | Ожидают подписания | 100 | RULE-SIGNING-001 |
+| signing | Задания на подписание | processing | На проверке | 200 | RULE-SIGNING-002 |
+| signing | Задания на подписание | signed | Подписано | 300 | RULE-SIGNING-003 |
+| signing | Задания на подписание | rejected | Отклонено | 400 | RULE-SIGNING-004 |

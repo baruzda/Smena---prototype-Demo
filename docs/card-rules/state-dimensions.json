@@ -6,6 +6,6 @@
   "legacyStateMigration": [
     { "legacyId": "available", "dimension": "availability", "targetId": "available", "preserved": true, "status": "mapped", "affectedRules": ["RULE-PLACEMENT-001"], "affectedScenarios": ["SCN-CATALOG-001"] },
     { "legacyId": "pending_confirmation", "dimension": "participation", "targetId": "pending_confirmation", "preserved": true, "status": "mapped", "affectedRules": ["RULE-MYTASKS-002"], "affectedScenarios": ["SCN-MYTASKS-002"] },
-    { "legacyId": "signing_required", "dimension": "signing", "targetId": "waiting_user", "preserved": true, "status": "provisional", "affectedRules": ["RULE-SIGNING-001"], "affectedScenarios": ["SCN-SIGNING-001"], "relatedQuestion": "OPEN-QUESTION-020" }
+    { "legacyId": "signing_required", "dimension": "signing", "targetId": "waiting_user", "preserved": true, "status": "mapped", "affectedRules": ["RULE-SIGNING-001"], "affectedScenarios": ["SCN-SIGNING-001"] }
   ]
 }

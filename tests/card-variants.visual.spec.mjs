@@ -17,6 +17,7 @@ const variants = [
   "signing_card:waiting_user",
   "signing_card:processing",
   "signing_card:signed",
+  "signing_card:rejected",
   "saved_collection_card:active_collection",
   "saved_collection_card:empty_collection",
   "favorite_store_card:default",

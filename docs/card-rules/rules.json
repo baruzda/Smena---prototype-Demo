@@ -333,7 +333,7 @@
     {
       "id": "RULE-SIGNING-001",
       "name": "Документы пользователя показываются в табе На подписание",
-      "status": "provisional",
+      "status": "active",
       "scope": {
         "entity": "service_offer",
         "surfaces": ["signing"],
@@ -351,9 +351,84 @@
       "priority": 800,
       "exceptions": ["EXC-SIGNING-001"],
       "supersedes": [],
-      "source": { "documents": ["README.md"], "decision": "DEC-001" },
-      "relatedQuestion": "OPEN-QUESTION-011",
-      "tests": ["SCN-SIGNING-001", "SCN-SIGNING-002"]
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-012" },
+      "tests": ["SCN-SIGNING-001", "SCN-SIGNING-002", "SCN-SIGNING-003", "SCN-SIGNING-004"]
+    },
+    {
+      "id": "RULE-SIGNING-002",
+      "name": "Документы на проверке остаются в табе Signing",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["signing"],
+        "templates": ["signing_card"]
+      },
+      "target": { "type": "placement", "surface": "signing", "section": "processing" },
+      "when": { "all": [{ "path": "signing.status", "operator": "equals", "value": "processing" }] },
+      "effect": { "action": "place" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 800,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-012" },
+      "tests": ["SCN-SIGNING-002", "SCN-SIGNING-005"]
+    },
+    {
+      "id": "RULE-SIGNING-003",
+      "name": "Подписанные документы остаются в табе Signing",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["signing"],
+        "templates": ["signing_card"]
+      },
+      "target": { "type": "placement", "surface": "signing", "section": "signed" },
+      "when": { "all": [{ "path": "signing.status", "operator": "equals", "value": "signed" }] },
+      "effect": { "action": "place" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 800,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-012" },
+      "tests": ["SCN-SIGNING-003", "SCN-SIGNING-006"]
+    },
+    {
+      "id": "RULE-SIGNING-004",
+      "name": "Отклонённые документы остаются в табе Signing",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["signing"],
+        "templates": ["signing_card"]
+      },
+      "target": { "type": "placement", "surface": "signing", "section": "rejected" },
+      "when": { "all": [{ "path": "signing.status", "operator": "equals", "value": "rejected" }] },
+      "effect": { "action": "place" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 800,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-012" },
+      "tests": ["SCN-SIGNING-004", "SCN-SIGNING-007"]
+    },
+    {
+      "id": "RULE-SIGNING-005",
+      "name": "Подписать можно только документ в ожидании пользователя",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["signing"],
+        "templates": ["signing_card"]
+      },
+      "target": { "type": "action", "id": "signing.primary_action" },
+      "when": { "all": [{ "path": "signing.status", "operator": "equals", "value": "waiting_user" }] },
+      "effect": { "action": "enable" },
+      "otherwise": { "action": "disable" },
+      "priority": 900,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-012" },
+      "tests": ["SCN-SIGNING-001", "SCN-SIGNING-002", "SCN-SIGNING-003", "SCN-SIGNING-004", "SCN-SIGNING-005"]
     },
     {
       "id": "RULE-CONTENT-001",

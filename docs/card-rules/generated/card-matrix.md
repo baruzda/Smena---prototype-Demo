@@ -18,6 +18,7 @@
 | signing_card | Карточка на подписании | waiting_user | Ожидает пользователя | signing | status, title, document, deadline, actions |
 | signing_card | Карточка на подписании | processing | Документы проверяются | signing | status, title, document, deadline, actions |
 | signing_card | Карточка на подписании | signed | Подписано | signing | status, title, document, deadline, actions |
+| signing_card | Карточка на подписании | rejected | Отклонено | signing | status, title, document, deadline, actions |
 | favorite_store_card | Карточка избранного магазина | default | Базовая | favorites | title, location, filters_summary, actions |
 | saved_collection_card | Карточка сохранённой подборки | active_collection | Активная подборка | favorites | title, filters_summary, location, actions |
 | saved_collection_card | Карточка сохранённой подборки | empty_collection | Без результатов | favorites | title, filters_summary, location, actions |

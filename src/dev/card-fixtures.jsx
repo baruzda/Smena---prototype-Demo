@@ -36,7 +36,7 @@ const serviceVariants = [
 ];
 
 const myServiceVariants = ["pending", "booked", "active", "completed", "cancelled"];
-const signingVariants = ["waiting_user", "processing", "signed"];
+const signingVariants = ["waiting_user", "processing", "signed", "rejected"];
 
 function Fixture({ children, id }) {
   return <section aria-label={id} className={styles.fixture} data-fixture={id}>{children}</section>;
@@ -66,7 +66,15 @@ function CardFixtures() {
       ))}
       {signingVariants.map((status) => (
         <Fixture id={`signing_card:${status}`} key={status}>
-          <SigningCard booking={{ day, id: `signing-${status}`, signing: { status }, status: "signing", task: service }} />
+          <SigningCard
+            booking={{
+              day,
+              id: `signing-${status}`,
+              signing: { actor: status === "waiting_user" ? "user" : "system", status },
+              status: "signing",
+              task: service,
+            }}
+          />
         </Fixture>
       ))}
       <Fixture id="saved_collection_card:active_collection">

@@ -6,7 +6,7 @@
 - Все шесть templates имеют component binding. `favorite_store_card` явно связан с `favorites/stores`, `FavoriteCollectionsView`, namespace `favorite-store-*` и approved placement rule; выделение `FavoriteStoreCard` остаётся отдельно отмеченным migration gap.
 - Все восемь UI states имеют binding; `catalog.error` и `catalog.stale` остаются `planned`/не реализованными.
 - Code-derived выбор вариантов, порядок, mapping статусов Моих заданий и условие метро хранятся как observations и provisional rules, а не approved product truth.
-- Production signing card, signing states интеграции и часть edge cases остаются unmapped или provisional; соответствующие вопросы перечислены в `open-questions.json`.
+- Signing card и состояния `waiting_user`, `processing`, `signed`, `rejected` подтверждены `DEC-012` и имеют runtime, resolver, visual и E2E evidence. Реальная signing-интеграция и критичный deadline остаются вне prototype scope.
 - Declarative scenarios не считаются исполняемыми resolver tests. E2E проверяет текущий прототип отдельно.
 
 ## Закрытие findings независимого review

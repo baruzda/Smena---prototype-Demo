@@ -177,7 +177,7 @@
       "name": "Действие с документами",
       "slot": "actions",
       "source": "computed",
-      "required": true,
+      "required": false,
       "fallback": null,
       "templates": ["signing_card"]
     },

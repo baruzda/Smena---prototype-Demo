@@ -28,8 +28,13 @@
 | SCN-RESTRICTION-004 | declarative |
 | SCN-SHIFT-001 | verified |
 | SCN-SHIFT-002 | verified |
-| SCN-SIGNING-001 | declarative |
-| SCN-SIGNING-002 | declarative |
+| SCN-SIGNING-001 | verified |
+| SCN-SIGNING-002 | verified |
+| SCN-SIGNING-003 | verified |
+| SCN-SIGNING-004 | verified |
+| SCN-SIGNING-005 | verified |
+| SCN-SIGNING-006 | verified |
+| SCN-SIGNING-007 | verified |
 | SCN-SPECIAL-001 | declarative |
 | SCN-SPECIAL-002 | declarative |
 | SCN-SPECIAL-003 | declarative |

@@ -35,6 +35,7 @@
 
 .success { color: #28a975; }
 .warning { color: #d87900; }
+.danger { color: #d93939; }
 
 .card h2 {
   font-family: "X5 Sans", Arial, sans-serif;

@@ -1,5 +1,9 @@
 # Журнал решений по карточкам
 
+## DEC-012 — утверждённый контракт Signing
+
+Контекст: пользователь утвердил блок Signing из product decision brief 2026-07-23. Решение: Signing остаётся отдельным табом; канонические runtime-состояния — `waiting_user`, `processing`, `signed`, `rejected`, и все они остаются в табе в отдельных упорядоченных секциях. Primary CTA `подписать` доступен только в `waiting_user` и переводит запись в `processing`. Deadline остаётся необязательным и не получает критичного оформления без отдельного решения. Последствие: placement, document status, primary action и переход получают active rules, runtime, unit, visual и E2E evidence; `signing_card` переводится в `verified`. Не входит: интеграция с реальным сервисом подписания, история документов и критичный deadline.
+
 ## DEC-011 — явная runtime-идентичность hidden services
 
 Контекст: `HiddenServicesState` использовался внутри `PartiallyHiddenState`, но получал тип родительского состояния и поэтому не эмитил собственный `hidden_services.message` ID. Решение: сохранить `catalog.partially_hidden` как внешний composition state, а вложенному сообщению вернуть `hidden_services.message`. Тексты, actions и визуальная анатомия не меняются. Последствие: UI state имеет отдельные resolver, runtime, visual и E2E evidence и получает статус `verified`. Не входит: изменение состава скрытых услуг или обход фильтров; эти правила остаются определены DEC-009.

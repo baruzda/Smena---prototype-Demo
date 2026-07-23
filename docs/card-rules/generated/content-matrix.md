@@ -21,6 +21,6 @@
 | service.primary_action | Основное действие | actions | computed | Нет | - | service_offer_card, my_service_card |
 | signing.document_status | Статус документов | document | signing.status | Да | Статус уточняется | signing_card |
 | signing.deadline | Срок подписания | deadline | signing.deadline | Нет | - | signing_card |
-| signing.primary_action | Действие с документами | actions | computed | Да | - | signing_card |
+| signing.primary_action | Действие с документами | actions | computed | Нет | - | signing_card |
 | collection.filters_summary | Состав подборки | filters_summary | collection.filters | Да | Без дополнительных фильтров | saved_collection_card |
 | collection.location | Территория подборки | location | collection.location | Нет | Любая территория | saved_collection_card |

@@ -232,12 +232,55 @@ test("[RULE-MYTASKS-001] accepted service placement is resolved outside JSX", ()
   assert.ok(result.appliedRuleIds.includes("RULE-MYTASKS-001"));
 });
 
-test("[RULE-SIGNING-001] signing placement stays explicit and provisional", () => {
-  const booking = { day: { label: "3 июня", secondaryLabel: "среда" }, status: "signing", task: baseService };
-  const result = resolveSigningPresentation(booking);
-  assert.equal(result.placement, "signing");
-  assert.equal(result.section, "waiting_user");
-  assert.ok(result.appliedRuleIds.includes("RULE-SIGNING-001"));
+test("[SCN-SIGNING-001][SCN-SIGNING-002][SCN-SIGNING-003][SCN-SIGNING-004][SCN-SIGNING-006][SCN-SIGNING-007][RULE-SIGNING-001][RULE-SIGNING-002][RULE-SIGNING-003][RULE-SIGNING-004][RULE-SIGNING-005][EXC-SIGNING-001] signing states resolve approved placement and actions", () => {
+  const expected = {
+    waiting_user: { action: "signing.primary_action", label: "на подписание", order: 100, rule: "RULE-SIGNING-001", tone: "warning" },
+    processing: { action: null, label: "на проверке", order: 200, rule: "RULE-SIGNING-002", tone: "warning" },
+    signed: { action: null, label: "подписано", order: 300, rule: "RULE-SIGNING-003", tone: "success" },
+    rejected: { action: null, label: "отклонено", order: 400, rule: "RULE-SIGNING-004", tone: "danger" },
+  };
+
+  for (const [status, contract] of Object.entries(expected)) {
+    const booking = {
+      day: { label: "3 июня", secondaryLabel: "среда" },
+      signing: { actor: status === "waiting_user" ? "user" : "system", status },
+      status: "signing",
+      task: baseService,
+    };
+    const result = resolveSigningPresentation(booking);
+
+    assert.equal(result.placement, "signing", status);
+    assert.equal(result.section, status, status);
+    assert.equal(result.structuralVariant, status, status);
+    assert.equal(result.status.label, contract.label, status);
+    assert.equal(result.status.tone, contract.tone, status);
+    assert.equal(result.order, contract.order, status);
+    assert.ok(result.appliedRuleIds.includes(contract.rule), status);
+    assert.ok(result.appliedRuleIds.includes("RULE-SIGNING-005"), status);
+    assert.equal(result.enabledActions[0] ?? null, contract.action, status);
+    assert.equal(result.primaryAction?.label ?? null, status === "waiting_user" ? "подписать" : null, status);
+    assert.deepEqual(result.appliedExceptionIds, status === "waiting_user" ? [] : ["EXC-SIGNING-001"], status);
+  }
+
+  const processing = resolveSigningPresentation({
+    day: { label: "3 июня", secondaryLabel: "среда" },
+    signing: { actor: "system", status: "processing" },
+    status: "signing",
+    task: baseService,
+  });
+  assert.notEqual(processing.section, "signed");
+  assert.notEqual(processing.section, "rejected");
+
+  const unknown = resolveSigningPresentation({
+    day: { label: "3 июня", secondaryLabel: "среда" },
+    signing: { actor: "system", status: "unknown_integration_state" },
+    status: "signing",
+    task: baseService,
+  });
+  assert.equal(unknown.structuralVariant, "processing");
+  assert.equal(unknown.status.label, "статус уточняется");
+  assert.deepEqual(unknown.enabledActions, []);
+  assert.equal(unknown.primaryAction, null);
 });
 
 test("[RULE-SHIFT-001] employee shift placement and order are deterministic", () => {
@@ -304,7 +347,16 @@ test("every active card rule and exception has resolver evidence", () => {
     "RULE-SHIFT-001",
     "RULE-FAVORITES-002",
     "RULE-FAVORITES-003",
+    "RULE-SIGNING-001",
+    "RULE-SIGNING-002",
+    "RULE-SIGNING-003",
+    "RULE-SIGNING-004",
+    "RULE-SIGNING-005",
+  ].sort();
+  const evidencedExceptionIds = [
+    ...serviceOfferResolverCoverage.activeExceptions,
+    "EXC-SIGNING-001",
   ].sort();
   assert.deepEqual(evidencedRuleIds, activeRuleIds);
-  assert.deepEqual([...serviceOfferResolverCoverage.activeExceptions].sort(), activeExceptionIds);
+  assert.deepEqual(evidencedExceptionIds, activeExceptionIds);
 });

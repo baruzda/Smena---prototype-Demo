@@ -501,11 +501,19 @@
         "template": "signing_card",
         "variant": "waiting_user",
         "section": "waiting_user",
+        "visibleContent": [
+          "signing.document_status"
+        ],
+        "enabledActions": [
+          "signing.primary_action"
+        ],
         "appliedRules": [
-          "RULE-SIGNING-001"
+          "RULE-SIGNING-001",
+          "RULE-SIGNING-005"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-SIGNING-002",
@@ -521,14 +529,166 @@
         }
       },
       "expected": {
+        "template": "signing_card",
+        "variant": "processing",
+        "section": "processing",
         "notInSections": [
           "waiting_user"
+        ],
+        "visibleContent": [
+          "signing.document_status"
+        ],
+        "disabledActions": [
+          "signing.primary_action"
+        ],
+        "appliedRules": [
+          "RULE-SIGNING-002",
+          "RULE-SIGNING-005"
         ],
         "appliedExceptions": [
           "EXC-SIGNING-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-SIGNING-003",
+      "name": "Подписанные документы остаются в табе",
+      "given": {
+        "surface": "signing",
+        "service": {
+          "state": "signing_required"
+        },
+        "signing": {
+          "actor": "system",
+          "status": "signed"
+        }
+      },
+      "expected": {
+        "template": "signing_card",
+        "variant": "signed",
+        "section": "signed",
+        "visibleContent": [
+          "signing.document_status"
+        ],
+        "disabledActions": [
+          "signing.primary_action"
+        ],
+        "appliedRules": [
+          "RULE-SIGNING-003",
+          "RULE-SIGNING-005"
+        ],
+        "appliedExceptions": [
+          "EXC-SIGNING-001"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-SIGNING-004",
+      "name": "Отклонённые документы остаются в табе",
+      "given": {
+        "surface": "signing",
+        "service": {
+          "state": "signing_required"
+        },
+        "signing": {
+          "actor": "system",
+          "status": "rejected"
+        }
+      },
+      "expected": {
+        "template": "signing_card",
+        "variant": "rejected",
+        "section": "rejected",
+        "visibleContent": [
+          "signing.document_status"
+        ],
+        "disabledActions": [
+          "signing.primary_action"
+        ],
+        "appliedRules": [
+          "RULE-SIGNING-004",
+          "RULE-SIGNING-005"
+        ],
+        "appliedExceptions": [
+          "EXC-SIGNING-001"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-SIGNING-005",
+      "name": "Подписание переводит документ на проверку",
+      "given": {
+        "surface": "signing",
+        "action": "signing.primary_action",
+        "signing": {
+          "actor": "user",
+          "status": "waiting_user"
+        }
+      },
+      "expected": {
+        "template": "signing_card",
+        "variant": "processing",
+        "section": "processing",
+        "disabledActions": [
+          "signing.primary_action"
+        ],
+        "appliedRules": [
+          "RULE-SIGNING-002",
+          "RULE-SIGNING-005"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/app.spec.mjs"
+    },
+    {
+      "id": "SCN-SIGNING-006",
+      "name": "Документы на проверке не попадают в секцию подписанных",
+      "given": {
+        "surface": "signing",
+        "signing": {
+          "actor": "system",
+          "status": "processing"
+        }
+      },
+      "expected": {
+        "notInSections": [
+          "signed"
+        ],
+        "appliedRules": [
+          "RULE-SIGNING-002",
+          "RULE-SIGNING-005"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-SIGNING-007",
+      "name": "Документы на проверке не попадают в секцию отклонённых",
+      "given": {
+        "surface": "signing",
+        "signing": {
+          "actor": "system",
+          "status": "processing"
+        }
+      },
+      "expected": {
+        "notInSections": [
+          "rejected"
+        ],
+        "appliedRules": [
+          "RULE-SIGNING-002",
+          "RULE-SIGNING-005"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-CONTENT-001",

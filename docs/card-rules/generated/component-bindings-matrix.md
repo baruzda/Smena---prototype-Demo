@@ -15,4 +15,4 @@
 | template | saved_collection_card | FavoriteCollectionCard | FavoriteCollectionCard | migrated |
 | template | service_offer_card | ServiceOfferCard | ServiceOfferCard | migrated |
 | ui_state | service_offer.skeleton | ServiceCardSkeleton | ServiceCardSkeleton | verified |
-| template | signing_card | SigningCard | SigningCard | migrated |
+| template | signing_card | SigningCard | SigningCard | verified |

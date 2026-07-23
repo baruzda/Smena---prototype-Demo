@@ -7,13 +7,17 @@ import styles from "./SigningCard.module.css";
 export function SigningCard({ booking, onPrimaryAction }) {
   const { task } = booking;
   const presentation = resolveSigningPresentation(booking);
-  const canSign = presentation.enabledActions.includes("signing.primary_action");
 
   return (
-    <article className={styles.card} data-card-template={presentation.templateId} data-card-variant={presentation.structuralVariant}>
+    <article
+      className={styles.card}
+      data-card-template={presentation.templateId}
+      data-card-variant={presentation.structuralVariant}
+      data-record-id={booking.id}
+    >
       <div className={styles.top}>
         <div className={styles.copy}>
-          <p className={`${styles.status} ${styles[presentation.status.tone]}`}>
+          <p aria-live="polite" className={`${styles.status} ${styles[presentation.status.tone]}`}>
             <span aria-hidden="true" />{presentation.status.label}
           </p>
           <h2>{task.title}</h2>
@@ -40,8 +44,10 @@ export function SigningCard({ booking, onPrimaryAction }) {
       </div>
       {presentation.document && <p className={styles.document}>{presentation.document}</p>}
       {presentation.deadline && <p className={styles.deadline}>{presentation.deadline}</p>}
-      {presentation.document && canSign && (
-        <button className={styles.primaryAction} onClick={onPrimaryAction} type="button">подписать</button>
+      {presentation.primaryAction && (
+        <button className={styles.primaryAction} onClick={() => onPrimaryAction?.(booking.id)} type="button">
+          {presentation.primaryAction.label}
+        </button>
       )}
     </article>
   );

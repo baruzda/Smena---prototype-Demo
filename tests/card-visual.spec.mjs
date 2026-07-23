@@ -91,9 +91,12 @@ test("my tasks, signing and favorites visual baseline", async ({ page }) => {
   await expect(myTaskCards.nth(3)).toHaveScreenshot("my-service-cancelled.png", { animations: "disabled" });
 
   await page.getByRole("button", { name: "задания на подписание", exact: true }).click();
-  const signingCard = page.getByRole("region", { name: "Задания на подписание", exact: true }).locator('[data-card-template="signing_card"]');
-  await expect(signingCard).toHaveCount(1);
-  await expect(signingCard).toHaveScreenshot("signing-card-legacy.png", { animations: "disabled" });
+  const signingCards = page.getByRole("region", { name: "Задания на подписание", exact: true }).locator('[data-card-template="signing_card"]');
+  await expect(signingCards).toHaveCount(4);
+  await expect(signingCards.nth(0)).toHaveScreenshot("signing-card-waiting-user.png", { animations: "disabled" });
+  await expect(signingCards.nth(1)).toHaveScreenshot("signing-card-processing.png", { animations: "disabled" });
+  await expect(signingCards.nth(2)).toHaveScreenshot("signing-card-signed.png", { animations: "disabled" });
+  await expect(signingCards.nth(3)).toHaveScreenshot("signing-card-rejected.png", { animations: "disabled" });
 
   await page.getByRole("button", { name: "избранное", exact: true }).click();
   await expect(page.locator('[data-card-template="favorite_store_card"]')).toHaveScreenshot("favorite-store.png", { animations: "disabled" });

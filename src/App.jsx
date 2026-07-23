@@ -557,7 +557,34 @@ const demoMyTaskRecords = [
 ];
 
 const demoSigningTaskRecords = [
-  { day: dayGroups[2], id: "demo-signing-task-ready", status: "signing", task: dayGroups[2].tasks[0] },
+  {
+    day: dayGroups[2],
+    id: "demo-signing-task-ready",
+    signing: { actor: "user", status: "waiting_user" },
+    status: "signing",
+    task: dayGroups[2].tasks[0],
+  },
+  {
+    day: dayGroups[4],
+    id: "demo-signing-task-processing",
+    signing: { actor: "system", status: "processing" },
+    status: "signing",
+    task: dayGroups[4].tasks[1],
+  },
+  {
+    day: dayGroups[6],
+    id: "demo-signing-task-signed",
+    signing: { actor: "system", status: "signed" },
+    status: "signing",
+    task: dayGroups[6].tasks[0],
+  },
+  {
+    day: dayGroups[8],
+    id: "demo-signing-task-rejected",
+    signing: { actor: "system", status: "rejected" },
+    status: "signing",
+    task: dayGroups[8].tasks[2],
+  },
 ];
 const demoFavoriteStore = Object.freeze({ isPresent: true });
 
@@ -1531,6 +1558,7 @@ export function App() {
   const [availabilityTime, setAvailabilityTime] = useState(emptyAvailabilityTime);
   const [selectedAvailabilityDuration, setSelectedAvailabilityDuration] = useState([]);
   const [bookedTasks, setBookedTasks] = useState(persistedState.bookedTasks || []);
+  const [signingTaskRecords, setSigningTaskRecords] = useState(demoSigningTaskRecords);
   const [currentView, setCurrentView] = useState("tasks");
   const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(true);
   const [settingsOnboardingAnchor, setSettingsOnboardingAnchor] = useState(null);
@@ -1950,7 +1978,14 @@ export function App() {
             }}
             onRemoveCollection={(id) => setFavoriteCollections((collections) => collections.filter((collection) => collection.id !== id))}
           /> : activeTab === 2 ? <MyTasksList bookedTasks={bookedTasks} demoRecords={demoMyTaskRecords} />
-            : activeTab === 3 ? <SigningList records={demoSigningTaskRecords} />
+            : activeTab === 3 ? <SigningList
+              onPrimaryAction={(recordId) => setSigningTaskRecords((records) => records.map((record) => (
+                record.id === recordId
+                  ? { ...record, signing: { actor: "system", status: "processing" } }
+                  : record
+              )))}
+              records={signingTaskRecords}
+            />
               : isTaskListLoading ? <CatalogLoadingState />
                 : <TaskFeed
                   dayGroups={dayGroups}

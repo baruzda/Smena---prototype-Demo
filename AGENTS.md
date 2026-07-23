@@ -15,3 +15,5 @@ Prototype motion preference: use smooth, purposeful animations for state changes
 Favorite store card rule: the retail brand logo is a standalone leading mark for the store row; the metro icon belongs inline to the address/station text and must not wrap away as a separate symbol beside the brand logo.
 
 Default demo state rule: every full prototype reload starts with a centered service spinner for 1 second, then the tasks feed with two task-card skeletons for 1 second, then the settings onboarding overlay/tooltip. The "подходит мне" toggle stays enabled; filters, search location/radius, and availability settings start empty. Do not persist a dismissed onboarding or configured filters/location/availability across reloads.
+
+Signing decision: Signing remains a separate tab. Its canonical runtime states are `waiting_user`, `processing`, `signed`, and `rejected`; all four remain visible in that tab in section order. Only `waiting_user` exposes the primary CTA `подписать`, and activating it moves the document to `processing`. Deadline is optional and has no critical styling until a separate product decision changes that contract.
