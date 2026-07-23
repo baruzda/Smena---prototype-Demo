@@ -10,7 +10,7 @@
 | ui_state | catalog.stale | - | CatalogStaleState | planned |
 | template | employee_shift_card | EmployeeShiftCard | EmployeeShiftCard | verified |
 | template | favorite_store_card | FavoriteStoreCard | FavoriteStoreCard | verified |
-| ui_state | hidden_services.message | HiddenServicesState | HiddenServicesState | migrated |
+| ui_state | hidden_services.message | HiddenServicesState | HiddenServicesState | verified |
 | template | my_service_card | MyServiceCard | MyServiceCard | verified |
 | template | saved_collection_card | FavoriteCollectionCard | FavoriteCollectionCard | migrated |
 | template | service_offer_card | ServiceOfferCard | ServiceOfferCard | migrated |

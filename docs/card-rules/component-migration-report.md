@@ -34,7 +34,7 @@
 | `service_offer.skeleton` | `src/App.jsx#TaskSkeletonCard` | `ServiceCardSkeleton` | verified | component coverage | skeleton snapshot | reload sequence | yes | none |
 | `catalog.filtered_empty` | `src/App.jsx#TaskMessageCard` | `FilteredServicesState` | verified | component coverage | filtered snapshot | filtered flow | yes | none |
 | `catalog.partially_hidden` | `src/App.jsx#TaskMessageCard` | `PartiallyHiddenState` | verified | component coverage | partial snapshot | expand/collapse flow | yes | none |
-| `hidden_services.message` | `src/App.jsx#TaskMessageCard` | `HiddenServicesState` | migrated | component coverage | component path covered through partial state | expand/collapse flow | yes | exact `hidden_services.message` state is not emitted separately at runtime |
+| `hidden_services.message` | `src/App.jsx#TaskMessageCard` | `HiddenServicesState` | verified | resolver identity test + component coverage | partial-state composition snapshot | explicit nested state + expand/collapse flow | yes | none |
 | `catalog.empty_day` | `src/App.jsx#NoTasksForDayCard` | `EmptyDayState` | verified | component coverage | empty-day snapshot | empty-day flow | yes | none |
 | `catalog.error` | отсутствует | planned `CatalogErrorState` | planned | registry coverage | none | none | n/a | утверждённый product/visual contract отсутствует |
 | `catalog.stale` | отсутствует | planned `CatalogStaleState` | planned | registry coverage | none | none | n/a | утверждённый product/visual contract отсутствует |
@@ -45,3 +45,4 @@
 - `App.jsx` больше не содержит анатомию карточек или функции `TaskCard`, `MyTaskCard`, `EmployeeShiftCard`, `TaskMessageCard`, `NoTasksForDayCard`, `TaskSkeletonCard`.
 - Семантические стили card families удалены из глобального `styles.css`; каждая family использует собственный CSS Module. Общими оставлены только нейтральные brand/metro/distance atoms и app-shell layout.
 - `docs/catalog-rules-matrix.md` и `docs/availability-rules.md` остаются `partially_mapped`: незакрытые product gaps не были придуманы в рамках технической миграции.
+- Точные оставшиеся product approvals и критерии перехода в `verified` собраны в `docs/card-rules/product-decision-brief.md`.

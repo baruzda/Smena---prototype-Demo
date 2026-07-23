@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { resolveEmployeeShiftPresentation } from "../src/entities/employee-shift/model/resolveEmployeeShiftPresentation.js";
+import { resolveCatalogStatePresentation } from "../src/entities/catalog-state/model/resolveCatalogStatePresentation.js";
 import { resolveFavoriteCollectionPresentation } from "../src/entities/favorite-collection/model/resolveFavoriteCollectionPresentation.js";
 import { resolveFavoriteStorePresentation } from "../src/entities/favorite-store/model/resolveFavoriteStorePresentation.js";
 import { resolveMyServicePresentation } from "../src/entities/my-service/model/resolveMyServicePresentation.js";
@@ -281,6 +282,16 @@ test("[SCN-FAVORITES-003][SCN-FAVORITES-004][RULE-FAVORITES-002] saved collectio
 test("[SCN-FAVORITES-005][SCN-FAVORITES-006][RULE-FAVORITES-003] favorite store placement is resolved", () => {
   assert.equal(resolveFavoriteStorePresentation({ isPresent: true }).section, "stores");
   assert.equal(resolveFavoriteStorePresentation().placement, "excluded");
+});
+
+test("hidden services keeps an explicit UI-state identity inside partial results", () => {
+  const result = resolveCatalogStatePresentation({
+    hiddenCount: 2,
+    hiddenReason: "filters",
+    type: "hidden_services",
+  });
+  assert.equal(result.uiState, "hidden_services.message");
+  assert.deepEqual(result.actions, ["subscribe", "show_all"]);
 });
 
 test("every active card rule and exception has resolver evidence", () => {

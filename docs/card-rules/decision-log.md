@@ -1,5 +1,9 @@
 # Журнал решений по карточкам
 
+## DEC-011 — явная runtime-идентичность hidden services
+
+Контекст: `HiddenServicesState` использовался внутри `PartiallyHiddenState`, но получал тип родительского состояния и поэтому не эмитил собственный `hidden_services.message` ID. Решение: сохранить `catalog.partially_hidden` как внешний composition state, а вложенному сообщению вернуть `hidden_services.message`. Тексты, actions и визуальная анатомия не меняются. Последствие: UI state имеет отдельные resolver, runtime, visual и E2E evidence и получает статус `verified`. Не входит: изменение состава скрытых услуг или обход фильтров; эти правила остаются определены DEC-009.
+
 ## DEC-010 — компонентная миграция карточек
 
 Контекст: legacy-разметка карточек и связанных UI-состояний находилась в `src/App.jsx` и глобальном `src/styles.css`, поэтому правила, варианты и потребители нельзя было проверять изолированно. Решение: перенести presentation-логику в чистые resolvers, UI — в entity-компоненты с CSS Modules, списки — в widgets, а связь registry → source → tests закрепить `component-bindings.json` и автоматической проверкой `scripts/check-card-component-coverage.mjs`. Legacy-функции карточек и их семантические глобальные селекторы удаляются только после unit, visual и E2E evidence. Последствие: `App.jsx` остаётся orchestration shell, каждый зарегистрированный structural variant имеет отдельный visual snapshot. Не входит: утверждение provisional product rules, контракт signing states и отсутствующие контракты `catalog.error`/`catalog.stale`; они сохраняют статусы `migrated` или `planned`.

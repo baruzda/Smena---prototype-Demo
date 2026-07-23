@@ -237,10 +237,12 @@ test("карточка скрытых заданий показывает акт
   await page.getByRole("checkbox", { name: "подходит мне", exact: true }).check();
   const firstDay = page.locator('[data-day="1"]');
   const filteredNotice = firstDay.locator('[data-ui-state="catalog.partially_hidden"]');
+  const hiddenServicesMessage = filteredNotice.locator('[data-ui-state="hidden_services.message"]');
 
-  await expect(filteredNotice.getByRole("button", { name: "подписаться на новые задания", exact: true })).toBeVisible();
-  await expect(filteredNotice.getByRole("button", { name: /показать остальные/ })).toBeVisible();
-  await filteredNotice.getByRole("button", { name: /показать остальные/ }).click();
+  await expect(hiddenServicesMessage).toBeVisible();
+  await expect(hiddenServicesMessage.getByRole("button", { name: "подписаться на новые задания", exact: true })).toBeVisible();
+  await expect(hiddenServicesMessage.getByRole("button", { name: /показать остальные/ })).toBeVisible();
+  await hiddenServicesMessage.getByRole("button", { name: /показать остальные/ }).click();
   await expect(firstDay.locator('[data-card-template="service_offer_card"]')).toHaveCount(5);
   await expect(firstDay.getByRole("button", { name: "скрыть неподходящие", exact: true })).toBeVisible();
 });

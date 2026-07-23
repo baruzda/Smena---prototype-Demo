@@ -17,6 +17,6 @@
     "catalog.error": { "currentComponent": null, "targetComponent": "CatalogErrorState", "migrationStatus": "planned" },
     "catalog.stale": { "currentComponent": null, "targetComponent": "CatalogStaleState", "migrationStatus": "planned" },
     "service_offer.skeleton": { "currentComponent": "ServiceCardSkeleton", "currentSource": "src/entities/catalog-state/ui/CatalogStates/CatalogStates.jsx", "targetComponent": "ServiceCardSkeleton", "migrationStatus": "verified", "evidence": ["tests/card-visual.spec.mjs", "tests/app.spec.mjs"] },
-    "hidden_services.message": { "currentComponent": "HiddenServicesState", "currentSource": "src/entities/catalog-state/ui/CatalogStates/CatalogStates.jsx", "targetComponent": "HiddenServicesState", "migrationStatus": "migrated", "evidence": ["tests/card-visual.spec.mjs", "tests/app.spec.mjs"] }
+    "hidden_services.message": { "currentComponent": "HiddenServicesState", "currentSource": "src/entities/catalog-state/ui/CatalogStates/CatalogStates.jsx", "targetComponent": "HiddenServicesState", "migrationStatus": "verified", "evidence": ["tests/service-offer-presentation.test.mjs", "tests/card-visual.spec.mjs", "tests/app.spec.mjs"] }
   }
 }

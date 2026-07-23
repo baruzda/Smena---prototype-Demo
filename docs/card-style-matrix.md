@@ -45,7 +45,7 @@ Marker `suitable_for_you` — отдельная ось presentation model и н
 | `service_offer.skeleton` | `ServiceCardSkeleton` | `CatalogStates.module.css` | verified |
 | `catalog.filtered_empty` | `FilteredServicesState` | `CatalogStates.module.css` | verified |
 | `catalog.partially_hidden` | `PartiallyHiddenState` | `CatalogStates.module.css` | verified |
-| `hidden_services.message` | `HiddenServicesState` | `CatalogStates.module.css` | migrated; exact runtime state not emitted |
+| `hidden_services.message` | `HiddenServicesState` | `CatalogStates.module.css` | verified |
 | `catalog.empty_day` | `EmptyDayState` | `CatalogStates.module.css` | verified |
 | `catalog.error` | `CatalogErrorState` | — | planned; product contract unresolved |
 | `catalog.stale` | `CatalogStaleState` | — | planned; product contract unresolved |

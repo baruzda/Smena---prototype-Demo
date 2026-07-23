@@ -8,6 +8,6 @@
     { "id": "catalog.error", "usedOn": ["tasks"], "display": "Не реализовано отдельной карточкой", "canCoexistWithCards": true, "actions": [], "sourceType": "unresolved_assumption", "currentImplementation": null, "implementationStatus": "not_implemented" },
     { "id": "catalog.stale", "usedOn": ["tasks"], "display": "Не реализовано", "canCoexistWithCards": true, "actions": [], "sourceType": "unresolved_assumption", "currentImplementation": null, "implementationStatus": "not_implemented" },
     { "id": "service_offer.skeleton", "usedOn": ["tasks"], "display": "Скелетон одной услуги", "canCoexistWithCards": false, "actions": [], "sourceType": "observed_implementation", "currentImplementation": "ServiceCardSkeleton", "implementationStatus": "implemented" },
-    { "id": "hidden_services.message", "usedOn": ["tasks"], "display": "Сообщение скрытых услуг", "canCoexistWithCards": true, "actions": ["subscribe", "show_all"], "sourceType": "observed_implementation", "currentImplementation": "HiddenServicesState", "implementationStatus": "partially_implemented" }
+    { "id": "hidden_services.message", "usedOn": ["tasks"], "display": "Сообщение скрытых услуг", "canCoexistWithCards": true, "actions": ["subscribe", "show_all"], "sourceType": "observed_implementation", "currentImplementation": "HiddenServicesState", "implementationStatus": "implemented" }
   ]
 }

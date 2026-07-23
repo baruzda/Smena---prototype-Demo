@@ -70,7 +70,11 @@ export function FilteredServicesState(props) {
 }
 
 export function PartiallyHiddenState(props) {
-  return <HiddenServicesState {...props} type="partially_hidden" />;
+  return (
+    <div data-ui-state="catalog.partially_hidden">
+      <HiddenServicesState {...props} />
+    </div>
+  );
 }
 
 export function HiddenServicesState({ type = "hidden_services", ...props }) {
