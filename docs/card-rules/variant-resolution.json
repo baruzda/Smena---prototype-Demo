@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "defaultVariant": "default",
+  "variants": [
+    { "template": "service_offer_card", "id": "restriction_status", "priority": 900, "sourceType": "unresolved_assumption", "relatedQuestion": "OPEN-QUESTION-008" },
+    { "template": "service_offer_card", "id": "restriction_status_plus", "priority": 850, "sourceType": "unresolved_assumption", "relatedQuestion": "OPEN-QUESTION-008" },
+    { "template": "service_offer_card", "id": "restriction_tags", "priority": 800, "sourceType": "unresolved_assumption", "relatedQuestion": "OPEN-QUESTION-008" },
+    { "template": "service_offer_card", "id": "special", "priority": 700, "sourceType": "observed_implementation", "relatedQuestion": "OPEN-QUESTION-008" }
+  ]
+}

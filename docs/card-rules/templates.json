@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "id": "service_offer_card",
+      "entity": "service_offer",
+      "name": "Карточка услуги",
+      "description": "Базовая карточка предложения услуги в каталоге и связанных табах.",
+      "slots": [
+        "header",
+        "markers",
+        "title",
+        "location",
+        "commercial",
+        "schedule",
+        "restrictions",
+        "actions"
+      ],
+      "supportedSurfaces": [
+        "tasks",
+        "favorites"
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "name": "Базовая",
+          "description": "Услуга без персонального маркера и без ограничений."
+        },
+        {
+          "id": "favorite_unavailable",
+          "name": "Недоступная избранная услуга (legacy presentation)",
+          "description": "Legacy-совместимость исключения избранного до отдельного решения о варианте."
+        },
+        {
+          "id": "restriction_status",
+          "name": "Не подходит",
+          "description": "Карточка с одним ограничением и коротким статусом."
+        },
+        {
+          "id": "restriction_status_plus",
+          "name": "Есть ограничения",
+          "description": "Карточка с несколькими ограничениями и общим статусом."
+        },
+        {
+          "id": "restriction_tags",
+          "name": "Ограничения тегами",
+          "description": "Карточка с полным набором причин, вынесенных вниз."
+        },
+        {
+          "id": "special",
+          "name": "Специально для вас",
+          "description": "Персональное предложение с таймером и самостоятельным CTA."
+        }
+      ]
+    },
+    {
+      "id": "employee_shift_card",
+      "entity": "employee_shift",
+      "name": "Карточка смены сотрудника",
+      "description": "Основная или уже принятая смена в расписании.",
+      "slots": [
+        "status",
+        "title",
+        "location",
+        "date",
+        "schedule"
+      ],
+      "supportedSurfaces": [
+        "tasks"
+      ],
+      "variants": [
+        {
+          "id": "primary_shift",
+          "name": "Основная смена"
+        },
+        {
+          "id": "accepted_extra_shift",
+          "name": "Принятая дополнительная смена"
+        }
+      ]
+    },
+    {
+      "id": "my_service_card",
+      "entity": "service_offer",
+      "name": "Карточка моей услуги",
+      "description": "Карточка услуги после действия пользователя.",
+      "slots": [
+        "header",
+        "status",
+        "title",
+        "location",
+        "date",
+        "schedule",
+        "commercial",
+        "actions"
+      ],
+      "supportedSurfaces": [
+        "my_tasks"
+      ],
+      "variants": [
+        {
+          "id": "pending",
+          "name": "На подтверждении"
+        },
+        {
+          "id": "booked",
+          "name": "Записаны"
+        },
+        {
+          "id": "active",
+          "name": "Выполняется"
+        },
+        {
+          "id": "completed",
+          "name": "Завершена"
+        },
+        {
+          "id": "cancelled",
+          "name": "Отменена"
+        }
+      ]
+    },
+    {
+      "id": "signing_card",
+      "entity": "service_offer",
+      "name": "Карточка на подписании",
+      "description": "Карточка услуги, для которой пользователь должен подписать документы.",
+      "slots": [
+        "status",
+        "title",
+        "document",
+        "deadline",
+        "actions"
+      ],
+      "supportedSurfaces": [
+        "signing"
+      ],
+      "variants": [
+        {
+          "id": "waiting_user",
+          "name": "Ожидает пользователя"
+        },
+        {
+          "id": "processing",
+          "name": "Документы проверяются"
+        },
+        {
+          "id": "signed",
+          "name": "Подписано"
+        }
+      ]
+    },
+    {
+      "id": "favorite_store_card",
+      "entity": "favorite_store",
+      "name": "Карточка избранного магазина",
+      "description": "Существующая демонстрационная карточка магазина.",
+      "slots": ["title", "location", "filters_summary", "actions"],
+      "supportedSurfaces": ["favorites"],
+      "variants": [{ "id": "default", "name": "Базовая" }]
+    },
+    {
+      "id": "saved_collection_card",
+      "entity": "saved_collection",
+      "name": "Карточка сохранённой подборки",
+      "description": "Сохранённые фильтры, территория и радиус.",
+      "slots": [
+        "title",
+        "filters_summary",
+        "location",
+        "actions"
+      ],
+      "supportedSurfaces": ["favorites"],
+      "variants": [
+        {
+          "id": "active_collection",
+          "name": "Активная подборка"
+        },
+        {
+          "id": "empty_collection",
+          "name": "Без результатов"
+        }
+      ]
+    }
+  ]
+}

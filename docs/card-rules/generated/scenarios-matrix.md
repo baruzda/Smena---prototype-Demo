@@ -1,0 +1,32 @@
+# Scenarios
+
+| ID | Execution |
+| --- | --- |
+| SCN-ACTION-001 | declarative |
+| SCN-ACTION-002 | declarative |
+| SCN-CATALOG-001 | declarative |
+| SCN-CATALOG-002 | declarative |
+| SCN-CONTENT-001 | declarative |
+| SCN-CONTENT-002 | declarative |
+| SCN-FAVORITES-001 | declarative |
+| SCN-FAVORITES-002 | declarative |
+| SCN-FAVORITES-003 | declarative |
+| SCN-FAVORITES-004 | declarative |
+| SCN-FAVORITES-005 | declarative |
+| SCN-FAVORITES-006 | declarative |
+| SCN-MATCH-001 | declarative |
+| SCN-MATCH-002 | declarative |
+| SCN-MYTASKS-001 | declarative |
+| SCN-MYTASKS-002 | declarative |
+| SCN-MYTASKS-003 | declarative |
+| SCN-RESTRICTION-001 | declarative |
+| SCN-RESTRICTION-002 | declarative |
+| SCN-RESTRICTION-003 | declarative |
+| SCN-RESTRICTION-004 | declarative |
+| SCN-SHIFT-001 | declarative |
+| SCN-SHIFT-002 | declarative |
+| SCN-SIGNING-001 | declarative |
+| SCN-SIGNING-002 | declarative |
+| SCN-SPECIAL-001 | declarative |
+| SCN-SPECIAL-002 | declarative |
+| SCN-SPECIAL-003 | declarative |

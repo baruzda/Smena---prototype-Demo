@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smena-x5.local/card-rules/schemas/registry-definitions.schema.json",
+  "$defs": {
+    "version": { "type": "integer", "const": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "stringArray": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+    "idRecord": {
+      "type": "object",
+      "required": ["id"],
+      "properties": { "id": { "$ref": "#/$defs/id" } },
+      "additionalProperties": true
+    },
+    "dictionary": {
+      "type": "object",
+      "required": ["version", "entities", "states", "markers", "actions", "surfaces", "operators", "ruleStatuses", "targetTypes"],
+      "properties": {
+        "version": { "$ref": "#/$defs/version" },
+        "entities": { "type": "array", "items": { "$ref": "#/$defs/idRecord" }, "minItems": 1 },
+        "states": { "type": "array", "items": { "$ref": "#/$defs/idRecord" }, "minItems": 1 },
+        "markers": { "type": "array", "items": { "$ref": "#/$defs/idRecord" }, "minItems": 1 },
+        "actions": { "$ref": "#/$defs/stringArray" },
+        "surfaces": { "type": "array", "items": { "$ref": "#/$defs/idRecord" }, "minItems": 1 },
+        "operators": { "$ref": "#/$defs/stringArray" },
+        "ruleStatuses": { "$ref": "#/$defs/stringArray" },
+        "targetTypes": { "$ref": "#/$defs/stringArray" }
+      },
+      "additionalProperties": true
+    },
+    "stateDimensions": {
+      "type": "object",
+      "required": ["version", "availabilityStates", "participationStates", "signingStates", "legacyStateMigration"],
+      "properties": {
+        "version": { "$ref": "#/$defs/version" },
+        "availabilityStates": { "$ref": "#/$defs/stringArray" },
+        "participationStates": { "$ref": "#/$defs/stringArray" },
+        "signingStates": { "$ref": "#/$defs/stringArray" },
+        "legacyStateMigration": { "type": "array", "items": { "$ref": "#/$defs/legacyState" } }
+      },
+      "additionalProperties": false
+    },
+    "legacyState": {
+      "type": "object",
+      "required": ["legacyId", "dimension", "targetId", "preserved", "status", "affectedRules", "affectedScenarios"],
+      "properties": {
+        "legacyId": { "$ref": "#/$defs/id" }, "dimension": { "enum": ["availability", "participation", "signing"] },
+        "targetId": { "$ref": "#/$defs/id" }, "preserved": { "type": "boolean" }, "status": { "enum": ["mapped", "provisional"] },
+        "affectedRules": { "$ref": "#/$defs/stringArray" }, "affectedScenarios": { "$ref": "#/$defs/stringArray" }, "relatedQuestion": { "$ref": "#/$defs/id" }
+      },
+      "additionalProperties": false
+    },
+    "templates": {
+      "type": "object", "required": ["version", "templates"],
+      "properties": { "version": { "$ref": "#/$defs/version" }, "templates": { "type": "array", "items": { "$ref": "#/$defs/template" }, "minItems": 1 } },
+      "additionalProperties": false
+    },
+    "template": {
+      "type": "object", "required": ["id", "entity", "name", "slots", "supportedSurfaces", "variants"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "entity": { "$ref": "#/$defs/id" }, "name": { "$ref": "#/$defs/id" },
+        "slots": { "$ref": "#/$defs/stringArray" }, "supportedSurfaces": { "$ref": "#/$defs/stringArray" },
+        "migrationScope": { "enum": ["tracked", "out_of_scope"] },
+        "variants": { "type": "array", "items": { "$ref": "#/$defs/namedId" }, "minItems": 1 }
+      },
+      "additionalProperties": true
+    },
+    "namedId": {
+      "type": "object", "required": ["id", "name"],
+      "properties": { "id": { "$ref": "#/$defs/id" }, "name": { "$ref": "#/$defs/id" } }, "additionalProperties": true
+    },
+    "contentElements": {
+      "type": "object", "required": ["version", "contentElements"],
+      "properties": { "version": { "$ref": "#/$defs/version" }, "contentElements": { "type": "array", "items": { "$ref": "#/$defs/contentElement" }, "minItems": 1 } },
+      "additionalProperties": false
+    },
+    "contentElement": {
+      "type": "object", "required": ["id", "name", "slot", "source", "required", "fallback", "templates"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" }, "name": { "$ref": "#/$defs/id" }, "slot": { "$ref": "#/$defs/id" }, "source": { "$ref": "#/$defs/id" },
+        "required": { "type": "boolean" }, "fallback": {}, "templates": { "$ref": "#/$defs/stringArray" }
+      },
+      "additionalProperties": true
+    },
+    "surfaces": {
+      "type": "object", "required": ["version", "surfaces"],
+      "properties": { "version": { "$ref": "#/$defs/version" }, "surfaces": { "type": "array", "items": { "$ref": "#/$defs/surface" }, "minItems": 1 } },
+      "additionalProperties": false
+    },
+    "surface": {
+      "type": "object", "required": ["id", "name", "sections"],
+      "properties": { "id": { "$ref": "#/$defs/id" }, "name": { "$ref": "#/$defs/id" }, "sections": { "type": "array", "items": { "$ref": "#/$defs/section" }, "minItems": 1 } },
+      "additionalProperties": true
+    },
+    "section": {
+      "type": "object", "required": ["id", "name", "order"],
+      "properties": { "id": { "$ref": "#/$defs/id" }, "name": { "$ref": "#/$defs/id" }, "order": { "type": "integer" } }, "additionalProperties": false
+    },
+    "rules": {
+      "type": "object", "required": ["version", "rules"],
+      "properties": { "version": { "$ref": "#/$defs/version" }, "rules": { "type": "array", "items": { "$ref": "#/$defs/rule" }, "minItems": 1 } },
+      "additionalProperties": false
+    },
+    "rule": {
+      "type": "object", "required": ["id", "name", "status", "scope", "target", "when", "effect", "priority", "exceptions", "supersedes", "source", "tests"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^RULE-[A-Z]+-[0-9]{3}$" }, "name": { "$ref": "#/$defs/id" },
+        "status": { "enum": ["draft", "active", "provisional", "superseded", "deprecated"] },
+        "scope": { "$ref": "#/$defs/scope" }, "target": { "type": "object" }, "when": { "$ref": "#/$defs/when" },
+        "effect": { "$ref": "#/$defs/effect" }, "otherwise": { "$ref": "#/$defs/effect" }, "priority": { "type": "integer" },
+        "exceptions": { "$ref": "#/$defs/stringArray" }, "supersedes": { "$ref": "#/$defs/stringArray" }, "source": { "type": "object" },
+        "tests": { "$ref": "#/$defs/stringArray" }, "relatedQuestion": { "$ref": "#/$defs/id" }
+      },
+      "additionalProperties": true
+    },
+    "scope": {
+      "type": "object", "required": ["entity", "surfaces", "templates"],
+      "properties": { "entity": { "$ref": "#/$defs/id" }, "surfaces": { "$ref": "#/$defs/stringArray" }, "templates": { "$ref": "#/$defs/stringArray" } }, "additionalProperties": false
+    },
+    "when": {
+      "type": "object", "minProperties": 1,
+      "properties": { "all": { "type": "array", "items": { "$ref": "#/$defs/condition" } }, "any": { "type": "array", "items": { "$ref": "#/$defs/condition" } } },
+      "additionalProperties": false
+    },
+    "condition": {
+      "type": "object", "required": ["path", "operator"],
+      "properties": { "path": { "$ref": "#/$defs/id" }, "operator": { "$ref": "#/$defs/id" } }, "additionalProperties": true
+    },
+    "effect": {
+      "type": "object", "required": ["action"],
+      "properties": { "action": { "$ref": "#/$defs/id" } }, "additionalProperties": true
+    },
+    "exceptions": {
+      "type": "object", "required": ["version", "exceptions"],
+      "properties": { "version": { "$ref": "#/$defs/version" }, "exceptions": { "type": "array", "items": { "$ref": "#/$defs/exception" } } },
+      "additionalProperties": false
+    },
+    "exception": {
+      "type": "object", "required": ["id", "name", "status", "baseRule", "when", "override", "priority", "reason"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^EXC-[A-Z]+-[0-9]{3}$" }, "name": { "$ref": "#/$defs/id" }, "status": { "enum": ["active", "provisional"] },
+        "baseRule": { "$ref": "#/$defs/id" }, "when": { "$ref": "#/$defs/when" }, "override": { "$ref": "#/$defs/effect" },
+        "priority": { "type": "integer" }, "reason": { "$ref": "#/$defs/id" }, "relatedQuestion": { "$ref": "#/$defs/id" }
+      }, "additionalProperties": true
+    },
+    "precedence": {
+      "type": "object", "required": ["version", "levels", "resolutionPolicy"],
+      "properties": {
+        "version": { "$ref": "#/$defs/version" },
+        "levels": { "type": "array", "items": { "$ref": "#/$defs/precedenceLevel" }, "minItems": 1 },
+        "resolutionPolicy": { "$ref": "#/$defs/stringArray" }
+      }, "additionalProperties": false
+    },
+    "precedenceLevel": {
+      "type": "object", "required": ["priority", "id", "name"],
+      "properties": { "priority": { "type": "integer" }, "id": { "$ref": "#/$defs/id" }, "name": { "$ref": "#/$defs/id" } }, "additionalProperties": false
+    },
+    "variantResolution": {
+      "type": "object", "required": ["version", "defaultVariant", "variants"],
+      "properties": {
+        "version": { "$ref": "#/$defs/version" }, "defaultVariant": { "$ref": "#/$defs/id" },
+        "variants": { "type": "array", "items": { "$ref": "#/$defs/variantResolutionEntry" } }
+      }, "additionalProperties": false
+    },
+    "variantResolutionEntry": {
+      "type": "object", "required": ["template", "id", "priority", "sourceType"],
+      "properties": { "template": { "$ref": "#/$defs/id" }, "id": { "$ref": "#/$defs/id" }, "priority": { "type": "integer" }, "sourceType": { "$ref": "#/$defs/id" }, "relatedQuestion": { "$ref": "#/$defs/id" } },
+      "additionalProperties": false
+    },
+    "uiStates": {
+      "type": "object", "required": ["version", "uiStates"],
+      "properties": { "version": { "$ref": "#/$defs/version" }, "uiStates": { "type": "array", "items": { "$ref": "#/$defs/uiState" } } }, "additionalProperties": false
+    },
+    "uiState": {
+      "type": "object", "required": ["id", "usedOn", "display", "canCoexistWithCards", "actions", "sourceType", "currentImplementation", "implementationStatus"],
+      "properties": { "id": { "$ref": "#/$defs/id" }, "usedOn": { "$ref": "#/$defs/stringArray" }, "display": { "$ref": "#/$defs/id" }, "canCoexistWithCards": { "type": "boolean" }, "actions": { "$ref": "#/$defs/stringArray" }, "sourceType": { "$ref": "#/$defs/id" }, "currentImplementation": { "type": ["string", "null"] }, "implementationStatus": { "$ref": "#/$defs/id" } },
+      "additionalProperties": true
+    },
+    "observations": {
+      "type": "object", "required": ["version", "observations"],
+      "properties": { "version": { "$ref": "#/$defs/version" }, "observations": { "type": "array", "items": { "$ref": "#/$defs/observation" } } }, "additionalProperties": false
+    },
+    "observation": {
+      "type": "object", "required": ["id", "name", "source", "observedBehavior", "approvalStatus", "mustNotBeUsedAsProductTruth"],
+      "properties": { "id": { "type": "string", "pattern": "^OBS-[A-Z-]+-[0-9]{3}$" }, "name": { "$ref": "#/$defs/id" }, "source": { "$ref": "#/$defs/id" }, "observedBehavior": { "type": "object" }, "approvalStatus": { "$ref": "#/$defs/id" }, "relatedQuestion": { "$ref": "#/$defs/id" }, "mustNotBeUsedAsProductTruth": { "const": true } },
+      "additionalProperties": false
+    },
+    "questions": {
+      "type": "object", "required": ["version", "questions"],
+      "properties": { "version": { "$ref": "#/$defs/version" }, "questions": { "type": "array", "items": { "$ref": "#/$defs/question" } } }, "additionalProperties": false
+    },
+    "question": {
+      "type": "object", "required": ["id", "title", "status", "blocking", "temporaryBehavior", "relatedRules", "relatedExceptions", "relatedScenarios", "relatedTemplates", "relatedObservations", "relatedDecisions", "owner", "resolution"],
+      "properties": { "id": { "type": "string", "pattern": "^OPEN-QUESTION-[0-9]{3}$" }, "title": { "$ref": "#/$defs/id" }, "status": { "$ref": "#/$defs/id" }, "blocking": { "type": "boolean" }, "temporaryBehavior": { "$ref": "#/$defs/id" }, "relatedRules": { "$ref": "#/$defs/stringArray" }, "relatedExceptions": { "$ref": "#/$defs/stringArray" }, "relatedScenarios": { "$ref": "#/$defs/stringArray" }, "relatedTemplates": { "$ref": "#/$defs/stringArray" }, "relatedObservations": { "$ref": "#/$defs/stringArray" }, "relatedDecisions": { "$ref": "#/$defs/stringArray" }, "owner": { "$ref": "#/$defs/id" }, "resolution": { "type": ["string", "null"] } },
+      "additionalProperties": true
+    },
+    "scenarios": {
+      "type": "object", "required": ["version", "scenarios"],
+      "properties": { "version": { "$ref": "#/$defs/version" }, "scenarios": { "type": "array", "items": { "$ref": "#/$defs/scenario" }, "minItems": 1 } }, "additionalProperties": false
+    },
+    "scenario": {
+      "type": "object", "required": ["id", "name", "given", "expected", "executionStatus"],
+      "properties": { "id": { "type": "string", "pattern": "^SCN-[A-Z]+-[0-9]{3}$" }, "name": { "$ref": "#/$defs/id" }, "given": { "type": "object" }, "expected": { "type": "object" }, "executionStatus": { "enum": ["declarative", "executable", "verified"] }, "testEvidence": { "$ref": "#/$defs/id" } },
+      "additionalProperties": false
+    },
+    "componentBindings": {
+      "type": "object", "required": ["version", "templates", "contentElements", "uiStates"],
+      "properties": {
+        "version": { "$ref": "#/$defs/version" },
+        "templates": { "type": "object", "additionalProperties": { "$ref": "#/$defs/templateBinding" } },
+        "contentElements": { "type": "object", "additionalProperties": { "$ref": "#/$defs/contentBinding" } },
+        "uiStates": { "type": "object", "additionalProperties": { "$ref": "#/$defs/uiStateBinding" } }
+      }, "additionalProperties": false
+    },
+    "templateBinding": {
+      "type": "object", "required": ["currentComponent", "currentSource", "targetComponent", "migrationStatus"],
+      "properties": { "currentComponent": { "type": ["string", "null"] }, "currentSource": { "type": ["string", "null"] }, "targetComponent": { "$ref": "#/$defs/id" }, "migrationStatus": { "enum": ["planned", "legacy", "migrated", "verified"] } },
+      "additionalProperties": false
+    },
+    "contentBinding": {
+      "type": "object", "required": ["currentImplementation", "targetComponent"],
+      "properties": { "currentImplementation": { "type": ["string", "null"] }, "targetComponent": { "$ref": "#/$defs/id" } },
+      "additionalProperties": false
+    },
+    "uiStateBinding": {
+      "type": "object", "required": ["currentComponent", "targetComponent", "migrationStatus"],
+      "properties": { "currentComponent": { "type": ["string", "null"] }, "targetComponent": { "$ref": "#/$defs/id" }, "migrationStatus": { "enum": ["planned", "legacy", "migrated", "verified"] } },
+      "additionalProperties": false
+    },
+    "migrationMap": {
+      "type": "object", "required": ["version", "sources"],
+      "properties": { "version": { "$ref": "#/$defs/version" }, "sources": { "type": "array", "items": { "$ref": "#/$defs/migrationSource" }, "minItems": 1 } }, "additionalProperties": false
+    },
+    "migrationSource": {
+      "type": "object", "required": ["legacySource", "relatedRules", "relatedScenarios", "relatedTemplates", "relatedUiStates", "currentImplementation", "status", "unmappedContent", "notes"],
+      "properties": { "legacySource": { "$ref": "#/$defs/id" }, "relatedRules": { "$ref": "#/$defs/stringArray" }, "relatedScenarios": { "$ref": "#/$defs/stringArray" }, "relatedTemplates": { "$ref": "#/$defs/stringArray" }, "relatedUiStates": { "$ref": "#/$defs/stringArray" }, "currentImplementation": { "$ref": "#/$defs/stringArray" }, "status": { "enum": ["unmapped", "partially_mapped", "mapped", "verified", "deprecated"] }, "unmappedContent": { "$ref": "#/$defs/stringArray" }, "notes": { "type": "array", "items": { "type": "string" } }, "evidence": { "$ref": "#/$defs/stringArray" }, "verifiedBeforeDeprecation": { "type": "boolean" } },
+      "additionalProperties": false
+    }
+  }
+}

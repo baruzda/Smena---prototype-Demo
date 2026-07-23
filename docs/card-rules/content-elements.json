@@ -1,0 +1,203 @@
+{
+  "version": 1,
+  "contentElements": [
+    {
+      "id": "service.title",
+      "name": "Название услуги",
+      "slot": "title",
+      "source": "service.title",
+      "required": true,
+      "fallback": null,
+      "templates": ["service_offer_card", "my_service_card", "signing_card"]
+    },
+    {
+      "id": "service.brand",
+      "name": "Бренд",
+      "slot": "header",
+      "source": "service.brand",
+      "required": true,
+      "fallback": "neutral_brand_mark",
+      "templates": ["service_offer_card", "my_service_card"]
+    },
+    {
+      "id": "service.address",
+      "name": "Адрес",
+      "slot": "location",
+      "source": "service.address",
+      "required": true,
+      "fallback": "Адрес уточняется",
+      "templates": ["service_offer_card", "my_service_card", "employee_shift_card"]
+    },
+    {
+      "id": "service.metro",
+      "name": "Метро",
+      "slot": "location",
+      "source": "service.metro",
+      "required": false,
+      "fallback": null,
+      "templates": ["service_offer_card", "my_service_card", "employee_shift_card"]
+    },
+    {
+      "id": "service.distance",
+      "name": "Расстояние",
+      "slot": "location",
+      "source": "service.distance",
+      "required": false,
+      "fallback": null,
+      "templates": ["service_offer_card", "my_service_card", "employee_shift_card"]
+    },
+    {
+      "id": "service.payment_total",
+      "name": "Вознаграждение за услугу",
+      "slot": "commercial",
+      "source": "service.payment",
+      "required": true,
+      "fallback": "Вознаграждение уточняется",
+      "templates": ["service_offer_card", "my_service_card"]
+    },
+    {
+      "id": "service.payment_rate",
+      "name": "Ставка в час",
+      "slot": "commercial",
+      "source": "service.rate",
+      "required": false,
+      "fallback": null,
+      "templates": ["service_offer_card", "my_service_card"]
+    },
+    {
+      "id": "service.time_range",
+      "name": "Время оказания услуги",
+      "slot": "schedule",
+      "source": "service.hours",
+      "required": true,
+      "fallback": "Время уточняется",
+      "templates": ["service_offer_card", "my_service_card", "employee_shift_card"]
+    },
+    {
+      "id": "service.duration_break",
+      "name": "Продолжительность и перерыв",
+      "slot": "schedule",
+      "source": "service.breakInfo",
+      "required": false,
+      "fallback": null,
+      "templates": ["service_offer_card", "my_service_card", "employee_shift_card"]
+    },
+    {
+      "id": "service.date",
+      "name": "Дата",
+      "slot": "date",
+      "source": "service.date",
+      "required": true,
+      "fallback": null,
+      "templates": ["my_service_card", "employee_shift_card"]
+    },
+    {
+      "id": "service.status",
+      "name": "Статус услуги",
+      "slot": "status",
+      "source": "computed",
+      "required": false,
+      "fallback": null,
+      "templates": ["my_service_card", "signing_card"]
+    },
+    {
+      "id": "marker.suitable_for_you",
+      "name": "Подходит вам",
+      "slot": "markers",
+      "source": "computed",
+      "required": false,
+      "fallback": null,
+      "templates": ["service_offer_card"]
+    },
+    {
+      "id": "marker.specially_for_you",
+      "name": "Специально для вас",
+      "slot": "markers",
+      "source": "computed",
+      "required": false,
+      "fallback": null,
+      "templates": ["service_offer_card"]
+    },
+    {
+      "id": "special.countdown",
+      "name": "Таймер предложения",
+      "slot": "markers",
+      "source": "service.specialOfferExpiresAt",
+      "required": false,
+      "fallback": null,
+      "templates": ["service_offer_card"]
+    },
+    {
+      "id": "restrictions.summary",
+      "name": "Короткий статус ограничений",
+      "slot": "restrictions",
+      "source": "computed",
+      "required": false,
+      "fallback": null,
+      "templates": ["service_offer_card"]
+    },
+    {
+      "id": "restrictions.tags",
+      "name": "Причины ограничений",
+      "slot": "restrictions",
+      "source": "service.restrictionTags",
+      "required": false,
+      "fallback": null,
+      "templates": ["service_offer_card"]
+    },
+    {
+      "id": "service.primary_action",
+      "name": "Основное действие",
+      "slot": "actions",
+      "source": "computed",
+      "required": false,
+      "fallback": null,
+      "templates": ["service_offer_card", "my_service_card"]
+    },
+    {
+      "id": "signing.document_status",
+      "name": "Статус документов",
+      "slot": "document",
+      "source": "signing.status",
+      "required": true,
+      "fallback": "Статус уточняется",
+      "templates": ["signing_card"]
+    },
+    {
+      "id": "signing.deadline",
+      "name": "Срок подписания",
+      "slot": "deadline",
+      "source": "signing.deadline",
+      "required": false,
+      "fallback": null,
+      "templates": ["signing_card"]
+    },
+    {
+      "id": "signing.primary_action",
+      "name": "Действие с документами",
+      "slot": "actions",
+      "source": "computed",
+      "required": true,
+      "fallback": null,
+      "templates": ["signing_card"]
+    },
+    {
+      "id": "collection.filters_summary",
+      "name": "Состав подборки",
+      "slot": "filters_summary",
+      "source": "collection.filters",
+      "required": true,
+      "fallback": "Без дополнительных фильтров",
+      "templates": ["saved_collection_card"]
+    },
+    {
+      "id": "collection.location",
+      "name": "Территория подборки",
+      "slot": "location",
+      "source": "collection.location",
+      "required": false,
+      "fallback": "Любая территория",
+      "templates": ["saved_collection_card"]
+    }
+  ]
+}

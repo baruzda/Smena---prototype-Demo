@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smena-x5.local/card-rules/schemas/rules.schema.json",
+  "$defs": {
+    "document": { "$ref": "registry-definitions.schema.json#/$defs/rules" }
+  },
+  "$ref": "#/$defs/document"
+}
