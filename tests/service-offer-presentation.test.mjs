@@ -1,0 +1,166 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { test } from "node:test";
+import { resolveEmployeeShiftPresentation } from "../src/entities/employee-shift/model/resolveEmployeeShiftPresentation.js";
+import { resolveFavoriteCollectionPresentation } from "../src/entities/favorite-collection/model/resolveFavoriteCollectionPresentation.js";
+import { resolveFavoriteStorePresentation } from "../src/entities/favorite-store/model/resolveFavoriteStorePresentation.js";
+import { resolveMyServicePresentation } from "../src/entities/my-service/model/resolveMyServicePresentation.js";
+import {
+  resolveServiceOfferPresentation,
+  serviceOfferResolverCoverage,
+} from "../src/entities/service-offer/model/resolveServiceOfferPresentation.js";
+import { resolveSigningPresentation } from "../src/entities/signing/model/resolveSigningPresentation.js";
+
+const baseService = Object.freeze({
+  address: "Лефортовский Вал, 1",
+  brand: "pyaterochka",
+  breakInfo: "7 ч без перерыва",
+  distance: "500 м",
+  hours: "09:00 – 16:00",
+  matchesFilters: true,
+  payment: "2 000,00 ₽",
+  rate: "250 ₽/час",
+  restrictionTags: [],
+  state: "available",
+  title: "сборка товара",
+});
+
+function resolve(service = {}, context = {}) {
+  return resolveServiceOfferPresentation({ ...baseService, ...service }, { surface: "tasks", ...context });
+}
+
+test("[RULE-PLACEMENT-001] available filtered service is placed in tasks", () => {
+  const result = resolve();
+  assert.equal(result.placement, "tasks");
+  assert.equal(result.section, "available_offers");
+  assert.ok(result.appliedRuleIds.includes("RULE-PLACEMENT-001"));
+});
+
+test("[EXC-PLACEMENT-001] accepted service leaves the catalog", () => {
+  const result = resolve({ state: "booked" });
+  assert.equal(result.placement, "excluded");
+  assert.ok(result.appliedExceptionIds.includes("EXC-PLACEMENT-001"));
+});
+
+test("[EXC-PLACEMENT-002] filtered service cannot return through hidden services", () => {
+  const result = resolve({ matchesFilters: false }, { section: "other_offers" });
+  assert.equal(result.placement, "excluded");
+  assert.ok(result.appliedExceptionIds.includes("EXC-PLACEMENT-002"));
+});
+
+test("[RULE-HIDDEN-001] primary-shift conflicts stay outside hidden services", () => {
+  const result = resolve({ overlapsPrimarySchedule: true }, { section: "other_offers" });
+  assert.equal(result.placement, "excluded");
+  assert.ok(result.appliedRuleIds.includes("RULE-HIDDEN-001"));
+});
+
+test("[RULE-MARKER-001] suitable marker is independent from structural variant", () => {
+  const result = resolve({ isSuitableForYou: true });
+  assert.deepEqual(result.markers, ["suitable_for_you"]);
+  assert.equal(result.structuralVariant, "default");
+});
+
+test("[EXC-MARKER-001] restriction hides suitable marker", () => {
+  const result = resolve({ isSuitableForYou: true, restrictionTags: ["Вне доступности"] });
+  assert.deepEqual(result.markers, []);
+  assert.ok(result.appliedExceptionIds.includes("EXC-MARKER-001"));
+});
+
+test("[RULE-ACTION-001] availability and accepted-service overlaps disable the action", () => {
+  const primary = resolve({ overlapsPrimarySchedule: true });
+  const accepted = resolve({ overlapsAcceptedServices: true });
+  assert.deepEqual(primary.disabledActions, ["service.primary_action"]);
+  assert.deepEqual(accepted.disabledActions, ["service.primary_action"]);
+});
+
+test("[RULE-ACTION-001] available service enables the primary action", () => {
+  assert.deepEqual(resolve().enabledActions, ["service.primary_action"]);
+});
+
+test("structural variants are deterministic and exclusive", () => {
+  const cases = [
+    [resolve(), "default"],
+    [resolve({ isSpecialOffer: true }), "special"],
+    [resolve({ restrictionTags: ["A"] }, { useObservedRestrictionStatus: true }), "restriction_status"],
+    [resolve({ restrictionTags: ["A", "B"] }, { useObservedRestrictionStatus: true }), "restriction_status_plus"],
+    [resolve({ restrictionTags: ["A"] }, { revealRestrictionTags: true }), "restriction_tags"],
+    [resolveServiceOfferPresentation({ ...baseService, isFavorite: true, state: "expired" }, { surface: "favorites" }), "favorite_unavailable"],
+  ];
+  for (const [result, expected] of cases) assert.equal(result.structuralVariant, expected);
+  assert.deepEqual(cases.map(([, variant]) => variant), serviceOfferResolverCoverage.structuralVariants);
+});
+
+test("special plus restriction never resolves to two structural variants", () => {
+  const result = resolve({ isSpecialOffer: true, restrictionTags: ["Вне доступности"] }, { revealRestrictionTags: true });
+  assert.equal(result.structuralVariant, "restriction_tags");
+  assert.ok(!result.markers.includes("specially_for_you"));
+});
+
+test("metro content uses address fallback when data is absent", () => {
+  const withoutMetro = resolve({ metro: null });
+  const withMetro = resolve({ metro: { station: "Ладожская" } });
+  assert.ok(withoutMetro.hiddenContent.includes("service.metro"));
+  assert.ok(withoutMetro.visibleContent.includes("service.address"));
+  assert.ok(withMetro.visibleContent.includes("service.metro"));
+});
+
+test("[RULE-FAVORITES-001] favorite placement and [EXC-FAVORITES-001] unavailable section", () => {
+  const available = resolveServiceOfferPresentation({ ...baseService, isFavorite: true }, { surface: "favorites" });
+  const unavailable = resolveServiceOfferPresentation({ ...baseService, isFavorite: true, state: "expired" }, { surface: "favorites" });
+  assert.equal(available.section, "services_available");
+  assert.equal(unavailable.section, "services_unavailable");
+  assert.ok(unavailable.appliedExceptionIds.includes("EXC-FAVORITES-001"));
+});
+
+test("[RULE-MYTASKS-001] accepted service placement is resolved outside JSX", () => {
+  const booking = { day: { label: "2 июня", secondaryLabel: "вторник" }, status: "booked", task: baseService };
+  const result = resolveMyServicePresentation(booking);
+  assert.equal(result.placement, "my_tasks");
+  assert.equal(result.section, "upcoming");
+  assert.ok(result.appliedRuleIds.includes("RULE-MYTASKS-001"));
+});
+
+test("[RULE-SIGNING-001] signing placement stays explicit and provisional", () => {
+  const booking = { day: { label: "3 июня", secondaryLabel: "среда" }, status: "signing", task: baseService };
+  const result = resolveSigningPresentation(booking);
+  assert.equal(result.placement, "signing");
+  assert.equal(result.section, "waiting_user");
+  assert.ok(result.appliedRuleIds.includes("RULE-SIGNING-001"));
+});
+
+test("[RULE-SHIFT-001] employee shift placement and order are deterministic", () => {
+  const result = resolveEmployeeShiftPresentation({ type: "primary" }, { label: "сегодня, 1 июня", secondaryLabel: "понедельник" });
+  assert.equal(result.structuralVariant, "primary_shift");
+  assert.equal(result.section, "employee_schedule");
+  assert.equal(result.order, 50);
+});
+
+test("[RULE-FAVORITES-002] saved collection placement is resolved", () => {
+  const result = resolveFavoriteCollectionPresentation({
+    filters: { brands: [], minimumPayment: "", service: "" },
+    location: { label: "" },
+    radius: 1,
+  }, ["pyaterochka"]);
+  assert.equal(result.section, "collections");
+  assert.ok(result.appliedRuleIds.includes("RULE-FAVORITES-002"));
+});
+
+test("[RULE-FAVORITES-003] favorite store placement is resolved", () => {
+  assert.equal(resolveFavoriteStorePresentation({ isPresent: true }).section, "stores");
+  assert.equal(resolveFavoriteStorePresentation({ isPresent: false }).placement, "excluded");
+});
+
+test("every active card rule and exception has resolver evidence", () => {
+  const rules = JSON.parse(readFileSync(new URL("../docs/card-rules/rules.json", import.meta.url), "utf8")).rules;
+  const exceptions = JSON.parse(readFileSync(new URL("../docs/card-rules/exceptions.json", import.meta.url), "utf8")).exceptions;
+  const activeRuleIds = rules.filter((rule) => rule.status === "active").map((rule) => rule.id).sort();
+  const activeExceptionIds = exceptions.filter((exception) => exception.status === "active").map((exception) => exception.id).sort();
+  const evidencedRuleIds = [
+    ...serviceOfferResolverCoverage.activeRules,
+    "RULE-SHIFT-001",
+    "RULE-FAVORITES-002",
+    "RULE-FAVORITES-003",
+  ].sort();
+  assert.deepEqual(evidencedRuleIds, activeRuleIds);
+  assert.deepEqual([...serviceOfferResolverCoverage.activeExceptions].sort(), activeExceptionIds);
+});
