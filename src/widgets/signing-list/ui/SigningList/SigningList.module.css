@@ -1,0 +1,17 @@
+.list {
+  display: grid;
+  gap: 8px;
+}
+
+.empty {
+  align-items: center;
+  background: #f4f4f5;
+  border-radius: 12px;
+  color: #6c737d;
+  display: flex;
+  font-size: 16px;
+  line-height: 20px;
+  margin: 48px 0 0;
+  min-height: 64px;
+  padding: 12px;
+}

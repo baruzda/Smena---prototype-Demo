@@ -1,0 +1,67 @@
+.view {
+  min-height: 320px;
+}
+
+.tabs {
+  background: #f4f4f5;
+  border-radius: 10px;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  width: 100%;
+}
+
+.tab,
+.activeTab {
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: #6c737d;
+  cursor: pointer;
+  flex: 1 1 0;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 16px;
+  height: 36px;
+  line-height: 20px;
+  padding: 0 14px;
+  text-align: center;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.activeTab {
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.08);
+  color: #000;
+}
+
+.list {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.empty {
+  align-items: center;
+  background: #f4f4f5;
+  border-radius: 12px;
+  color: #6c737d;
+  display: flex;
+  font-size: 16px;
+  line-height: 20px;
+  margin: 48px 0 0;
+  min-height: 64px;
+  padding: 12px;
+}
+
+.tab:focus-visible,
+.activeTab:focus-visible {
+  outline: 2px solid #6446ff;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab,
+  .activeTab {
+    transition: none;
+  }
+}
