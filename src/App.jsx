@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getTaskHours, shiftsOverlap } from "./schedule-utils.js";
 
 const assetUrl = (name) => `${import.meta.env.BASE_URL}figma-assets/${name}`;
@@ -77,6 +77,7 @@ const emptyFilters = { brands: [], minimumPayment: "", service: "" };
 const emptyAvailabilityTime = { from: "", to: "", preset: null, presets: [] };
 
 const prototypeDefaultStateVersion = 4;
+const settingsOnboardingVersion = 3;
 
 const availabilityTimePresets = [
   { id: "all-day", label: "весь день", from: "8:00", to: "22:00" },
@@ -1969,25 +1970,63 @@ export function App() {
   const [selectedAvailabilityDuration, setSelectedAvailabilityDuration] = useState([]);
   const [bookedTasks, setBookedTasks] = useState(persistedState.bookedTasks || []);
   const [currentView, setCurrentView] = useState("tasks");
-  const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(true);
+  const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(() => persistedState.settingsOnboardingVersion !== settingsOnboardingVersion);
+  const [settingsOnboardingAnchor, setSettingsOnboardingAnchor] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
   const [scrollTargetDay, setScrollTargetDay] = useState(null);
   const [isTimelineLoading, setIsTimelineLoading] = useState(false);
   const [expandedFilteredDays, setExpandedFilteredDays] = useState([]);
   const screenRef = useRef(null);
+  const scheduleSettingsButtonRef = useRef(null);
   const daySectionRefs = useRef({});
   const timelineDayRefs = useRef({});
   const programmaticDayRef = useRef(null);
   const lastScrollTopRef = useRef(0);
   const timelineLoadTimerRef = useRef(null);
 
+  useLayoutEffect(() => {
+    if (!isSettingsOnboardingVisible) {
+      setSettingsOnboardingAnchor(null);
+      return undefined;
+    }
+
+    const updateAnchor = () => {
+      const source = scheduleSettingsButtonRef.current;
+      const prototype = source?.closest(".mobile-prototype");
+      if (!source || !prototype) return;
+
+      const sourceRect = source.getBoundingClientRect();
+      const prototypeRect = prototype.getBoundingClientRect();
+      const nextAnchor = {
+        left: Math.round(sourceRect.left - prototypeRect.left + (sourceRect.width - 40) / 2),
+        top: Math.round(sourceRect.top - prototypeRect.top + (sourceRect.height - 40) / 2),
+      };
+
+      setSettingsOnboardingAnchor((currentAnchor) => (
+        currentAnchor?.left === nextAnchor.left && currentAnchor?.top === nextAnchor.top
+          ? currentAnchor
+          : nextAnchor
+      ));
+    };
+
+    updateAnchor();
+    window.addEventListener("resize", updateAnchor);
+    screenRef.current?.addEventListener("scroll", updateAnchor, { passive: true });
+
+    return () => {
+      window.removeEventListener("resize", updateAnchor);
+      screenRef.current?.removeEventListener("scroll", updateAnchor);
+    };
+  }, [isSettingsOnboardingVisible]);
+
   useEffect(() => {
     window.localStorage.setItem(prototypeStorageKey, JSON.stringify({
       bookedTasks,
       defaultStateVersion: prototypeDefaultStateVersion,
       favoriteCollections,
+      settingsOnboardingVersion: isSettingsOnboardingVisible ? settingsOnboardingVersion - 1 : settingsOnboardingVersion,
     }));
-  }, [bookedTasks, favoriteCollections]);
+  }, [bookedTasks, favoriteCollections, isSettingsOnboardingVisible]);
 
   useEffect(() => {
     const timeline = document.querySelector(".date-timeline");
@@ -2356,6 +2395,7 @@ export function App() {
                     setIsSettingsOnboardingVisible(false);
                     setCurrentView("settings");
                   }}
+                  ref={scheduleSettingsButtonRef}
                   type="button"
                 >
                   <img alt="" src={assetUrl("schedule_ic.svg")} />
@@ -2630,7 +2670,14 @@ export function App() {
       />}
 
       {currentView === "tasks" && isSettingsOnboardingVisible && (
-        <div className="settings-onboarding" role="presentation">
+        <div
+          className="settings-onboarding"
+          role="presentation"
+          style={settingsOnboardingAnchor ? {
+            "--settings-onboarding-target-left": `${settingsOnboardingAnchor.left}px`,
+            "--settings-onboarding-target-top": `${settingsOnboardingAnchor.top}px`,
+          } : undefined}
+        >
           <button
             aria-label="Закрыть подсказку настроек"
             className="settings-onboarding-dismiss"

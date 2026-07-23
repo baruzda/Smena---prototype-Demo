@@ -25,7 +25,15 @@ test("подсказка настроек возвращается после п
   await page.reload();
 
   await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Закрыть подсказку настроек", exact: true }).click({ position: { x: 24, y: 320 } });
+  const [onboardingTarget, settingsButton] = await Promise.all([
+    page.locator(".settings-onboarding-target").boundingBox(),
+    page.locator(".filter-icon-button-availability").boundingBox(),
+  ]);
+  expect(onboardingTarget).not.toBeNull();
+  expect(settingsButton).not.toBeNull();
+  expect(onboardingTarget.x + onboardingTarget.width / 2).toBeCloseTo(settingsButton.x + settingsButton.width / 2, 0);
+  expect(onboardingTarget.y + onboardingTarget.height / 2).toBeCloseTo(settingsButton.y + settingsButton.height / 2, 0);
+  await dismissSettingsOnboarding(page);
   await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeHidden();
 
   await page.reload();
