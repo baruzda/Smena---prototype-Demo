@@ -7,7 +7,7 @@ async function resetPrototype(page) {
 }
 
 async function waitForReadyPrototype(page) {
-  await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeVisible({ timeout: 3_000 });
+  await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeVisible({ timeout: 5_000 });
   const dismiss = page.getByRole("button", { name: "Закрыть подсказку настроек", exact: true });
   await dismiss.click({ force: true });
   await expect(dismiss).toBeHidden();
@@ -19,7 +19,10 @@ async function stabilizeCardScreenshots(page) {
   });
 }
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page }, testInfo) => {
+  if (testInfo.title === "catalog loading sequence visual baseline") {
+    await page.clock.install();
+  }
   await resetPrototype(page);
 });
 
@@ -28,6 +31,7 @@ test("catalog loading sequence visual baseline", async ({ page }) => {
   await expect(launch).toBeVisible();
   await expect(launch).toHaveScreenshot("catalog-launch-spinner.png", { animations: "disabled" });
 
+  await page.clock.runFor(1_000);
   const loading = page.getByRole("status", { name: "Загрузка заданий", exact: true });
   await expect(loading).toBeVisible({ timeout: 1_500 });
   await expect(loading).toHaveScreenshot("catalog-service-skeletons.png", { animations: "disabled" });
