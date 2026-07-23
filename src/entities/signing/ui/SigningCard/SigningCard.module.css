@@ -1,0 +1,122 @@
+.card {
+  background: #fff;
+  border: 1px solid rgb(0 0 0 / 0.12);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.top {
+  align-items: flex-start;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) 28px;
+}
+
+.copy { min-width: 0; }
+
+.status {
+  align-items: center;
+  display: inline-flex;
+  font-size: 14px;
+  line-height: 18px;
+  margin: 0 0 4px;
+}
+
+.status span {
+  background: currentcolor;
+  border-radius: 50%;
+  height: 6px;
+  margin-right: 4px;
+  width: 6px;
+}
+
+.success { color: #28a975; }
+.warning { color: #d87900; }
+
+.card h2 {
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 21px;
+  margin: 0;
+}
+
+.address {
+  color: #6c737d;
+  font-size: 14px;
+  line-height: 18px;
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.addressWithMetro { display: block; }
+
+.metroIcon {
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: -4px;
+}
+
+.brandLogo {
+  height: 28px;
+  margin: 0;
+  width: 28px;
+}
+
+.divider {
+  background: rgb(0 0 0 / 0.12);
+  height: 1px;
+  width: 100%;
+}
+
+.bottom {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.payment,
+.date p:first-child {
+  color: #000;
+  font-size: 18px;
+  line-height: 21px;
+  margin: 0;
+}
+
+.rate,
+.date p + p {
+  color: #6c737d;
+  font-size: 14px;
+  line-height: 18px;
+  margin: 2px 0 0;
+}
+
+.date {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.document,
+.deadline {
+  color: #6c737d;
+  font-size: 14px;
+  line-height: 18px;
+  margin: 0;
+}
+
+.primaryAction {
+  background: #f4f4f5;
+  border: 0;
+  border-radius: 100px;
+  color: #000;
+  cursor: pointer;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 14px;
+  height: 40px;
+  line-height: 18px;
+  width: 100%;
+}

@@ -1,0 +1,128 @@
+.card {
+  background: #fff;
+  border: 1px solid rgb(0 0 0 / 0.12);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 12px;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.header {
+  align-items: flex-start;
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.header > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.header h2 {
+  color: #000;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 21px;
+  margin: 0 0 8px;
+}
+
+.storeLocation {
+  display: block;
+}
+
+.brandLogo {
+  height: 32px;
+  margin: 0;
+  width: 32px;
+}
+
+.storeLocation p {
+  color: #6c737d;
+  display: block;
+  font-size: 14px;
+  line-height: 18px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.metroIcon {
+  display: inline-block;
+  height: 9px;
+  margin: 0 2px 0 0;
+  object-fit: contain;
+  width: 14px;
+}
+
+.kebab {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 100px;
+  color: #000;
+  cursor: pointer;
+  display: inline-flex;
+  height: 40px;
+  justify-content: center;
+  margin: -8px -8px 0 0;
+  padding: 0;
+  width: 40px;
+}
+
+.kebab img {
+  height: 24px;
+  width: 24px;
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%;
+}
+
+.chip {
+  align-items: center;
+  background: rgb(0 0 0 / 5%);
+  border-radius: 6px;
+  color: #000;
+  display: inline-flex;
+  font-size: 14px;
+  height: 32px;
+  line-height: 18px;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.apply {
+  background: #f4f4f5;
+  border: 0;
+  border-radius: 100px;
+  color: #000;
+  cursor: pointer;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 14px;
+  height: 40px;
+  line-height: 18px;
+  padding: 0 20px;
+  width: 100%;
+}
+
+.kebab:focus-visible,
+.apply:focus-visible {
+  outline: 2px solid #6446ff;
+  outline-offset: 2px;
+}

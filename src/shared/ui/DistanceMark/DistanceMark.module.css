@@ -1,0 +1,7 @@
+.mark {
+  display: inline-block;
+  height: 16px;
+  margin: 0 2px 0 1px;
+  vertical-align: -3px;
+  width: 16px;
+}
