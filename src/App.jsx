@@ -77,8 +77,6 @@ const emptyFilters = { brands: [], minimumPayment: "", service: "" };
 const emptyAvailabilityTime = { from: "", to: "", preset: null, presets: [] };
 
 const prototypeDefaultStateVersion = 4;
-const settingsOnboardingVersion = 3;
-
 const availabilityTimePresets = [
   { id: "all-day", label: "весь день", from: "8:00", to: "22:00" },
   { id: "morning", label: "утро", from: "8:00", to: "12:00" },
@@ -806,6 +804,14 @@ function TimelineLoadingState() {
     <section aria-label="Загрузка заданий" className="timeline-loading-state" role="status">
       <TaskSkeletonCard />
       <TaskSkeletonCard />
+    </section>
+  );
+}
+
+function ServiceLaunchScreen() {
+  return (
+    <section aria-label="Запуск сервиса" className="service-launch-screen" role="status">
+      <span aria-hidden="true" className="service-launch-spinner" />
     </section>
   );
 }
@@ -1970,8 +1976,9 @@ export function App() {
   const [selectedAvailabilityDuration, setSelectedAvailabilityDuration] = useState([]);
   const [bookedTasks, setBookedTasks] = useState(persistedState.bookedTasks || []);
   const [currentView, setCurrentView] = useState("tasks");
-  const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(() => persistedState.settingsOnboardingVersion !== settingsOnboardingVersion);
+  const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(true);
   const [settingsOnboardingAnchor, setSettingsOnboardingAnchor] = useState(null);
+  const [startupPhase, setStartupPhase] = useState("spinner");
   const [selectedTask, setSelectedTask] = useState(null);
   const [scrollTargetDay, setScrollTargetDay] = useState(null);
   const [isTimelineLoading, setIsTimelineLoading] = useState(false);
@@ -1985,7 +1992,7 @@ export function App() {
   const timelineLoadTimerRef = useRef(null);
 
   useLayoutEffect(() => {
-    if (!isSettingsOnboardingVisible) {
+    if (!isSettingsOnboardingVisible || startupPhase === "spinner") {
       setSettingsOnboardingAnchor(null);
       return undefined;
     }
@@ -2017,16 +2024,25 @@ export function App() {
       window.removeEventListener("resize", updateAnchor);
       screenRef.current?.removeEventListener("scroll", updateAnchor);
     };
-  }, [isSettingsOnboardingVisible]);
+  }, [isSettingsOnboardingVisible, startupPhase]);
+
+  useEffect(() => {
+    const showSkeletonsTimer = window.setTimeout(() => setStartupPhase("skeleton"), 1000);
+    const showTasksTimer = window.setTimeout(() => setStartupPhase("ready"), 2000);
+
+    return () => {
+      window.clearTimeout(showSkeletonsTimer);
+      window.clearTimeout(showTasksTimer);
+    };
+  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(prototypeStorageKey, JSON.stringify({
       bookedTasks,
       defaultStateVersion: prototypeDefaultStateVersion,
       favoriteCollections,
-      settingsOnboardingVersion: isSettingsOnboardingVisible ? settingsOnboardingVersion - 1 : settingsOnboardingVersion,
     }));
-  }, [bookedTasks, favoriteCollections, isSettingsOnboardingVisible]);
+  }, [bookedTasks, favoriteCollections]);
 
   useEffect(() => {
     const timeline = document.querySelector(".date-timeline");
@@ -2317,6 +2333,12 @@ export function App() {
     };
   }
 
+  if (startupPhase === "spinner") {
+    return <main className="mobile-prototype" aria-label="Смена X5"><ServiceLaunchScreen /></main>;
+  }
+
+  const isTaskListLoading = isTimelineLoading || startupPhase === "skeleton";
+
   return (
     <main className="mobile-prototype" aria-label="Смена X5">
       <div className="status-bar" aria-label="9:41">
@@ -2431,7 +2453,7 @@ export function App() {
           </div>
         </section>}
 
-        <section aria-label={activeTab === 2 ? "Мои задания" : activeTab === 1 ? "Избранное" : "Список заданий"} className={isTimelineLoading ? "task-list task-list-loading" : "task-list"}>
+        <section aria-label={activeTab === 2 ? "Мои задания" : activeTab === 1 ? "Избранное" : "Список заданий"} className={isTaskListLoading ? "task-list task-list-loading" : "task-list"}>
           {activeTab === 1 ? <FavoriteCollectionsView
             collections={favoriteCollections}
             onApplyCollection={(collection) => {
@@ -2449,7 +2471,7 @@ export function App() {
               setCurrentView("filters");
             }}
             onRemoveCollection={(id) => setFavoriteCollections((collections) => collections.filter((collection) => collection.id !== id))}
-          /> : activeTab === 2 ? <MyTasksView bookedTasks={bookedTasks} /> : activeTab === 3 ? <SigningTasksView /> : isTimelineLoading ? <TimelineLoadingState /> : dayGroups.map((day, dayIndex) => {
+          /> : activeTab === 2 ? <MyTasksView bookedTasks={bookedTasks} /> : activeTab === 3 ? <SigningTasksView /> : isTaskListLoading ? <TimelineLoadingState /> : dayGroups.map((day, dayIndex) => {
             const employeeShifts = getEmployeeShifts(day);
             const hasDemoEmptyDay = day.date === "14";
             const dayTasks = hasDemoEmptyDay ? [] : getLocationTasks(day, dayIndex);
@@ -2669,7 +2691,7 @@ export function App() {
         }}
       />}
 
-      {currentView === "tasks" && isSettingsOnboardingVisible && (
+      {currentView === "tasks" && startupPhase === "ready" && isSettingsOnboardingVisible && (
         <div
           className="settings-onboarding"
           role="presentation"

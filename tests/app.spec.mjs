@@ -12,18 +12,16 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-
+  await expect(page.getByRole("status", { name: "Запуск сервиса", exact: true })).toBeVisible();
+  await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeVisible({ timeout: 2500 });
   await dismissSettingsOnboarding(page);
-  await page.waitForFunction(() => {
-    const state = JSON.parse(localStorage.getItem("x5-shift-prototype-state") || "{}");
-    return Number.isInteger(state.defaultStateVersion) && state.defaultStateVersion > 0;
-  });
 });
 
-test("подсказка настроек возвращается после перезагрузки и ведёт в настройки", async ({ page }) => {
-  await page.evaluate(() => localStorage.clear());
+test("запуск сервиса показывает спиннер, скелетоны и онбординг на каждом reload", async ({ page }) => {
   await page.reload();
 
+  await expect(page.getByRole("status", { name: "Запуск сервиса", exact: true })).toBeVisible();
+  await expect(page.locator(".task-skeleton-card")).toHaveCount(2, { timeout: 1500 });
   await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeVisible();
   const [onboardingTarget, settingsButton] = await Promise.all([
     page.locator(".settings-onboarding-target").boundingBox(),
@@ -37,8 +35,7 @@ test("подсказка настроек возвращается после п
   await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeHidden();
 
   await page.reload();
-  await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeVisible();
-
+  await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeVisible({ timeout: 2500 });
   await page.getByRole("button", { name: "Открыть настройки расписания", exact: true }).click();
   await expect(page.getByRole("heading", { name: "настройки расписания", exact: true })).toBeVisible();
 });

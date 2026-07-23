@@ -14,4 +14,4 @@ Prototype motion preference: use smooth, purposeful animations for state changes
 
 Favorite store card rule: the retail brand logo is a standalone leading mark for the store row; the metro icon belongs inline to the address/station text and must not wrap away as a separate symbol beside the brand logo.
 
-Default demo state rule: every full prototype reload must start on the tasks feed with the settings onboarding overlay/tooltip visible, the "подходит мне" toggle enabled, empty filters, empty search location/radius, and empty availability settings. Do not persist dismissed onboarding or configured filters/location/availability across reloads.
+Default demo state rule: every full prototype reload starts with a centered service spinner for 1 second, then the tasks feed with two task-card skeletons for 1 second, then the settings onboarding overlay/tooltip. The "подходит мне" toggle stays enabled; filters, search location/radius, and availability settings start empty. Do not persist a dismissed onboarding or configured filters/location/availability across reloads.

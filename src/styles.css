@@ -273,6 +273,10 @@ body {
   .settings-onboarding {
     animation: none;
   }
+
+  .service-launch-spinner {
+    animation: none;
+  }
 }
 
 h1 {
@@ -706,6 +710,26 @@ h1 {
 
 .task-list-loading {
   min-height: 1400px;
+}
+
+.service-launch-screen {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+}
+
+.service-launch-spinner {
+  animation: service-launch-spin 900ms linear infinite;
+  border: 3px solid rgb(83 55 236 / 20%);
+  border-radius: 50%;
+  border-top-color: #5337ec;
+  height: 32px;
+  width: 32px;
+}
+
+@keyframes service-launch-spin {
+  to { transform: rotate(360deg); }
 }
 
 .timeline-loading-state {
