@@ -905,12 +905,9 @@ h1 {
 }
 
 .metro-icon {
-  background: var(--metro-color);
   display: block;
   flex: 0 0 14px;
   height: 18px;
-  -webkit-mask: var(--metro-icon) center / contain no-repeat;
-  mask: var(--metro-icon) center / contain no-repeat;
   width: 14px;
 }
 
@@ -1383,7 +1380,7 @@ h1 {
 }
 
 .availability-calendar-section .availability-legend { margin-top: 16px; }
-.legend-overtime, .availability-day-overtime { background-image: repeating-linear-gradient(135deg, transparent 0 4px, rgb(0 0 0 / 0.08) 4px 7px); }
+.legend-x5-shift, .availability-day-x5-shift { background-image: repeating-linear-gradient(135deg, transparent 0 4px, rgb(0 0 0 / 0.08) 4px 7px); }
 
 .availability-month-nav { align-items: center; background: #fff; display: flex; height: 48px; justify-content: space-between; margin-bottom: 16px; position: sticky; top: 0; z-index: 1; }
 .availability-month-nav h2 { font-size: 24px; line-height: 26px; margin: 0; }

@@ -7,16 +7,11 @@ import { TaskCardShell } from "./features/tasks/components/TaskCardShell/index.j
 import { taskCardStyles } from "./features/tasks/components/TaskCard/index.js";
 
 const assetUrl = (name) => `${import.meta.env.BASE_URL}figma-assets/${name}`;
-const cssAssetUrl = (name) => {
-  const href = typeof window === "undefined" ? assetUrl(name) : new URL(assetUrl(name), window.location.href).href;
-  return `url("${href}")`;
-};
-
 const tabs = ["задания", "избранное", "мои задания", "задания на подписание"];
-const metroIconAssets = {
-  msk: "metro-msk.svg",
-  spb: "metro-spb.svg",
-  nino: "metro-nino.svg",
+const metroIconPaths = {
+  msk: "M6.86577 9.42218C7.17552 8.94747 7.48649 8.4107 7.78377 7.92562L9.62751 4.91211C9.82141 5.33387 10.0149 5.82291 10.1978 6.25469L11.2939 8.84062L12.3706 11.3788C12.5415 11.782 12.7498 12.2396 12.9055 12.6423L13.8672 12.6414L13.8677 13.8137L8.91435 13.8138C8.9073 13.43 8.91313 13.0255 8.91282 12.6403L9.64631 12.6414C9.60218 12.5048 9.54007 12.351 9.48868 12.2149L9.13706 11.2765C9.07249 11.1039 8.99414 10.9083 8.93816 10.7349C8.85244 10.8572 8.76582 10.9926 8.68583 11.1188C8.0926 12.0548 7.45717 12.9746 6.86763 13.9121C6.72923 13.671 6.49912 13.3421 6.34091 13.0994L5.29392 11.4917C5.16722 11.2965 4.90366 10.9191 4.80348 10.7306C4.57554 11.3678 4.3175 12.0041 4.08989 12.6425C4.32395 12.6357 4.58966 12.6411 4.82618 12.6408L4.82604 13.8136L-0.126558 13.8137C-0.138715 13.448 -0.127886 13.0109 -0.127794 12.6405C0.190856 12.6393 0.509507 12.6402 0.828137 12.6429C1.06749 12.0984 1.29812 11.5406 1.53018 10.9924L2.6371 8.38351L3.58718 6.14398C3.75775 5.74187 3.94209 5.32372 4.10366 4.92023C4.15104 4.95599 4.66252 5.81442 4.72641 5.91898L6.17844 8.29488C6.39142 8.6438 6.67504 9.07332 6.86577 9.42218Z",
+  spb: "M9.12631 3.94434C9.66034 4.15789 10.1632 4.44166 10.6214 4.78809L10.8148 4.94043L11.0482 5.14062C12.1904 6.17087 12.9747 7.61548 13.1244 9.16113C13.3041 11.0175 12.6624 12.5983 11.5179 13.9961L11.4574 14.0693L8.58822 14.0703L8.50229 13.6895C8.63669 13.6255 8.76574 13.5641 8.89096 13.498C10.1023 12.8587 11.0157 11.8423 11.4163 10.5332C11.7565 9.42414 11.6453 8.22568 11.1068 7.19824C10.997 6.9915 10.8241 6.71049 10.6224 6.46094C10.4151 6.20453 10.1975 6.00618 10.0052 5.93066C9.97613 5.91936 9.92707 5.913 9.86654 5.91992C9.80686 5.9268 9.75156 5.94545 9.7142 5.9668C9.6424 6.00802 9.58835 6.07597 9.54233 6.17773C9.49372 6.2853 9.46525 6.40269 9.42416 6.54004L9.29819 6.96387L9.29721 6.9668L7.75424 12.0693C7.57389 12.666 7.3877 13.3333 7.18881 13.9287L6.99545 14.5078L6.80893 13.9268C6.59592 13.2629 6.39601 12.5705 6.19565 11.9072L5.08627 8.23926C4.88598 7.57702 4.69102 6.91852 4.48569 6.25879C4.44028 6.11312 4.36433 6.01583 4.28061 5.96484C4.20138 5.91664 4.09472 5.8971 3.95346 5.94434C3.80853 5.99455 3.69096 6.11623 3.5433 6.27539C2.42476 7.48098 2.09767 9.21983 2.65854 10.7656C3.0301 11.7896 3.73263 12.6351 4.65072 13.2305C4.92938 13.4112 5.1897 13.5426 5.49936 13.6904L5.41049 14.0713C4.50589 14.0567 3.55005 14.0663 2.63901 14.0713H2.54721L2.48666 14.002C2.01491 13.4609 1.57718 12.7382 1.306 12.0791C0.690356 10.6006 0.690281 8.9365 1.306 7.45801C1.97271 5.85961 3.25356 4.59538 4.86068 3.9502L4.97787 3.90332L5.07065 3.98828C5.09345 4.00917 5.1058 4.0309 5.10776 4.03418C5.11221 4.04165 5.11492 4.04838 5.11654 4.05176C5.11989 4.05875 5.12298 4.0649 5.12436 4.06836C5.12734 4.0759 5.13063 4.08454 5.13315 4.0918C5.1384 4.10697 5.14499 4.12726 5.15268 4.15137C5.16842 4.20075 5.19018 4.27173 5.21713 4.36035C5.27112 4.53786 5.34689 4.79053 5.43686 5.09375C5.61682 5.70027 5.85528 6.51292 6.09897 7.34375C6.43778 8.49893 6.78701 9.68858 7.00033 10.4141C7.01781 10.3517 7.03559 10.2908 7.05209 10.2344L8.85971 4.07324L8.92123 3.8623L9.12631 3.94434Z",
+  nino: "M7.00076 9.69983L9.98084 4.85547L14 13.8551L11.3165 13.8551C10.9222 12.9806 10.4909 12.0889 10.0834 11.2176C9.88074 10.784 9.67631 10.3296 9.46605 9.90117L7.00081 13.3249C6.92986 13.2378 6.83933 13.104 6.7724 13.011L6.33417 12.4022L5.16402 10.776C4.95964 10.492 4.74373 10.1796 4.5328 9.90258C4.31959 10.333 4.10782 10.8087 3.90252 11.2475L2.68268 13.8555L0 13.8548C0.199873 13.3917 0.416481 12.9213 0.622523 12.46L1.84396 9.72528L4.01673 4.86339C4.05446 4.89264 4.58705 5.77794 4.66286 5.90121L7.00076 9.69983Z",
 };
 
 const defaultCollectionBrands = ["pyaterochka", "perekrestok", "vprok", "chizhik"];
@@ -62,13 +57,16 @@ function buildAvailabilityCalendar(monthOffset) {
     const isCurrentMonth = date.getMonth() === shownMonth.getMonth();
     const isPast = date < prototypeToday;
     const day = date.getDate();
+    const weekIndex = Math.floor(index / 7);
+    const isX5Shift = isCurrentMonth && weekIndex % 2 === 1 && index % 7 === 2;
     const isFree = isCurrentMonth && !isPast && (day - 1) % 4 < 2;
     return {
       id: date.toISOString().slice(0, 10),
       day,
+      isX5Shift,
       month: isCurrentMonth ? "current" : "outside",
       selectionKey: monthOffset === 0 ? String(day) : `next-${day}`,
-      status: isFree ? "free" : "busy",
+      status: isFree && !isX5Shift ? "free" : "busy",
       weekday: calendarWeekdays[(date.getDay() + 6) % 7],
     };
   });
@@ -820,11 +818,15 @@ function BrandMark({ brand }) {
 
 function MetroIcon({ metro }) {
   return (
-    <span
+    <svg
       aria-label={metro.label}
       className="metro-icon"
-      style={{ "--metro-color": metro.color, "--metro-icon": cssAssetUrl(metroIconAssets[metro.city]) }}
-    />
+      fill="none"
+      role="img"
+      viewBox="0 0 14 18"
+    >
+      <path d={metroIconPaths[metro.city]} fill={metro.color} />
+    </svg>
   );
 }
 
@@ -1519,7 +1521,7 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
               const className = [
                 "availability-day",
                 `availability-day-${day.status}`,
-                day.status === "busy" && day.day % 3 === 0 ? "availability-day-overtime" : "",
+                day.isX5Shift ? "availability-day-x5-shift" : "",
                 day.month !== "current" || isPast ? "availability-day-outside" : "",
                 isSelected ? "availability-day-selected" : "",
               ].filter(Boolean).join(" ");
@@ -1543,7 +1545,7 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
           </div>
           <div className="availability-legend" aria-label="Обозначения календаря">
             <span><i className="legend-swatch legend-busy" />занято</span>
-            <span><i className="legend-swatch legend-overtime" />сверхурочные</span>
+            <span><i className="legend-swatch legend-x5-shift" />Х5-Смена</span>
             <span><i className="legend-swatch legend-free" />свободно</span>
             <span><i className="legend-swatch legend-selected" />выбрано</span>
           </div>
