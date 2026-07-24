@@ -20,13 +20,14 @@
 | `подходит вам` | `TaskCard cardVariant="match"` | `gig-task-*` | white + stroke | violet badge `подходит вам` + title + address + brand | payment/rate + hours/break | Реализовано |
 | `status+` | `TaskCard cardVariant="status-plus"` | `gig-task-*` | white + stroke | status label + title + address + brand | old/new payment + old/new time | Реализован отдельный mode |
 | `status` | `TaskCard cardVariant="status"` | `gig-task-*` | white + stroke | status label + title + address + brand | payment/rate + time/date | Реализован отдельный mode |
-| `нижние теги` | `TaskCard cardVariant="bottom-tags"` | `gig-task-*` | white + stroke | title + address + brand | payment/rate + hours/break + bottom restriction chips | Реализован отдельный mode |
+| `теги ограничений` | `TaskCard cardVariant="top-tags"` | `task-card-top-tags-*` | white + stroke | orange restriction chips + title + address + brand | payment/rate + hours/break | Реализован отдельный mode |
 | `специально для вас` | `TaskCard cardVariant="special"` | `gig-task-*`, `special-card-*` | white + violet stroke | violet badge + timer + title + address + brand | payment/rate + hours/break + CTA | Реализовано |
-| `основная смена` | `EmployeeShiftCard` with `shift.type === "primary"` | `employee-shift-*` | grey-light, no stroke | grey badge + title + address + brand | date/time | Реализовано отдельным namespace |
-| `сверхурочная смена` | `EmployeeShiftCard` with `shift.type !== "primary"` | `employee-shift-*` | grey-light, no stroke | grey badge + title + address + brand | date/time | Зарезервировано для смен, не для услуг |
+| `основная смена` | `EmployeeShiftCard` with `shift.type === "primary"` | `employee-shift-*` | `Card variant="filled"`, no stroke | grey badge + title + address + brand | акцент: дата; secondary: день недели; time | Реализовано отдельным namespace |
+| `сверхурочная смена` | `EmployeeShiftCard` with `shift.type !== "primary"` | `employee-shift-*` | `Card variant="filled"`, no stroke | grey badge + title + address + brand | акцент: дата; secondary: день недели; time | Реализовано для смен, не для услуг |
+| `моё задание` | `MyTaskCard` | `my-task-*` | `Card variant="outlined"` | status + title + address + brand | payment/rate + date/hours | Реализовано отдельным namespace |
 | `подходящих услуг больше нет` | `TaskMessageCard variant="no-more"` | `task-message-*` | grey-light | centered title + explanatory text | subscribe + show all | Реализовано |
 | `в этот день нет подходящих услуг` | `TaskMessageCard variant="empty-day-filtered"` | `task-message-*` | grey-light | centered title + explanatory text | subscribe + show all | Реализовано |
-| `в этот день услуг нет` | `NoTasksForDayCard` | `task-message-*` | grey-light | centered title | subscribe | Реализовано |
+| `в этот день услуг нет` | `NoTasksForDayCard` (день без смен и заданий) | `task-message-*` | grey-light | centered title | subscribe | Реализовано |
 | `избранное-подборка` | saved collection card | `favorite-collection-*` | white + stroke | collection title + logos + menu | chips + CTA | Реализовано |
 | `избранное - магазин` | demo store card in stores tab | `favorite-store-*` | white + stroke | title + store/address + menu | chips + CTA | Реализовано |
 
@@ -38,10 +39,6 @@
 - `details-*` нельзя использовать в карточках ленты.
 - Бейджи не взаимозаменяемы: `gig-task-badge`, `employee-shift-badge`, `details-match-badge`, `my-task-status` — разные элементы.
 - Нельзя использовать текстовые псевдо-иконки (`☆`, `⌄`) вместо экспортированных assets, если asset уже есть.
-- `TaskMessageCard` обязан получать причину скрытия: `filters`, `availability` или `mixed`. Текст причины:
-  - `filters`: «ещё N услуг скрыты из-за фильтров» / «N услуг скрыты из-за фильтров»;
-  - `availability`: «ещё N услуг скрыты из-за настроек доступности» / «N услуг скрыты из-за настроек доступности»;
-  - `mixed`: «ещё N услуг скрыты из-за фильтров или выбранного времени» / «N услуг скрыты из-за фильтров или выбранного времени».
 
 ## Чеклист перед деплоем
 

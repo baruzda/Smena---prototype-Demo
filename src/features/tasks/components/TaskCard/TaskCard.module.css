@@ -3,3 +3,4 @@
 .payment p { margin: 0; color: #000; font-size: 18px; line-height: 21px; }.payment p + p { margin-top: 2px; color: #6c737d; font-size: 14px; line-height: 18px; }
 .time { flex: 0 0 auto; text-align: right; }.time p { margin: 4px 0 0; color: #6c737d; font-size: 14px; line-height: 18px; white-space: nowrap; }.time > p:first-child { margin: 0; color: #000; font-size: 18px; letter-spacing: 0; line-height: 21px; }
 .special { box-shadow: inset 0 0 0 1px #c9bffa; }
+.topTags { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 2px; }

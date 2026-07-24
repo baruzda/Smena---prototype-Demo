@@ -857,7 +857,7 @@ function getShortDayLabel(day) {
 function getGigTaskCardVariant(task, { revealRestrictionTags = false } = {}) {
   const restrictionCount = task.restrictionTags?.length ?? 0;
   if (task.variant === "special" && restrictionCount === 0) return "special";
-  if (restrictionCount > 0) return revealRestrictionTags ? "bottom-tags" : "default";
+  if (restrictionCount > 0) return revealRestrictionTags ? "top-tags" : "default";
   if (task.badge) return "match";
   return "default";
 }
@@ -867,7 +867,7 @@ function TaskCard({ day, revealRestrictionTags = false, task, onOpen }) {
   const isPersonalOffer = cardVariant === "special";
   const showMatchBadge = cardVariant === "match";
   const showStatus = cardVariant === "status" || cardVariant === "status-plus";
-  const showRestrictionTags = cardVariant === "bottom-tags";
+  const showRestrictionTags = cardVariant === "top-tags";
   return (
     <TaskCardShell
       ariaLabel={onOpen ? `Подробнее: ${task.title}` : undefined}
@@ -875,6 +875,7 @@ function TaskCard({ day, revealRestrictionTags = false, task, onOpen }) {
       onOpen={onOpen}
       brand={<BrandMark brand={task.brand} />}
       header={<>
+          {showRestrictionTags && <span className={taskCardStyles.topTags}>{task.restrictionTags.map((tag) => <Badge key={tag} size="small" tone="warning" variant="soft">{tag}</Badge>)}</span>}
           {showMatchBadge && <Badge className="gig-task-badge" tone="accent" variant="soft">подходит вам</Badge>}
           {showStatus && <Badge className="gig-task-status-label" leadingIcon={<i />} tone="success" variant="plain">{cardVariant === "status-plus" ? "есть ограничения" : "не подходит"}</Badge>}
           {isPersonalOffer && <span className="special-card-badges"><Badge tone="accent">специально для вас</Badge><OfferCountdown render={({ value, ariaLabel }) => <Badge aria-label={ariaLabel} tone="accent">{value}</Badge>} /></span>}
@@ -894,7 +895,6 @@ function TaskCard({ day, revealRestrictionTags = false, task, onOpen }) {
           <p>{task.hours}</p>
           <p>{task.breakInfo}</p>
         </div></>}
-      restrictions={showRestrictionTags && task.restrictionTags.map((tag) => <Badge key={tag} size="small" tone="warning" variant="soft">{tag}</Badge>)}
       action={isPersonalOffer && <Button fullWidth onClick={(event) => { event.stopPropagation(); onOpen?.(); }} size="small" variant="secondary">принять задание</Button>}
     />
   );
@@ -2333,7 +2333,7 @@ export function App() {
   const persistedState = persistedStateRef.current;
   const [activeTab, setActiveTab] = useState(0);
   const [activeDay, setActiveDay] = useState(days[0].id);
-  const [onlyMatching, setOnlyMatching] = useState(true);
+  const [onlyMatching, setOnlyMatching] = useState(false);
   const [networkFilter, setNetworkFilter] = useState("торговая сеть");
   const [filterScrollState, setFilterScrollState] = useState("at-start");
   const [isBottomChromeHidden, setIsBottomChromeHidden] = useState(false);
@@ -2756,8 +2756,9 @@ export function App() {
     const hasExplicitAvailability = Boolean(
       availabilityTime.from || availabilityTime.to || availabilityTime.preset || availabilityTime.presets?.length,
     );
+    const effectiveAvailability = hasExplicitAvailability ? availabilityTime : defaultAvailabilityTime;
     return isAvailableForMatching(date)
-      && (!hasExplicitAvailability || isTaskWithinAvailability(task, availabilityTime));
+      && isTaskWithinAvailability(task, effectiveAvailability);
   }
 
   function getTasksForFeed(tasks, date) {

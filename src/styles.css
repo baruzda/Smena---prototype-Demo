@@ -791,8 +791,7 @@ h1 {
 }
 
 .gig-task-card-status,
-.gig-task-card-status-plus,
-.gig-task-card-bottom-tags {
+.gig-task-card-status-plus {
   background: #fff;
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
 }
