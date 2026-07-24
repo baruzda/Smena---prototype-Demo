@@ -48,8 +48,8 @@ Marker `suitable_for_you` — отдельная ось presentation model и н
 | `catalog.partially_hidden` | `PartiallyHiddenState` | `CatalogStates.module.css` | verified |
 | `hidden_services.message` | `HiddenServicesState` | `CatalogStates.module.css` | verified |
 | `catalog.empty_day` | `EmptyDayState` | `CatalogStates.module.css` | verified |
-| `catalog.error` | `CatalogErrorState` | — | planned; product contract unresolved |
-| `catalog.stale` | `CatalogStaleState` | — | planned; product contract unresolved |
+| `catalog.error` | `CatalogErrorState` | `CatalogStates.module.css` | verified; DEC-015 full replacement without cached data |
+| `catalog.stale` | `CatalogStaleState` | `CatalogStates.module.css` | verified; DEC-015 inline warning with cached cards |
 
 ## Запрещённые пересечения
 
@@ -76,5 +76,7 @@ Marker `suitable_for_you` — отдельная ось presentation model и н
    - `подходящих услуг больше нет`;
    - `в этот день нет подходящих услуг`;
    - `в этот день услуг нет`.
+   - `не удалось обновить каталог`;
+   - stale-предупреждение вместе с карточками.
 5. Проверить `tests/card-variants.visual.spec.mjs`: на каждый variant из registry должен быть отдельный snapshot.
 6. Если правка затрагивает карточки, обновить эту матрицу и component bindings в том же коммите.

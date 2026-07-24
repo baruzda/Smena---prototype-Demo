@@ -4,8 +4,12 @@ export function resolveEmployeeShiftPresentation(shift, day) {
     templateId: "employee_shift_card",
     structuralVariant,
     marker: structuralVariant === "primary_shift" ? "основная смена" : "сверхурочная смена",
-    date: day?.label?.replace(/^сегодня,\s*/i, "") ?? "1 июня",
-    secondaryDate: day?.secondaryLabel ?? "",
+    date: day?.calendarDate?.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })
+      ?? day?.label?.replace(/^(сегодня|завтра),\s*/i, "")
+      ?? "1 июня",
+    secondaryDate: day?.weekday
+      ? ({ пн: "понедельник", вт: "вторник", ср: "среда", чт: "четверг", пт: "пятница", сб: "суббота", вс: "воскресенье" })[day.weekday]
+      : day?.secondaryLabel ?? "",
     placement: "tasks",
     section: "employee_schedule",
     order: 50,

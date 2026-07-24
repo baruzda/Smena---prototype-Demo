@@ -20,7 +20,30 @@
   align-items: flex-start;
   display: flex;
   gap: 8px;
+  position: relative;
   width: 100%;
+}
+
+.menu {
+  background: #fff;
+  border: 1px solid rgb(0 0 0 / 0.12);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  padding: 4px;
+  position: absolute;
+  right: 12px;
+  top: 42px;
+  z-index: 3;
+}
+
+.menu button {
+  background: transparent;
+  border: 0;
+  color: #d43c32;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 14px;
+  padding: 10px 12px;
+  white-space: nowrap;
 }
 
 .header > div {

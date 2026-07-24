@@ -1,0 +1,31 @@
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  border: 0;
+  border-radius: var(--radius-control);
+  padding: 0;
+  cursor: pointer;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18px;
+  transition: opacity var(--duration-fast) ease;
+}
+
+.button:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
+.button:disabled { cursor: default; opacity: .5; }
+.fullWidth { width: 100%; }
+.size-small { min-height: 32px; }
+.size-medium { min-height: 40px; }
+.variant-primary { padding: 0 20px; color: var(--color-text-primary); background: var(--color-surface-primary); }
+.variant-secondary { padding: 0 16px; color: var(--color-text-primary); background: var(--color-surface-secondary); }
+.variant-ghost { color: #5233f2; background: transparent; }
+.icon { display: inline-flex; width: 16px; height: 16px; flex: 0 0 16px; align-items: center; justify-content: center; }
+.icon > img { display: block; width: 16px; height: 16px; }
+.loading .label, .loading .icon { visibility: hidden; }
+.spinner { position: absolute; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin var(--duration-standard) linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 0s; } }

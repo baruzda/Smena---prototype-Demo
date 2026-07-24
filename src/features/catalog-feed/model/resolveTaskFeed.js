@@ -1,16 +1,44 @@
 import { getTaskHours, shiftsOverlap } from "../../../schedule-utils.js";
 
-export function getDistanceInMeters(distance) {
-  const value = Number.parseFloat(distance.replace(",", "."));
-  return distance.includes("км") ? value * 1000 : value;
+const DEFAULT_MATCHING_AVAILABILITY = Object.freeze({
+  from: "08:00",
+  preset: "all-day",
+  presets: Object.freeze(["all-day"]),
+  to: "22:00",
+});
+
+function normalizeSelection(value) {
+  const values = Array.isArray(value)
+    ? value
+    : typeof value === "string" && value.trim() ? [value] : [];
+  return [...new Set(values.map((item) => item.trim()).filter(Boolean))];
 }
 
-export function getPaymentValue(payment) {
-  const normalized = payment
+function getDayValue(record, day) {
+  return record?.[day.id] ?? record?.[day.date];
+}
+
+function normalizeDay(day, context) {
+  if (typeof day !== "string") return day;
+  return context.days?.find((candidate) => candidate.id === day || candidate.date === day)
+    ?? { date: day, id: day, weekday: undefined };
+}
+
+export function getDistanceInMeters(distance = "") {
+  const value = Number.parseFloat(String(distance).replace(",", "."));
+  return String(distance).includes("км") ? value * 1000 : value;
+}
+
+export function getPaymentValue(payment = "") {
+  const normalized = String(payment)
     .replace(/\s/g, "")
     .replace(/[^\d,.]/g, "")
     .replace(",", ".");
   return Number.parseFloat(normalized) || 0;
+}
+
+export function getHourlyRateValue(rate = "") {
+  return Number(String(rate).replace(/[^\d]/g, "")) || 0;
 }
 
 export function getTaskDuration(task) {
@@ -18,7 +46,7 @@ export function getTaskDuration(task) {
   return (end - start + 24) % 24;
 }
 
-export function isTaskWithinAvailability(task, availability) {
+export function isTaskWithinAvailability(task, availability = DEFAULT_MATCHING_AVAILABILITY) {
   const { end, start } = getTaskHours(task);
   const duration = getTaskDuration(task);
   const isWithinWindow = (from, to) => {
@@ -36,18 +64,18 @@ export function isTaskWithinAvailability(task, availability) {
     ? availability.presets
     : availability.preset ? [availability.preset] : [];
   const presets = [
-    { id: "all-day", from: "8:00", to: "22:00" },
-    { id: "morning", from: "8:00", to: "12:00" },
+    { id: "all-day", from: "08:00", to: "22:00" },
+    { id: "morning", from: "08:00", to: "12:00" },
     { id: "afternoon", from: "12:00", to: "16:00" },
     { id: "evening", from: "16:00", to: "22:00" },
-    { id: "night", from: "22:00", to: "6:00" },
+    { id: "night", from: "22:00", to: "06:00" },
   ].filter((preset) => selectedPresetIds.includes(preset.id));
 
   if (presets.length > 0) return presets.some((preset) => isWithinWindow(preset.from, preset.to));
   return isWithinWindow(availability.from, availability.to);
 }
 
-function matchesDurationPreference(task, preference) {
+function matchesDurationPreference(task, preference = []) {
   const duration = getTaskDuration(task);
   if (!preference.length) return true;
   return preference.some((option) => (
@@ -61,11 +89,15 @@ export function getSortedTasks(tasks, sortBy) {
   if (sortBy === "recommended") {
     return [...tasks].sort((first, second) => (second.recommendation ?? 0) - (first.recommendation ?? 0));
   }
-  return [...tasks].sort((first, second) => (
-    sortBy === "nearby"
-      ? getDistanceInMeters(first.distance) - getDistanceInMeters(second.distance)
-      : getPaymentValue(second.payment) - getPaymentValue(first.payment)
-  ));
+  return [...tasks].sort((first, second) => {
+    if (sortBy === "nearby") {
+      return getDistanceInMeters(first.distance) - getDistanceInMeters(second.distance);
+    }
+    if (sortBy === "hourly-rate") {
+      return getHourlyRateValue(second.rate) - getHourlyRateValue(first.rate);
+    }
+    return getPaymentValue(second.payment) - getPaymentValue(first.payment);
+  });
 }
 
 export function getOrderedTasks(tasks, sortBy, hasAppliedSort) {
@@ -76,105 +108,95 @@ export function getOrderedTasks(tasks, sortBy, hasAppliedSort) {
   ];
 }
 
-function getHiddenReason(hiddenTasks) {
-  const kinds = new Set();
-  hiddenTasks.forEach((task) => {
-    task.restrictionTags.forEach((reason) => {
-      if (
-        reason === "Вне доступности"
-        || reason === "Пересекается со сменой"
-        || reason === "Пересекается с принятой услугой"
-      ) kinds.add("availability");
-      else kinds.add("filters");
-    });
-  });
-  if (kinds.size === 1) return [...kinds][0];
-  return "mixed";
+function isDayAvailable(day, context) {
+  if (getDayValue(context.availabilityByDate, day) !== "free") return false;
+  const selectedDates = context.selectedAvailabilityDates ?? [];
+  const selectedWeekdays = context.selectedAvailabilityWeekdays ?? [];
+  if (selectedDates.length === 0 && selectedWeekdays.length === 0) return true;
+  return selectedDates.includes(day.id)
+    || selectedDates.includes(day.date)
+    || selectedWeekdays.includes(day.weekday);
 }
 
-function isDayAvailable(date, context) {
-  if (context.availabilityByDate[date] !== "free") return false;
-  const hasManualAvailability = context.selectedAvailabilityDates.length > 0
-    || context.selectedAvailabilityWeekdays.length > 0;
-  if (!hasManualAvailability) return true;
-  const weekday = context.days.find((day) => day.date === date)?.weekday;
-  return context.selectedAvailabilityDates.includes(date)
-    || context.selectedAvailabilityWeekdays.includes(weekday);
-}
-
-function decorateTask(task, date, context) {
+function matchesCatalogFilters(task, context) {
+  const filters = context.appliedFilters ?? {};
   const maximumDistance = Number.isFinite(context.searchRadius) ? context.searchRadius * 1000 : Infinity;
-  const minimumPayment = Number.parseInt(context.appliedFilters.minimumPayment.replace(/\D/g, ""), 10) || 0;
-  const selectedService = context.appliedFilters.service.trim().toLocaleLowerCase("ru-RU");
-  const isSuggested = Boolean(task.badge || task.variant === "special");
-  const hasAvailabilityMismatch = !matchesDurationPreference(task, context.selectedAvailabilityDuration);
-  const hasFilterMismatch = (context.appliedFilters.brands.length > 0 && !context.appliedFilters.brands.includes(task.brand))
-    || (selectedService && !task.title.toLocaleLowerCase("ru-RU").includes(selectedService))
-    || getPaymentValue(task.payment) < minimumPayment;
-  const hasRadiusMismatch = Number.isFinite(maximumDistance) && getDistanceInMeters(task.distance) > maximumDistance;
-  const overlapsPrimarySchedule = context.availabilityByDate[date] === "busy";
-  const isBookedService = (context.bookedTasks ?? []).some((booking) => (
-    booking.id === task.id || booking.task?.id === task.id
-  ));
-  const acceptedServices = [
-    ...(context.acceptedGigByDate?.[date] ? [context.acceptedGigByDate[date]] : []),
+  const minimumPayment = Number.parseInt(String(filters.minimumPayment ?? "").replace(/\D/g, ""), 10) || 0;
+  const selectedServices = normalizeSelection(filters.service).map((service) => service.toLocaleLowerCase("ru-RU"));
+  const selectedStores = normalizeSelection(filters.stores);
+  const title = task.title.toLocaleLowerCase("ru-RU");
+
+  return !(
+    ((filters.brands ?? []).length > 0 && !filters.brands.includes(task.brand))
+    || (selectedStores.length > 0 && !selectedStores.includes(task.storeId))
+    || (selectedServices.length > 0 && !selectedServices.some((service) => title.includes(service)))
+    || getPaymentValue(task.payment) < minimumPayment
+    || getDistanceInMeters(task.distance) > maximumDistance
+    || !matchesDurationPreference(task, context.selectedAvailabilityDuration)
+  );
+}
+
+function getAcceptedShifts(day, context) {
+  return [
+    ...(getDayValue(context.acceptedGigByDate, day) ? [getDayValue(context.acceptedGigByDate, day)] : []),
     ...(context.bookedTasks ?? [])
-      .filter((booking) => booking.day.date === date)
+      .filter((booking) => booking.day.id === day.id || booking.day.date === day.date)
       .map((booking) => booking.task),
   ];
-  const overlapsAcceptedServices = acceptedServices.some((acceptedService) => shiftsOverlap(task, acceptedService));
-  const reasons = [];
+}
 
-  if (!isDayAvailable(date, context)) reasons.push("Вне доступности");
-  if (!isTaskWithinAvailability(task, context.availabilityTime)) reasons.push("Пересекается со сменой");
-  if (hasAvailabilityMismatch) reasons.push("Вне доступности");
-  if (hasRadiusMismatch) reasons.push("Вне радиуса");
-  if (hasFilterMismatch || (!isSuggested && reasons.length === 0)) reasons.push("Не совпадает с фильтрами");
-  if (overlapsAcceptedServices) reasons.push("Пересекается с принятой услугой");
-  reasons.push(...(task.mismatchHints ?? []));
+function getMatchingAvailability(context) {
+  const availability = context.availabilityTime ?? {};
+  const hasExplicitAvailability = Boolean(
+    availability.from || availability.to || availability.preset || availability.presets?.length,
+  );
+  return hasExplicitAvailability ? availability : DEFAULT_MATCHING_AVAILABILITY;
+}
+
+function decorateTask(task, day, context) {
+  const isBooked = (context.bookedTasks ?? []).some((booking) => (
+    booking.id === task.id || booking.task?.id === task.id
+  ));
+  const matchesFilters = matchesCatalogFilters(task, context);
+  const overlapsPrimarySchedule = getDayValue(context.availabilityByDate, day) === "busy"
+    && shiftsOverlap(task, { hours: "10:00 – 22:00" });
+  const overlapsAcceptedServices = getAcceptedShifts(day, context).some((shift) => shiftsOverlap(task, shift));
+  const overlapsSchedule = overlapsPrimarySchedule || overlapsAcceptedServices;
+  const matchesAvailability = isDayAvailable(day, context)
+    && isTaskWithinAvailability(task, getMatchingAvailability(context));
 
   return {
     ...task,
-    state: isBookedService ? "booked" : "available",
+    badge: context.onlyMatching && matchesAvailability ? "подходит вам" : undefined,
     isSpecialOffer: task.variant === "special",
-    matchesFilters: !hasFilterMismatch && !hasRadiusMismatch,
+    matchesAvailability,
+    matchesFilters,
     overlapsAcceptedServices,
     overlapsPrimarySchedule,
-    restrictionTags: [...new Set(reasons)],
+    overlapsSchedule,
+    restrictionTags: context.onlyMatching && !matchesAvailability ? ["Не совпадает с доступностью"] : [],
+    state: isBooked ? "booked" : "available",
   };
 }
 
-export function resolveTaskFeed(tasks, date, context) {
-  const decoratedTasks = tasks.map((task) => decorateTask(task, date, context));
+export function resolveTaskFeed(tasks, day, context) {
+  const normalizedDay = normalizeDay(day, context);
+  const decoratedTasks = tasks.map((task) => decorateTask(task, normalizedDay, context));
   const catalogEligibleTasks = decoratedTasks.filter((task) => (
-    task.state === "available"
-    && task.matchesFilters
-    && (!context.onlyMatching || !task.overlapsPrimarySchedule)
+    task.state === "available" && task.matchesFilters && !task.overlapsSchedule
   ));
-  const catalogEligibleIds = new Set(catalogEligibleTasks.map((task) => task.id));
-  const excludedTasks = decoratedTasks.filter((task) => !catalogEligibleIds.has(task.id));
-  const suitableTasks = catalogEligibleTasks.filter((task) => task.restrictionTags.length === 0);
-  const suggestedTasks = suitableTasks.filter((task) => task.badge || task.isSpecialOffer);
-  const restrictedTasks = catalogEligibleTasks.filter((task) => task.restrictionTags.length > 0);
-  const hiddenTasks = getSortedTasks(restrictedTasks, context.sortBy);
-  const hiddenReason = getHiddenReason(hiddenTasks);
-
-  if (context.onlyMatching) {
-    return Object.freeze({
-      excludedTasks: Object.freeze(excludedTasks),
-      hiddenReason,
-      hiddenTasks: Object.freeze(hiddenTasks),
-      visibleTasks: Object.freeze(getOrderedTasks(suggestedTasks, context.sortBy, context.hasAppliedSort)),
-    });
-  }
+  const eligibleIds = new Set(catalogEligibleTasks.map((task) => task.id));
+  const excludedTasks = decoratedTasks.filter((task) => !eligibleIds.has(task.id));
+  const matchingTasks = catalogEligibleTasks.filter((task) => task.matchesAvailability);
+  const hiddenTasks = context.onlyMatching
+    ? catalogEligibleTasks.filter((task) => !task.matchesAvailability)
+    : [];
+  const visibleTasks = context.onlyMatching ? matchingTasks : catalogEligibleTasks;
 
   return Object.freeze({
     excludedTasks: Object.freeze(excludedTasks),
-    hiddenReason: "mixed",
-    hiddenTasks: Object.freeze([]),
-    visibleTasks: Object.freeze([
-      ...getOrderedTasks(suitableTasks, context.sortBy, context.hasAppliedSort),
-      ...hiddenTasks,
-    ]),
+    hiddenReason: "availability",
+    hiddenTasks: Object.freeze(getSortedTasks(hiddenTasks, context.sortBy)),
+    visibleTasks: Object.freeze(getOrderedTasks(visibleTasks, context.sortBy, context.hasAppliedSort)),
   });
 }

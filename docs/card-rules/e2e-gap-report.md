@@ -46,3 +46,16 @@ Workflow `Card rules validation` запускает базовую и cross-regi
 - Gap по устаревшим селекторам и зависимость от чужого Vite-сервера закрыты.
 - Для объединённого HEAD E2E-gate: **проходит** на изолированном порту `4187`.
 - Отдельный продуктовый вопрос о визуальном объяснении услуг вне радиуса остаётся открытым; он не маскируется E2E-тестами.
+
+## Финальный аудит после синхронизации main — 2026-07-24
+
+Ветка синхронизирована обычным merge с `origin/main` `128864b5579735f9b0339746b416ffaf243ee4ca`. Финальная E2E-матрица расширена до 28 сценариев: error/stale recovery, Favorites services/collections/stores, Signing transition, динамический timeline, accessibility, reduced motion, booking persistence и исключение пересекающихся смен.
+
+Параллельный прогон обнаружил один слишком жёсткий тестовый timeout: helper ожидал двухсекундную launch-анимацию не более 3 секунд. Runtime не падал; ожидание увеличено до 6 секунд, после чего проблемный сценарий прошёл дважды параллельно.
+
+После стабилизации выполнены два полных неизменных цикла:
+
+- цикл 1: card-rules registry **25 rules / 7 exceptions / 45 scenarios**, validator fixtures **6 valid / 20 invalid**, resolver tests **27/27**, component coverage **6 templates / 8 UI states / 31 verified scenarios**, visual **8/8**, E2E **28/28**, build **passed**;
+- цикл 2: те же результаты без generated drift, visual drift, flaky или runtime warnings/errors; E2E **28/28**.
+
+Оба цикла начинались с `npm ci`. `npm ci` стабильно сообщает две существующие dependency audit записи (1 moderate, 1 high); автоматический `npm audit fix` не выполнялся, так как обновление зависимостей не входит в card migration scope.

@@ -67,6 +67,7 @@ export function ServiceOfferCard({
         styles[presentation.structuralVariant],
         onOpen ? styles.clickable : "",
       ].filter(Boolean).join(" ")}
+      data-card-id={service.id}
       data-card-template={presentation.templateId}
       data-card-variant={presentation.structuralVariant}
     >
@@ -80,6 +81,11 @@ export function ServiceOfferCard({
       )}
       <div className={topClass}>
         <div className={copyClass}>
+          {showRestrictionTags && (
+            <div className={styles.restrictions}>
+              {(service.restrictionTags ?? []).map((tag) => <span key={tag}>{tag}</span>)}
+            </div>
+          )}
           {showSuitableMarker && <span className={styles.suitableMarker}>подходит вам</span>}
           {isFavoriteUnavailable && <span className={styles.favoriteUnavailableStatus}>больше недоступно</span>}
           {showStatus && (
@@ -116,11 +122,6 @@ export function ServiceOfferCard({
           <p>{service.breakInfo}</p>
         </div>
       </div>
-      {showRestrictionTags && (
-        <div className={styles.restrictions}>
-          {(service.restrictionTags ?? []).map((tag) => <span key={tag}>{tag}</span>)}
-        </div>
-      )}
       {isSpecial && (
         <button className={styles.primaryAction} disabled={actionDisabled} onClick={handlePrimaryAction} type="button">
           принять задание

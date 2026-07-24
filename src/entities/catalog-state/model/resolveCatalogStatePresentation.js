@@ -20,6 +20,24 @@ export function resolveCatalogStatePresentation({
   hiddenReason = "mixed",
   type,
 }) {
+  if (type === "error") {
+    return Object.freeze({
+      uiState: "catalog.error",
+      title: "не удалось обновить каталог",
+      subtitle: "проверьте подключение и попробуйте ещё раз",
+      actions: Object.freeze(["retry"]),
+    });
+  }
+
+  if (type === "stale") {
+    return Object.freeze({
+      uiState: "catalog.stale",
+      title: "показаны неактуальные данные",
+      subtitle: "обновите каталог, чтобы увидеть актуальные услуги",
+      actions: Object.freeze(["refresh"]),
+    });
+  }
+
   const reason = getHiddenReasonText(hiddenReason);
   const serviceWord = getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"]);
 

@@ -108,9 +108,26 @@
 }
 
 .showAll img {
-  height: 16px;
+  height: 10px;
   margin-left: 4px;
-  width: 16px;
+  width: 18px;
+}
+
+.primary {
+  background: #fff;
+  color: #000;
+  cursor: pointer;
+  padding: 0 20px;
+}
+
+.stale {
+  border: 1px solid rgb(0 0 0 / 0.08);
+  padding-top: 12px;
+}
+
+.error {
+  margin-top: 8px;
+  padding: 24px 16px 16px;
 }
 
 .actions button:focus-visible {

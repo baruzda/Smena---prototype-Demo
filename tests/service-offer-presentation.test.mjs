@@ -102,7 +102,7 @@ test("[SCN-ACTION-002][RULE-ACTION-001] available service enables the primary ac
   assert.deepEqual(resolve().enabledActions, ["service.primary_action"]);
 });
 
-test("[RULE-ACTION-001] feed decoration passes accepted-service overlaps into presentation", () => {
+test("[RULE-ACTION-001] accepted-service overlaps stay outside every catalog list", () => {
   const context = {
     acceptedGigByDate: { "1": { ...baseService, hours: "10:00 – 18:00" } },
     appliedFilters: { brands: [], minimumPayment: "", service: "" },
@@ -119,16 +119,17 @@ test("[RULE-ACTION-001] feed decoration passes accepted-service overlaps into pr
     sortBy: "recommended",
   };
   const feed = resolveTaskFeed([{ ...baseService, badge: "подходит вам", id: "candidate" }], "1", context);
-  const candidate = feed.hiddenTasks[0];
+  const candidate = feed.excludedTasks[0];
   const presentation = resolveServiceOfferPresentation(candidate, { surface: "tasks" });
 
   assert.equal(candidate.overlapsAcceptedServices, true);
-  assert.ok(candidate.restrictionTags.includes("Пересекается с принятой услугой"));
+  assert.equal(feed.visibleTasks.length, 0);
+  assert.equal(feed.hiddenTasks.length, 0);
   assert.equal(feed.hiddenReason, "availability");
   assert.deepEqual(presentation.disabledActions, ["service.primary_action"]);
 });
 
-test("[RULE-HIDDEN-001] primary-shift conflicts return only in the general catalog", () => {
+test("[RULE-HIDDEN-001] primary-shift conflicts stay outside personal and general catalogs", () => {
   const personalFeed = resolveTaskFeed(
     [{ ...baseService, badge: "подходит вам", id: "candidate" }],
     "1",
@@ -143,7 +144,9 @@ test("[RULE-HIDDEN-001] primary-shift conflicts return only in the general catal
   assert.equal(personalFeed.visibleTasks.length, 0);
   assert.equal(personalFeed.hiddenTasks.length, 0);
   assert.equal(personalFeed.excludedTasks[0].overlapsPrimarySchedule, true);
-  assert.equal(generalFeed.visibleTasks[0].overlapsPrimarySchedule, true);
+  assert.equal(generalFeed.visibleTasks.length, 0);
+  assert.equal(generalFeed.hiddenTasks.length, 0);
+  assert.equal(generalFeed.excludedTasks[0].overlapsPrimarySchedule, true);
 });
 
 test("[EXC-PLACEMENT-002] fully filtered results remain excluded with a recoverable count", () => {
@@ -354,6 +357,20 @@ test("[SCN-CATALOG-005] hidden services keeps an explicit UI-state identity insi
   });
   assert.equal(result.uiState, "hidden_services.message");
   assert.deepEqual(result.actions, ["subscribe", "show_all"]);
+});
+
+test("[SCN-CATALOG-006] catalog error replaces unavailable content and exposes retry", () => {
+  const result = resolveCatalogStatePresentation({ type: "error" });
+  assert.equal(result.uiState, "catalog.error");
+  assert.equal(result.title, "не удалось обновить каталог");
+  assert.deepEqual(result.actions, ["retry"]);
+});
+
+test("[SCN-CATALOG-007] stale catalog keeps cached content and exposes refresh", () => {
+  const result = resolveCatalogStatePresentation({ type: "stale" });
+  assert.equal(result.uiState, "catalog.stale");
+  assert.equal(result.title, "показаны неактуальные данные");
+  assert.deepEqual(result.actions, ["refresh"]);
 });
 
 test("every active card rule and exception has resolver evidence", () => {

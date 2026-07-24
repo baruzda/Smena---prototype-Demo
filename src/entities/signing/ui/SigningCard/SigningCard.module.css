@@ -76,8 +76,9 @@
 
 .bottom {
   align-items: flex-start;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: max-content minmax(0, 1fr);
 }
 
 .payment,
@@ -96,8 +97,13 @@
   margin: 2px 0 0;
 }
 
+.payment,
+.rate {
+  white-space: nowrap;
+}
+
 .date {
-  flex: 0 0 auto;
+  min-width: 0;
   text-align: right;
 }
 

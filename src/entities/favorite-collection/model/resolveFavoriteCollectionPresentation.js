@@ -22,9 +22,14 @@ export function resolveFavoriteCollectionPresentation(collection, defaultBrands)
 
   const isEmpty = collection.resultCount === 0;
   const brands = collection.filters.brands.length ? collection.filters.brands : defaultBrands;
+  const selectedServices = Array.isArray(collection.filters.service)
+    ? collection.filters.service
+    : collection.filters.service ? [collection.filters.service] : [];
   const chips = [
-    collection.filters.service || "уборка урожая пшеницы",
-    "1, 2, 3 июня",
+    selectedServices.length === 0
+      ? "все услуги"
+      : selectedServices.length === 1 ? selectedServices[0] : `${selectedServices.length} услуги`,
+    ...(collection.availability?.labels ?? []),
     "Пн, Ср, Пт",
     collection.filters.minimumPayment ? `от ${collection.filters.minimumPayment} ₽` : "от 1500 ₽",
     collection.radius ? `до ${collection.radius} км` : "до 50 км",

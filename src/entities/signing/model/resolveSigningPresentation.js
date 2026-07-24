@@ -27,7 +27,7 @@ const signingStates = Object.freeze({
 
 export function resolveSigningPresentation(booking) {
   const { day } = booking;
-  const dateFragment = `${day.label}, ${day.secondaryLabel}`.match(/\d+ июня/)?.[0];
+  const calendarDate = day.calendarDate instanceof Date ? day.calendarDate : null;
   const requestedStatus = booking.signing?.status;
   const hasKnownStatus = Boolean(signingStates[requestedStatus]);
   const structuralVariant = hasKnownStatus ? requestedStatus : "processing";
@@ -38,7 +38,9 @@ export function resolveSigningPresentation(booking) {
     templateId: "signing_card",
     structuralVariant,
     status: Object.freeze({ label: hasKnownStatus ? state.label : "статус уточняется", tone: state.tone }),
-    date: dateFragment ? `${dateFragment}, 2025` : `${day.label}, ${day.secondaryLabel}`,
+    date: calendarDate
+      ? calendarDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })
+      : `${day.label}, ${day.secondaryLabel}`,
     document: booking.document ?? null,
     deadline: booking.deadline ?? null,
     primaryAction: canSign ? Object.freeze({ id: "signing.primary_action", label: "подписать" }) : null,

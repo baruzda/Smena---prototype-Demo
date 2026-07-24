@@ -95,7 +95,18 @@ function CardFixtures() {
           defaultBrands={["pyaterochka"]}
         />
       </Fixture>
-      <Fixture id="favorite_store_card:default"><FavoriteStoreCard store={{ isPresent: true }} /></Fixture>
+      <Fixture id="favorite_store_card:default">
+        <FavoriteStoreCard
+          store={{
+            address: "Косой переулок, 5, к. 8",
+            brand: "pyaterochka",
+            chips: ["выкладка товара", "Пн, Ср, Пт", "от 1500 ₽"],
+            id: "fixture-store",
+            metro: { city: "spb", color: "#d6083b", label: "Метро Санкт-Петербурга", station: "Площадь Восстания" },
+            title: "магазин у площади Восстания",
+          }}
+        />
+      </Fixture>
     </main>
   );
 }

@@ -1,33 +1,36 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { getTaskHours, shiftsOverlap } from "./schedule-utils.js";
-import { CatalogLoadingState } from "./entities/catalog-state/ui/CatalogStates/CatalogStates.jsx";
-import { getDistanceInMeters, getPaymentValue, isTaskWithinAvailability } from "./features/catalog-feed/model/resolveTaskFeed.js";
+import { shiftsOverlap } from "./schedule-utils.js";
+import {
+  CatalogErrorState,
+  CatalogLoadingState,
+  CatalogStaleState,
+} from "./entities/catalog-state/ui/CatalogStates/CatalogStates.jsx";
+import { isTaskWithinAvailability } from "./features/catalog-feed/model/resolveTaskFeed.js";
 import { assetUrl } from "./shared/lib/assets.js";
+import { formatPayment, getShortLocationLabel, seededValue } from "./shared/lib/demoCatalog.js";
 import { BrandMark } from "./shared/ui/BrandMark/BrandMark.jsx";
-import { MetroIcon } from "./shared/ui/MetroIcon/MetroIcon.jsx";
+import { Badge, Button } from "./shared/ui/index.js";
 import { FavoritesView } from "./widgets/favorites-view/ui/FavoritesView/FavoritesView.jsx";
 import { MyTasksList } from "./widgets/my-tasks-list/ui/MyTasksList/MyTasksList.jsx";
 import { SigningList } from "./widgets/signing-list/ui/SigningList/SigningList.jsx";
 import { TaskFeed } from "./widgets/task-feed/ui/TaskFeed/TaskFeed.jsx";
-
 const tabs = ["задания", "избранное", "мои задания", "задания на подписание"];
 const defaultCollectionBrands = ["pyaterochka", "perekrestok", "vprok", "chizhik"];
-const days = [
-  { date: "1", weekday: "пн" },
-  { date: "2", weekday: "вт" },
-  { date: "3", weekday: "ср" },
-  { date: "4", weekday: "чт" },
-  { date: "5", weekday: "пт" },
-  { date: "6", weekday: "сб" },
-  { date: "7", weekday: "вс" },
-  { date: "8", weekday: "пн" },
-  { date: "9", weekday: "вт" },
-  { date: "10", weekday: "ср" },
-  { date: "11", weekday: "чт" },
-  { date: "12", weekday: "пт" },
-  { date: "13", weekday: "сб" },
-  { date: "14", weekday: "вс" },
-];
+const timelineToday = new Date();
+timelineToday.setHours(12, 0, 0, 0);
+const timelineEnd = new Date(timelineToday.getFullYear(), timelineToday.getMonth() + 2, 0, 12);
+const days = Array.from({ length: Math.round((timelineEnd - timelineToday) / 86_400_000) + 1 }, (_, index) => {
+  const calendarDate = new Date(timelineToday);
+  calendarDate.setDate(timelineToday.getDate() + index);
+  return {
+    calendarDate,
+    date: String(calendarDate.getDate()),
+    id: calendarDate.toISOString().slice(0, 10),
+    isMonthStart: index === 0 || calendarDate.getDate() === 1,
+    monthLabel: calendarDate.toLocaleDateString("ru-RU", { month: "short" }).replace(".", ""),
+    weekday: ["вс", "пн", "вт", "ср", "чт", "пт", "сб"][calendarDate.getDay()],
+  };
+});
 
 const calendarWeekdays = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"];
 const weekdayNames = {
@@ -40,23 +43,40 @@ const weekdayNames = {
   "вс": "Вс",
 };
 
-const juneCalendarDays = Array.from({ length: 35 }, (_, index) => {
-  const day = index < 2 ? 29 + index : index < 32 ? index - 1 : index - 31;
-  const month = index < 2 ? "previous" : index < 32 ? "current" : "next";
-  const currentMonthDate = month === "current" ? day : null;
-  const isFree = currentMonthDate !== null && (currentMonthDate - 1) % 4 < 2;
+const prototypeToday = new Date();
+prototypeToday.setHours(12, 0, 0, 0);
 
-  return {
-    id: `${month}-${day}`,
-    day,
-    month,
-    status: isFree ? "free" : "busy",
-    weekday: calendarWeekdays[index % calendarWeekdays.length],
-  };
-});
+function buildAvailabilityCalendar(monthOffset) {
+  const shownMonth = new Date(prototypeToday.getFullYear(), prototypeToday.getMonth() + monthOffset, 1);
+  const firstWeekday = (shownMonth.getDay() + 6) % 7;
+  const gridStart = new Date(shownMonth);
+  gridStart.setDate(1 - firstWeekday);
+
+  const cells = Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(gridStart);
+    date.setDate(gridStart.getDate() + index);
+    const isCurrentMonth = date.getMonth() === shownMonth.getMonth();
+    const isPast = date < prototypeToday;
+    const day = date.getDate();
+    const weekIndex = Math.floor(index / 7);
+    const isX5Shift = isCurrentMonth && weekIndex % 2 === 1 && index % 7 === 2;
+    const isFree = isCurrentMonth && !isPast && (day - 1) % 4 < 2;
+    return {
+      id: date.toISOString().slice(0, 10),
+      day,
+      isX5Shift,
+      month: isCurrentMonth ? "current" : "outside",
+      selectionKey: monthOffset === 0 ? String(day) : `next-${day}`,
+      status: isFree && !isX5Shift ? "free" : "busy",
+      weekday: calendarWeekdays[(date.getDay() + 6) % 7],
+    };
+  });
+
+  return cells.slice(-7).some((day) => day.month === "current") ? cells : cells.slice(0, -7);
+}
 
 const availabilityByDate = Object.fromEntries(
-  days.map(({ date }) => [date, (Number(date) - 1) % 4 < 2 ? "free" : "busy"]),
+  days.map(({ id }, index) => [id, index % 5 === 4 ? "busy" : "free"]),
 );
 
 const defaultSearchLocation = {
@@ -69,20 +89,117 @@ const emptySearchLocation = {
   label: "",
 };
 
-const emptyFilters = { brands: [], minimumPayment: "", service: "" };
+const emptyFilters = { brands: [], minimumPayment: "", service: [], stores: [] };
+
+const defaultFavoriteCollections = [
+  {
+    availability: {
+      dateKeys: [days[1].id, days[3].id],
+      labels: [days.slice(1, 4).map((day) => day.calendarDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })).join(", ")],
+    },
+    filters: { brands: ["pyaterochka"], minimumPayment: "1800", service: ["выкладка товара"], stores: [] },
+    id: "demo-collection-merchandising",
+    location: { coords: [55.7522, 37.6156], label: "улица Большая Дмитровка" },
+    notifications: { email: false, frequency: null, push: true, quietHours: true },
+    radius: 5,
+    title: "смены рядом с центром",
+  },
+  {
+    availability: {
+      dateKeys: [days[5].id],
+      labels: [days[5].calendarDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })],
+    },
+    filters: { brands: ["perekrestok", "vprok"], minimumPayment: "2200", service: ["сборка товара", "комплектация"], stores: [] },
+    id: "demo-collection-warehouse",
+    location: { coords: [55.7214, 37.6345], label: "Павелецкая площадь" },
+    notifications: { email: true, frequency: "daily", push: false, quietHours: false },
+    radius: 10,
+    title: "сборка и комплектация",
+  },
+  {
+    availability: {
+      dateKeys: [days[7].id, days[9].id],
+      labels: [days.slice(7, 10).filter((_, index) => index !== 1).map((day) => day.calendarDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })).join(", ")],
+    },
+    filters: { brands: ["chizhik"], minimumPayment: "", service: ["погрузка-разгрузка"], stores: [] },
+    id: "demo-collection-evening",
+    location: { coords: [55.7613, 37.6605], label: "улица Нижняя Красносельская" },
+    notifications: { email: false, frequency: null, push: false, quietHours: false },
+    radius: 2,
+    title: "смены на вечер",
+  },
+];
+
+const defaultFavoriteStores = [
+  {
+    address: "Площадь Восстания · Косой переулок 5, к. 8",
+    brand: "pyaterochka",
+    chips: ["выкладка товара", "Пн, Ср, Пт", "от 1500 ₽"],
+    id: "demo-store-vosstaniya",
+    metro: { city: "spb", color: "#d6083b", label: "Метро Санкт-Петербурга", station: "Площадь Восстания" },
+    title: "магазин у площади Восстания",
+  },
+  {
+    address: "Бауманская · улица Фридриха Энгельса, 31",
+    brand: "perekrestok",
+    chips: ["сборка товара", "Вт, Чт", "от 2000 ₽"],
+    id: "demo-store-baumanskaya",
+    metro: { city: "msk", color: "#006cb7", label: "Метро Москвы", station: "Бауманская" },
+    title: "перекрёсток на Бауманской",
+  },
+  {
+    address: "Петроградская · Каменноостровский проспект, 42",
+    brand: "chizhik",
+    chips: ["погрузка-разгрузка", "Сб, Вс", "от 1800 ₽"],
+    id: "demo-store-petrogradskaya",
+    metro: { city: "spb", color: "#d6083b", label: "Метро Санкт-Петербурга", station: "Петроградская" },
+    title: "чижик на Петроградской",
+  },
+];
+
+function normalizeSelectedServices(value) {
+  const services = Array.isArray(value) ? value : typeof value === "string" && value.trim() ? [value] : [];
+  return [...new Set(services.map((service) => service.trim()).filter(Boolean))];
+}
+
+function normalizeSelectedStores(value) {
+  const stores = Array.isArray(value) ? value : typeof value === "string" && value.trim() ? [value] : [];
+  return [...new Set(stores.map((store) => store.trim()).filter(Boolean))];
+}
+
+function getServiceSelectionSummary(value, emptyLabel = "услуга") {
+  const services = normalizeSelectedServices(value);
+  if (services.length === 0) return emptyLabel;
+  if (services.length === 1) return services[0];
+  return `${services.length} ${getRussianPlural(services.length, ["услуга выбрана", "услуги выбраны", "услуг выбрано"])}`;
+}
 
 const emptyAvailabilityTime = { from: "", to: "", preset: null, presets: [] };
 
-const prototypeDefaultStateVersion = 4;
+const prototypeDefaultStateVersion = 5;
 const availabilityTimePresets = [
-  { id: "all-day", label: "весь день", from: "8:00", to: "22:00" },
-  { id: "morning", label: "утро", from: "8:00", to: "12:00" },
+  { id: "all-day", label: "весь день", from: "08:00", to: "22:00" },
+  { id: "morning", label: "утро", from: "08:00", to: "12:00" },
   { id: "afternoon", label: "день", from: "12:00", to: "16:00" },
   { id: "evening", label: "вечер", from: "16:00", to: "22:00" },
   { id: "night", label: "ночью", from: "22:00", to: "6:00" },
 ];
+const defaultAvailabilityTime = { from: "08:00", to: "22:00", preset: "all-day", presets: ["all-day"] };
+
+function isVisualDefaultAvailability({ from, preset, presets, to }) {
+  const presetIds = Array.isArray(presets) ? presets : preset ? [preset] : [];
+  return from === defaultAvailabilityTime.from
+    && to === defaultAvailabilityTime.to
+    && presetIds.length === 1
+    && presetIds[0] === "all-day";
+}
 
 const prototypeStorageKey = "x5-shift-prototype-state";
+
+function readCatalogRuntimeState() {
+  const requestedState = new URLSearchParams(window.location.search).get("catalogState");
+  return ["error", "stale"].includes(requestedState) ? requestedState : "ready";
+}
 
 function readPrototypeState() {
   try {
@@ -181,6 +298,30 @@ const DEMO_SERVICE_TITLES = [
   "зона бананов: приёмка, размещение и перемещение ТМЦ",
   "дозревание бананов",
 ];
+
+const DEMO_TASKS_PER_DAY = 60;
+const DEMO_TASK_BRANDS = ["pyaterochka", "perekrestok", "chizhik", "vprok"];
+const DEFAULT_VISIBLE_DEMO_TASKS_PER_DAY = 6;
+
+const DEMO_STORES = [
+  { id: "store-8", building: 8 },
+  { id: "store-40", building: 40 },
+  { id: "store-67", building: 67 },
+  { id: "store-12", building: 12 },
+  { id: "store-1", building: 1 },
+  { id: "store-86", building: 86 },
+  { id: "store-44", building: 44 },
+  { id: "store-51", building: 51 },
+  { id: "store-7", building: 7 },
+  { id: "store-53", building: 53 },
+  { id: "store-27", building: 27 },
+  { id: "store-36", building: 36 },
+];
+
+function getStoreAddress(locationLabel, store) {
+  const location = (locationLabel || defaultSearchLocation.label).replace(/, Россия$/u, "");
+  return `${location}, д. ${store.building}`;
+}
 
 const taskTemplates = [
   {
@@ -514,27 +655,18 @@ taskTemplates.forEach((template, index) => {
   template.title = DEMO_SERVICE_TITLES[index % DEMO_SERVICE_TITLES.length];
 });
 
-const dayLabels = [
-  ["сегодня, 1 июня", "понедельник"],
-  ["завтра, 2 июня", "вторник"],
-  ["среда", "3 июня"],
-  ["четверг", "4 июня"],
-  ["пятница", "5 июня"],
-  ["суббота", "6 июня"],
-  ["воскресенье", "7 июня"],
-  ["понедельник", "8 июня"],
-  ["вторник", "9 июня"],
-  ["среда", "10 июня"],
-  ["четверг", "11 июня"],
-  ["пятница", "12 июня"],
-  ["суббота", "13 июня"],
-  ["воскресенье", "14 июня"],
-];
+const weekdayLongNames = { "пн": "понедельник", "вт": "вторник", "ср": "среда", "чт": "четверг", "пт": "пятница", "сб": "суббота", "вс": "воскресенье" };
+const dayLabels = days.map((day, index) => {
+  const dateLabel = day.calendarDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+  if (index === 0) return [`сегодня, ${dateLabel}`, weekdayLongNames[day.weekday]];
+  if (index === 1) return [`завтра, ${dateLabel}`, weekdayLongNames[day.weekday]];
+  return [weekdayLongNames[day.weekday], dateLabel];
+});
 
 const dayGroups = days.map((day, dayIndex) => {
   const [label, secondaryLabel] = dayLabels[dayIndex];
-  const firstTemplate = taskTemplates[dayIndex * 2];
-  const secondTemplate = taskTemplates[dayIndex * 2 + 1];
+  const firstTemplate = taskTemplates[(dayIndex * 2) % taskTemplates.length];
+  const secondTemplate = taskTemplates[(dayIndex * 2 + 1) % taskTemplates.length];
   const thirdTemplate = taskTemplates[(dayIndex * 2 + 11) % taskTemplates.length];
 
   return {
@@ -549,19 +681,6 @@ const dayGroups = days.map((day, dayIndex) => {
   };
 });
 
-function getSavedCollectionResultCount(filters, radius) {
-  const maximumDistance = Number.isFinite(radius) ? radius * 1000 : Infinity;
-  const minimumPayment = Number.parseInt(filters.minimumPayment.replace(/\D/g, ""), 10) || 0;
-  const selectedService = filters.service.trim().toLocaleLowerCase("ru-RU");
-
-  return dayGroups.flatMap((day) => day.tasks).filter((task) => (
-    (filters.brands.length === 0 || filters.brands.includes(task.brand))
-    && (!selectedService || task.title.toLocaleLowerCase("ru-RU").includes(selectedService))
-    && getPaymentValue(task.payment) >= minimumPayment
-    && getDistanceInMeters(task.distance) <= maximumDistance
-  )).length;
-}
-
 const demoMyTaskRecords = [
   { day: dayGroups[1], id: "demo-my-task-booked", status: "booked", task: dayGroups[1].tasks[0] },
   { day: dayGroups[3], id: "demo-my-task-pending", status: "pending", task: dayGroups[3].tasks[1] },
@@ -572,65 +691,56 @@ const demoMyTaskRecords = [
 const demoSigningTaskRecords = [
   {
     day: dayGroups[2],
+    deadline: "подпишите до конца дня",
+    document: "акт выполненных работ",
     id: "demo-signing-task-ready",
-    signing: { actor: "user", status: "waiting_user" },
+    signing: { status: "waiting_user" },
     status: "signing",
     task: dayGroups[2].tasks[0],
   },
   {
     day: dayGroups[4],
+    document: "акт выполненных работ",
     id: "demo-signing-task-processing",
-    signing: { actor: "system", status: "processing" },
+    signing: { status: "processing" },
     status: "signing",
     task: dayGroups[4].tasks[1],
   },
   {
     day: dayGroups[6],
+    document: "акт выполненных работ",
     id: "demo-signing-task-signed",
-    signing: { actor: "system", status: "signed" },
+    signing: { status: "signed" },
     status: "signing",
     task: dayGroups[6].tasks[0],
   },
   {
-    day: dayGroups[8],
+    day: dayGroups[7],
+    document: "акт выполненных работ",
     id: "demo-signing-task-rejected",
-    signing: { actor: "system", status: "rejected" },
+    signing: { status: "rejected" },
     status: "signing",
-    task: dayGroups[8].tasks[2],
+    task: dayGroups[7].tasks[2],
   },
 ];
+
 const demoFavoriteServiceRecords = [
   {
-    day: dayGroups[0],
-    service: { ...dayGroups[0].tasks[1], isFavorite: true, state: "available" },
+    day: dayGroups[1],
+    service: { ...dayGroups[1].tasks[0], isFavorite: true, state: "available" },
   },
   {
-    day: dayGroups[4],
-    service: { ...dayGroups[4].tasks[2], badge: undefined, isFavorite: true, state: "expired" },
+    day: dayGroups[5],
+    service: { ...dayGroups[5].tasks[2], isFavorite: true, state: "expired" },
   },
 ];
-const demoFavoriteStore = Object.freeze({ isPresent: true });
 
 const sortOptions = [
   { id: "nearby", label: "сначала ближайшие" },
   { id: "recommended", label: "рекомендуемые" },
   { id: "earnings", label: "выше заработок" },
+  { id: "hourly-rate", label: "выше цена за час" },
 ];
-
-function seededValue(seed) {
-  let value = 2166136261;
-
-  for (let index = 0; index < seed.length; index += 1) {
-    value ^= seed.charCodeAt(index);
-    value = Math.imul(value, 16777619);
-  }
-
-  return (value >>> 0) / 4294967296;
-}
-
-function formatPayment(value) {
-  return `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(value)},00 ₽`;
-}
 
 function ServiceLaunchScreen() {
   return (
@@ -638,6 +748,15 @@ function ServiceLaunchScreen() {
       <span aria-hidden="true" className="service-launch-spinner" />
     </section>
   );
+}
+
+function getRussianPlural(count, forms) {
+  const remainder = Math.abs(count) % 100;
+  const lastDigit = remainder % 10;
+  if (remainder > 10 && remainder < 20) return forms[2];
+  if (lastDigit === 1) return forms[0];
+  if (lastDigit > 1 && lastDigit < 5) return forms[1];
+  return forms[2];
 }
 
 function CardFiltersSheet({ filters, onApply, onClose, onOpenFullFilters }) {
@@ -668,12 +787,13 @@ function CardFiltersSheet({ filters, onApply, onClose, onOpenFullFilters }) {
           {brandOptions.map((brand) => {
             const isSelected = brands.includes(brand.id);
             return <button
+              aria-label={brand.label}
               aria-pressed={isSelected}
               className={isSelected ? "brand-filter-chip brand-filter-chip-selected" : "brand-filter-chip"}
               key={brand.id}
               onClick={() => toggleBrand(brand.id)}
               type="button"
-            ><BrandMark brand={brand.id} size="small" /><span>{brand.label}</span></button>;
+            ><BrandMark brand={brand.id} /><span>{brand.label}</span></button>;
           })}
         </div>
         <label className={minimumPayment ? "card-sheet-field card-sheet-field-filled" : "card-sheet-field"}>
@@ -687,11 +807,72 @@ function CardFiltersSheet({ filters, onApply, onClose, onOpenFullFilters }) {
   );
 }
 
+function QuickFilterSheet({ filters, onApply, onClose, radius, type }) {
+  const [brands, setBrands] = useState(filters.brands);
+  const [minimumPayment, setMinimumPayment] = useState(filters.minimumPayment);
+  const [selectedRadius, setSelectedRadius] = useState(radius);
+  const brandOptions = [
+    { id: "pyaterochka", label: "Пятёрочка" },
+    { id: "perekrestok", label: "Перекрёсток" },
+    { id: "chizhik", label: "Чижик" },
+  ];
+  const titles = { distance: "расстояние", network: "торговая сеть", payment: "оплата" };
+
+  function apply() {
+    onApply({
+      filters: { ...filters, brands, minimumPayment },
+      radius: selectedRadius,
+    });
+  }
+
+  return (
+    <div className="card-sheet-layer" onClick={onClose}>
+      <section aria-label={`Быстрый фильтр: ${titles[type]}`} aria-modal="true" className="card-sheet" onClick={(event) => event.stopPropagation()} role="dialog">
+        <span aria-hidden="true" className="card-sheet-handle" />
+        <div className="card-sheet-header">
+          <h2>{titles[type]}</h2>
+          <button aria-label={`Закрыть фильтр: ${titles[type]}`} className="card-sheet-close" onClick={onClose} type="button">×</button>
+        </div>
+        {type === "network" && <div className="card-sheet-brands">
+          {brandOptions.map((brand) => {
+            const isSelected = brands.includes(brand.id);
+            return <button
+              aria-label={brand.label}
+              aria-pressed={isSelected}
+              className={isSelected ? "brand-filter-chip brand-filter-chip-selected" : "brand-filter-chip"}
+              key={brand.id}
+              onClick={() => setBrands((current) => current.includes(brand.id) ? current.filter((id) => id !== brand.id) : [...current, brand.id])}
+              type="button"
+            ><BrandMark brand={brand.id} /><span>{brand.label}</span></button>;
+          })}
+        </div>}
+        {type === "payment" && <label className={minimumPayment ? "card-sheet-field card-sheet-field-filled" : "card-sheet-field"}>
+          <span>минимальная стоимость ₽</span>
+          <input aria-label="Минимальная стоимость в быстром фильтре" inputMode="numeric" onChange={(event) => setMinimumPayment(event.target.value)} placeholder="Не указана" type="text" value={minimumPayment} />
+        </label>}
+        {type === "distance" && <div aria-label="Радиус быстрого фильтра" className="quick-radius-options">
+          {[1, 2, 5, 10, 50].map((value) => <button
+            aria-pressed={selectedRadius === value}
+            className={selectedRadius === value ? "radius-chip radius-chip-selected" : "radius-chip"}
+            key={value}
+            onClick={() => setSelectedRadius(value)}
+            type="button"
+          >{value} км</button>)}
+        </div>}
+        <button className="card-sheet-primary" onClick={apply} type="button">применить</button>
+      </section>
+    </div>
+  );
+}
+
 function CardAvailabilitySheet({ availability, onApply, onClose, onOpenFullSettings }) {
-  const [from, setFrom] = useState(availability.from);
-  const [to, setTo] = useState(availability.to);
+  const hasAvailabilitySelection = Boolean(availability.from || availability.to || availability.preset || availability.presets?.length);
+  const [from, setFrom] = useState(availability.from || defaultAvailabilityTime.from);
+  const [to, setTo] = useState(availability.to || defaultAvailabilityTime.to);
   const [presets, setPresets] = useState(() => (
-    Array.isArray(availability.presets) ? availability.presets : availability.preset ? [availability.preset] : []
+    hasAvailabilitySelection
+      ? (Array.isArray(availability.presets) ? availability.presets : availability.preset ? [availability.preset] : [])
+      : defaultAvailabilityTime.presets
   ));
 
   function togglePreset(preset) {
@@ -740,7 +921,7 @@ function TaskDetailsScreen({ task, day, onBack, onBook, bookingState }) {
       </header>
       <main className="details-content">
         <div className="details-brand"><BrandMark brand={task.brand} /></div>
-        {!task.restrictionTags?.length && task.badge && <span className="details-match-badge">{task.badge}</span>}
+        {!task.restrictionTags?.length && task.badge && <Badge className="details-match-badge" size="small" tone="accent" variant="soft">{task.badge}</Badge>}
         <h2>{task.title}</h2>
         <p className="details-payment">{task.payment}</p>
         <p className="details-rate">{task.rate}</p>
@@ -781,38 +962,102 @@ function IconButton({ alt, src, label, onClick }) {
 function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initialSelectedWeekdays, initialSelectedDuration, onBack, onSave }) {
   const [selectedDates, setSelectedDates] = useState(initialSelectedDates);
   const [selectedWeekdays, setSelectedWeekdays] = useState(initialSelectedWeekdays);
-  const [availableFrom, setAvailableFrom] = useState(initialAvailabilityTime.from);
-  const [availableTo, setAvailableTo] = useState(initialAvailabilityTime.to);
-  const [selectedTimePresets, setSelectedTimePresets] = useState(() => (
-    Array.isArray(initialAvailabilityTime.presets)
+  const hasInitialAvailabilitySelection = Boolean(
+    initialAvailabilityTime.from
+    || initialAvailabilityTime.to
+    || initialAvailabilityTime.preset
+    || initialAvailabilityTime.presets?.length,
+  );
+  const initialAvailableFrom = initialAvailabilityTime.from || defaultAvailabilityTime.from;
+  const initialAvailableTo = initialAvailabilityTime.to || defaultAvailabilityTime.to;
+  const initialTimePresets = hasInitialAvailabilitySelection
+    ? (Array.isArray(initialAvailabilityTime.presets)
       ? initialAvailabilityTime.presets
-      : initialAvailabilityTime.preset ? [initialAvailabilityTime.preset] : []
+      : initialAvailabilityTime.preset ? [initialAvailabilityTime.preset] : [])
+    : defaultAvailabilityTime.presets;
+  const [availableFrom, setAvailableFrom] = useState(initialAvailableFrom);
+  const [availableTo, setAvailableTo] = useState(initialAvailableTo);
+  const [selectedTimePresets, setSelectedTimePresets] = useState(() => (
+    initialTimePresets
   ));
   const [selectedDuration, setSelectedDuration] = useState(() => (
     Array.isArray(initialSelectedDuration) ? initialSelectedDuration : initialSelectedDuration ? [initialSelectedDuration] : []
   ));
   const [isDaysPickerOpen, setIsDaysPickerOpen] = useState(false);
+  const [availabilityMonthOffset, setAvailabilityMonthOffset] = useState(0);
   const hasSelection = selectedDates.length > 0 || selectedWeekdays.length > 0;
+  const initialDuration = Array.isArray(initialSelectedDuration) ? initialSelectedDuration : initialSelectedDuration ? [initialSelectedDuration] : [];
   const hasChanges = selectedDates.join(",") !== initialSelectedDates.join(",")
     || selectedWeekdays.join(",") !== initialSelectedWeekdays.join(",")
-    || availableFrom !== initialAvailabilityTime.from
-    || availableTo !== initialAvailabilityTime.to
-    || selectedTimePresets.join(",") !== (Array.isArray(initialAvailabilityTime.presets)
-      ? initialAvailabilityTime.presets
-      : initialAvailabilityTime.preset ? [initialAvailabilityTime.preset] : []).join(",");
+    || availableFrom !== initialAvailableFrom
+    || availableTo !== initialAvailableTo
+    || selectedTimePresets.join(",") !== initialTimePresets.join(",")
+    || selectedDuration.join(",") !== initialDuration.join(",");
+  const hasAppliedSettings = initialSelectedDates.length > 0
+    || initialSelectedWeekdays.length > 0
+    || (hasInitialAvailabilitySelection && !isVisualDefaultAvailability(initialAvailabilityTime))
+    || initialDuration.length > 0;
+  const isDraftEmpty = selectedDates.length === 0
+    && selectedWeekdays.length === 0
+    && ((!availableFrom && !availableTo && selectedTimePresets.length === 0)
+      || isVisualDefaultAvailability({ from: availableFrom, presets: selectedTimePresets, to: availableTo }))
+    && selectedDuration.length === 0;
+
+  function saveSettings() {
+    onSave({
+      selectedDates,
+      selectedWeekdays,
+      availabilityTime: {
+        from: availableFrom,
+        to: availableTo,
+        preset: selectedTimePresets[0] ?? null,
+        presets: selectedTimePresets,
+      },
+      selectedDuration,
+    });
+  }
+
+  function resetAllSettings() {
+    onSave({
+      selectedDates: [],
+      selectedWeekdays: [],
+      availabilityTime: emptyAvailabilityTime,
+      selectedDuration: [],
+    });
+  }
 
   function toggleDate(day) {
     if (day.status !== "free") return;
 
-    setSelectedDates((current) => current.includes(String(day.day))
-      ? current.filter((date) => date !== String(day.day))
-      : [...current, String(day.day)]);
+    setSelectedDates((current) => {
+      const next = current.includes(day.selectionKey)
+        ? current.filter((date) => date !== day.selectionKey)
+        : [...current, day.selectionKey];
+
+      setSelectedWeekdays((weekdays) => weekdays.filter((weekday) => {
+        const matchingFreeDays = availabilityCalendarDays.filter((calendarDay) => (
+          calendarDay.month === "current" && calendarDay.status === "free" && calendarDay.weekday === weekday
+        ));
+        return matchingFreeDays.every((calendarDay) => next.includes(calendarDay.selectionKey));
+      }));
+
+      return next;
+    });
   }
 
   function toggleWeekday(weekday) {
-    setSelectedWeekdays((current) => current.includes(weekday)
-      ? current.filter((item) => item !== weekday)
-      : [...current, weekday]);
+    const matchingFreeDays = availabilityCalendarDays.filter((day) => (
+      day.month === "current" && day.status === "free" && day.weekday === weekday
+    ));
+    const keys = matchingFreeDays.map((day) => day.selectionKey);
+
+    setSelectedWeekdays((current) => {
+      const isSelected = current.includes(weekday);
+      setSelectedDates((dates) => isSelected
+        ? dates.filter((date) => !keys.includes(date))
+        : [...new Set([...dates, ...keys])]);
+      return isSelected ? current.filter((item) => item !== weekday) : [...current, weekday];
+    });
   }
 
   function resetSelection() {
@@ -837,10 +1082,10 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
         }
 
         const starts = selected.map((item) => Number.parseInt(item.from, 10));
-        setAvailableFrom(`${Math.min(...starts)}:00`);
+        setAvailableFrom(`${String(Math.min(...starts)).padStart(2, "0")}:00`);
         setAvailableTo(selected.some((item) => item.id === "night")
           ? "6:00"
-          : `${Math.max(...selected.map((item) => Number.parseInt(item.to, 10)))}:00`);
+          : `${String(Math.max(...selected.map((item) => Number.parseInt(item.to, 10)))).padStart(2, "0")}:00`);
       }
 
       return next;
@@ -854,34 +1099,47 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
     };
   }
 
+  const availabilityCalendarDays = buildAvailabilityCalendar(availabilityMonthOffset);
+  const availabilityMonthLabel = new Date(prototypeToday.getFullYear(), prototypeToday.getMonth() + availabilityMonthOffset, 1)
+    .toLocaleDateString("ru-RU", { month: "long" });
+
   if (isDaysPickerOpen) return (
-    <section className="availability-screen">
+    <div className="availability-sheet-backdrop">
+    <section aria-modal="true" className="availability-screen" role="dialog" aria-labelledby="availability-sheet-title">
       <header className="availability-header">
         <span aria-hidden="true" className="availability-handle" />
-        <button aria-label="Закрыть выбор дней" className="availability-close" onClick={() => setIsDaysPickerOpen(false)} type="button">×</button>
-        <h1>в какие дни вы готовы<br />выходить на подработки</h1>
+        <div className="availability-heading">
+          <div>
+            <h1 id="availability-sheet-title">укажите свою доступность</h1>
+            <p>выберите дни недели или даты, когда вы готовы оказывать услуги</p>
+          </div>
+          <button aria-label="Закрыть выбор дней" className="availability-close" onClick={() => setIsDaysPickerOpen(false)} type="button">×</button>
+        </div>
       </header>
 
       <main className="availability-content">
-        <div className="availability-legend" aria-label="Обозначения календаря">
-          <span><i className="legend-swatch legend-busy" />занято</span>
-          <span><i className="legend-swatch legend-free" />свободно</span>
-          <span><i className="legend-swatch legend-selected" />выбрано</span>
-        </div>
-
-        <section className="availability-calendar-section" aria-label="Календарь июня">
-          <h2>июнь</h2>
-          <div className="calendar-weekdays">
-            {calendarWeekdays.map((weekday) => <span key={weekday}>{weekday}</span>)}
+        <section className="availability-calendar-section" aria-label={`Календарь ${availabilityMonthLabel}`}>
+          <div className="availability-month-nav">
+            <button aria-label="Предыдущий месяц" disabled={availabilityMonthOffset === 0} onClick={() => setAvailabilityMonthOffset(0)} type="button">‹</button>
+            <h2>{availabilityMonthLabel}</h2>
+            <button aria-label="Следующий месяц" disabled={availabilityMonthOffset === 1} onClick={() => setAvailabilityMonthOffset(1)} type="button">›</button>
+          </div>
+          <div className="regular-days-options availability-weekday-chips">
+            {calendarWeekdays.map((weekday) => {
+              const isSelected = selectedWeekdays.includes(weekday);
+              return <button aria-pressed={isSelected} className={isSelected ? "regular-day regular-day-selected" : "regular-day"} key={weekday} onClick={() => toggleWeekday(weekday)} type="button">{weekday}</button>;
+            })}
           </div>
           <div className="availability-calendar">
-            {juneCalendarDays.map((day) => {
-              const isSelected = day.month === "current" && selectedDates.includes(String(day.day));
+            {availabilityCalendarDays.map((day) => {
+              const isSelected = day.month === "current" && selectedDates.includes(day.selectionKey);
+              const isPast = day.month === "current" && new Date(`${day.id}T12:00:00`) < prototypeToday;
               const isDisabled = day.status !== "free";
               const className = [
                 "availability-day",
                 `availability-day-${day.status}`,
-                day.month !== "current" ? "availability-day-outside" : "",
+                day.isX5Shift ? "availability-day-x5-shift" : "",
+                day.month !== "current" || isPast ? "availability-day-outside" : "",
                 isSelected ? "availability-day-selected" : "",
               ].filter(Boolean).join(" ");
 
@@ -889,6 +1147,7 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
                 <button
                   aria-pressed={isSelected}
                   className={className}
+                  data-weekday={day.weekday}
                   disabled={isDisabled}
                   key={day.id}
                   onClick={() => toggleDate(day)}
@@ -901,41 +1160,21 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
               );
             })}
           </div>
-        </section>
-
-        <section className="regular-days-section">
-          <h2>в какие дни недели вы готовы<br />регулярно выполнять задания</h2>
-          <div className="regular-days-options">
-            {calendarWeekdays.map((weekday) => {
-              const isSelected = selectedWeekdays.includes(weekday);
-
-              return (
-                <button
-                  aria-pressed={isSelected}
-                  className={isSelected ? "regular-day regular-day-selected" : "regular-day"}
-                  key={weekday}
-                  onClick={() => toggleWeekday(weekday)}
-                  type="button"
-                >
-                  {weekdayNames[weekday]}
-                </button>
-              );
-            })}
+          <div className="availability-legend" aria-label="Обозначения календаря">
+            <span><i className="legend-swatch legend-busy" />занято</span>
+            <span><i className="legend-swatch legend-x5-shift" />Х5-Смена</span>
+            <span><i className="legend-swatch legend-free" />свободно</span>
+            <span><i className="legend-swatch legend-selected" />выбрано</span>
           </div>
         </section>
       </main>
 
       <footer className="availability-actions">
-        {hasSelection || hasChanges ? (
-          <>
-            <button className="availability-reset" onClick={resetSelection} type="button">сбросить</button>
-            <button className="availability-save" onClick={() => setIsDaysPickerOpen(false)} type="button">готово</button>
-          </>
-        ) : (
-          <button className="availability-cancel" onClick={() => setIsDaysPickerOpen(false)} type="button">отмена</button>
-        )}
+        <button className="availability-reset" onClick={resetSelection} type="button">сбросить</button>
+        <button className="availability-save" onClick={() => setIsDaysPickerOpen(false)} type="button">готово</button>
       </footer>
     </section>
+    </div>
   );
 
   const selectedDaysSummary = `выбрано дней: ${selectedDates.length + selectedWeekdays.length}`;
@@ -958,7 +1197,7 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
 
       <main className="settings-content">
         <section className="availability-section">
-          <button aria-expanded={isDaysPickerOpen} className="settings-select" onClick={() => setIsDaysPickerOpen(true)} type="button">
+          <button aria-expanded={isDaysPickerOpen} className="settings-select" onClick={() => { setAvailabilityMonthOffset(0); setIsDaysPickerOpen(true); }} type="button">
             <span className="settings-select-copy">
               {hasSelection ? <><small>выберите дни</small><strong>{selectedDaysSummary}</strong></> : <strong className="settings-select-placeholder">выберите дни</strong>}
             </span>
@@ -1018,24 +1257,19 @@ function ScheduleSettings({ initialAvailabilityTime, initialSelectedDates, initi
       </main>
 
       <footer className="settings-actions">
-        <button className="availability-reset" onClick={() => {
-          resetSelection();
-          setAvailableFrom("");
-          setAvailableTo("");
-          setSelectedTimePresets([]);
-          setSelectedDuration([]);
-        }} type="button">сбросить</button>
-        <button className="availability-save" onClick={() => onSave({
-          selectedDates,
-          selectedWeekdays,
-          availabilityTime: {
-            from: availableFrom,
-            to: availableTo,
-            preset: selectedTimePresets[0] ?? null,
-            presets: selectedTimePresets,
-          },
-          selectedDuration,
-        })} type="button">сохранить</button>
+        {!hasChanges && !hasAppliedSettings ? (
+          <button className="availability-reset availability-action-single" onClick={onBack} type="button">закрыть</button>
+        ) : !hasChanges ? (
+          <>
+            <button className="availability-reset" onClick={onBack} type="button">закрыть</button>
+            <button className="availability-reset" onClick={resetAllSettings} type="button">сбросить</button>
+          </>
+        ) : (
+          <>
+            <button className="availability-reset" onClick={onBack} type="button">отмена</button>
+            <button className="availability-save" onClick={saveSettings} type="button">{isDraftEmpty ? "показать все" : "применить"}</button>
+          </>
+        )}
       </footer>
     </section>
   );
@@ -1297,9 +1531,16 @@ function LocationPicker({ initialLocation, initialRadius, onApply, onBack }) {
   );
 }
 
-function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditingCollection = false, onBack, onSave, onSaveCollection }) {
+function FiltersScreen({ initialCollectionAvailability, initialFilters, initialLocation, initialRadius, isClosing = false, isEditingCollection = false, onBack, onSave, onSaveCollection }) {
   const [selectedBrands, setSelectedBrands] = useState(initialFilters.brands);
-  const [service, setService] = useState(initialFilters.service);
+  const initialStores = normalizeSelectedStores(initialFilters.stores);
+  const [selectedStores, setSelectedStores] = useState(initialStores);
+  const [isStorePickerOpen, setIsStorePickerOpen] = useState(false);
+  const [storeSearch, setStoreSearch] = useState("");
+  const initialServices = normalizeSelectedServices(initialFilters.service);
+  const [selectedServices, setSelectedServices] = useState(initialServices);
+  const [isServicePickerOpen, setIsServicePickerOpen] = useState(false);
+  const [serviceSearch, setServiceSearch] = useState("");
   const [minimumPayment, setMinimumPayment] = useState(initialFilters.minimumPayment);
   const [radius, setRadius] = useState(initialRadius);
   const [location, setLocation] = useState(initialLocation);
@@ -1316,8 +1557,18 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
     { id: "perekrestok", label: "Перекрёсток" },
     { id: "chizhik", label: "Чижик" },
   ];
+  const stores = DEMO_STORES.map((store) => ({ ...store, address: getStoreAddress(location.label, store) }));
+  const normalizedStoreQuery = storeSearch.trim().toLocaleLowerCase("ru-RU");
+  const visibleStores = normalizedStoreQuery
+    ? stores.filter((store) => store.address.toLocaleLowerCase("ru-RU").includes(normalizedStoreQuery))
+    : stores;
+  const normalizedServiceQuery = serviceSearch.trim().toLocaleLowerCase("ru-RU");
+  const visibleServices = normalizedServiceQuery
+    ? DEMO_SERVICE_TITLES.filter((service) => service.toLocaleLowerCase("ru-RU").includes(normalizedServiceQuery))
+    : DEMO_SERVICE_TITLES;
   const isDirty = selectedBrands.join(",") !== initialFilters.brands.join(",")
-    || service !== initialFilters.service
+    || [...selectedStores].sort().join("\u0000") !== [...initialStores].sort().join("\u0000")
+    || [...selectedServices].sort().join("\u0000") !== [...initialServices].sort().join("\u0000")
     || minimumPayment !== initialFilters.minimumPayment
     || radius !== initialRadius
     || location.label !== initialLocation.label
@@ -1332,9 +1583,22 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
     location: { coords: location.coords, label: location.label },
     minimumPayment,
     radius,
-    service,
+    service: [...selectedServices].sort(),
+    stores: [...selectedStores].sort(),
   });
   const isCollectionSaved = savedCollectionSnapshot === collectionSnapshot;
+  const hasAppliedFilters = initialFilters.brands.length > 0
+    || initialStores.length > 0
+    || initialServices.length > 0
+    || Boolean(initialFilters.minimumPayment)
+    || initialRadius !== null
+    || Boolean(initialLocation.label);
+  const isDraftEmpty = selectedBrands.length === 0
+    && selectedStores.length === 0
+    && selectedServices.length === 0
+    && !minimumPayment
+    && radius === null
+    && !location.label;
 
   function toggleBrand(brand) {
     setSelectedBrands((current) => current.includes(brand)
@@ -1342,12 +1606,38 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
       : [...current, brand]);
   }
 
-  function resetFilters() {
-    setSelectedBrands([]);
-    setService("");
-    setMinimumPayment("");
-    setRadius(null);
-    setLocation(emptySearchLocation);
+  function toggleService(service) {
+    setSelectedServices((current) => current.includes(service)
+      ? current.filter((item) => item !== service)
+      : [...current, service]);
+  }
+
+  function toggleStore(storeId) {
+    setSelectedStores((current) => current.includes(storeId)
+      ? current.filter((item) => item !== storeId)
+      : [...current, storeId]);
+  }
+
+  function getStoreSelectionSummary() {
+    const selected = stores.filter((store) => selectedStores.includes(store.id));
+    if (selected.length === 1) return selected[0].address;
+    return `${selected.length} ${getRussianPlural(selected.length, ["магазин выбран", "магазина выбраны", "магазинов выбрано"])}`;
+  }
+
+  function saveFilters() {
+    onSave({
+      filters: { brands: selectedBrands, minimumPayment, service: selectedServices, stores: selectedStores },
+      location,
+      radius,
+    });
+  }
+
+  function resetAllFilters() {
+    onSave({
+      filters: { ...emptyFilters, brands: [], service: [], stores: [] },
+      location: { ...emptySearchLocation, coords: [...emptySearchLocation.coords] },
+      radius: null,
+    });
   }
 
   function getDefaultCollectionName() {
@@ -1364,10 +1654,18 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
     setIsCollectionSaveSheetOpen(true);
   }
 
+  useEffect(() => {
+    if (initialCollectionAvailability) openCollectionSaveSheet();
+  }, [initialCollectionAvailability]);
+
   function saveCollection() {
     const title = collectionName.trim() || getDefaultCollectionName();
     onSaveCollection({
-      filters: { brands: selectedBrands, minimumPayment, service },
+      availability: initialCollectionAvailability ? {
+        dateKeys: [initialCollectionAvailability.key],
+        labels: [initialCollectionAvailability.label],
+      } : undefined,
+      filters: { brands: selectedBrands, minimumPayment, service: selectedServices, stores: selectedStores },
       location: { ...location, coords: [...location.coords] },
       notifications: {
         email: emailUpdates,
@@ -1396,7 +1694,7 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
   );
 
   return (
-    <section className="filters-screen">
+    <section className={isClosing ? "filters-screen filters-screen-exit" : "filters-screen"}>
       <header className="filters-header">
         <div className="filters-navigation-row">
           <IconButton alt="" label="Назад к заданиям" onClick={onBack} src={assetUrl("back.svg")} />
@@ -1404,7 +1702,7 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
         <h1>фильтры</h1>
       </header>
 
-      <main className="filters-content">
+      <main className="filters-content filters-content-with-actions">
         <section className="filter-section">
           <h2>торговая сеть</h2>
           <div className="brand-filter-options">
@@ -1420,7 +1718,7 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
                   onClick={() => toggleBrand(brand.id)}
                   type="button"
                 >
-                  <BrandMark brand={brand.id} size="small" />
+                  <BrandMark brand={brand.id} />
                   <span>{brand.label}</span>
                 </button>
               );
@@ -1429,18 +1727,98 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
         </section>
 
         <section className="filter-fields">
-          <button className="filter-field filter-field-placeholder" type="button">
-            <span>адрес магазина</span>
-            <img alt="" src={assetUrl("chevron-down.svg")} />
-          </button>
-          <button
-            className={service ? "filter-field filter-field-filled" : "filter-field filter-field-placeholder"}
-            onClick={() => setService((current) => current ? "" : "сборка урожая пшеницы")}
-            type="button"
-          >
-            {service ? <span className="filter-field-content"><small>услуга</small><strong>{service}</strong></span> : <span>услуга</span>}
-            <img alt="" src={assetUrl("chevron-down.svg")} />
-          </button>
+          <div className={isStorePickerOpen ? "filter-picker filter-picker-open" : "filter-picker"}>
+            <button
+              aria-controls="store-filter-options"
+              aria-expanded={isStorePickerOpen}
+              aria-label="Выбрать адреса магазинов"
+              className={selectedStores.length ? "filter-field filter-field-filled filter-picker-trigger" : "filter-field filter-field-placeholder filter-picker-trigger"}
+              onClick={() => setIsStorePickerOpen((current) => !current)}
+              type="button"
+            >
+              {selectedStores.length ? (
+                <span className="filter-field-content">
+                  <small>адреса магазинов</small>
+                  <strong>{getStoreSelectionSummary()}</strong>
+                </span>
+              ) : <span>адрес магазина</span>}
+              <img alt="" className="filter-picker-chevron" src={assetUrl("chevron-down.svg")} />
+            </button>
+            {isStorePickerOpen && (
+              <div className="filter-picker-panel" id="store-filter-options">
+                <label className="filter-picker-search-field">
+                  <img alt="" aria-hidden="true" src={assetUrl("search.svg")} />
+                  <input
+                    aria-label="Поиск по адресу магазина"
+                    autoComplete="off"
+                    className="filter-picker-search"
+                    onChange={(event) => setStoreSearch(event.target.value)}
+                    placeholder="найти адрес"
+                    type="search"
+                    value={storeSearch}
+                  />
+                </label>
+                <div aria-label="Список адресов магазинов" className="filter-picker-options">
+                  {visibleStores.length ? visibleStores.map((store) => (
+                    <label className={selectedStores.includes(store.id) ? "filter-picker-option filter-picker-option-selected" : "filter-picker-option"} key={store.id}>
+                      <span>{store.address}</span>
+                      <input
+                        checked={selectedStores.includes(store.id)}
+                        onChange={() => toggleStore(store.id)}
+                        type="checkbox"
+                      />
+                    </label>
+                  )) : <p className="filter-picker-empty" role="status">ничего не найдено</p>}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className={isServicePickerOpen ? "filter-picker filter-picker-open" : "filter-picker"}>
+            <button
+              aria-controls="service-filter-options"
+              aria-expanded={isServicePickerOpen}
+              aria-label="Выбрать услуги"
+              className={selectedServices.length ? "filter-field filter-field-filled filter-picker-trigger" : "filter-field filter-field-placeholder filter-picker-trigger"}
+              onClick={() => setIsServicePickerOpen((current) => !current)}
+              type="button"
+            >
+              {selectedServices.length ? (
+                <span className="filter-field-content">
+                  <small>услуги</small>
+                  <strong>{getServiceSelectionSummary(selectedServices)}</strong>
+                </span>
+              ) : <span>услуга</span>}
+              <img alt="" className="filter-picker-chevron" src={assetUrl("chevron-down.svg")} />
+            </button>
+            {isServicePickerOpen && (
+              <div className="filter-picker-panel" id="service-filter-options">
+                <label className="filter-picker-search-field">
+                  <img alt="" aria-hidden="true" src={assetUrl("search.svg")} />
+                  <input
+                    aria-label="Поиск по услугам"
+                    autoComplete="off"
+                    className="filter-picker-search"
+                    onChange={(event) => setServiceSearch(event.target.value)}
+                    placeholder="найти услугу"
+                    type="search"
+                    value={serviceSearch}
+                  />
+                </label>
+                <div aria-label="Список услуг" className="filter-picker-options">
+                  {visibleServices.length ? visibleServices.map((service) => (
+                    <label className={selectedServices.includes(service) ? "filter-picker-option filter-picker-option-selected" : "filter-picker-option"} key={service}>
+                      <span>{service}</span>
+                      <input
+                        checked={selectedServices.includes(service)}
+                        onChange={() => toggleService(service)}
+                        type="checkbox"
+                      />
+                    </label>
+                  )) : <p className="filter-picker-empty" role="status">ничего не найдено</p>}
+                </div>
+              </div>
+            )}
+          </div>
           <label className={minimumPayment ? "filter-field filter-field-filled" : "filter-field filter-field-placeholder"}>
             {minimumPayment && <small>мин. стоимость ₽</small>}
             <input
@@ -1486,26 +1864,37 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
         </section>
       </main>
 
-      {isDirty && (
-        <div className="filter-actions">
-          {!isEditingCollection && <button
-            className="filter-collection-save"
-            disabled={isCollectionSaved}
-            onClick={openCollectionSaveSheet}
-            type="button"
-          >
-            {isCollectionSaved ? "подборка сохранена" : "сохранить подборку"}
-          </button>}
-          <div className="filter-actions-row">
-            <button className="filter-action-reset" onClick={resetFilters} type="button">сбросить</button>
-            <button className="filter-action-save" onClick={() => onSave({
-              filters: { brands: selectedBrands, minimumPayment, service },
-              location,
-              radius,
-            })} type="button">применить</button>
+      <div className={isDirty ? "filter-actions" : "filter-actions filter-actions-compact"}>
+          <div className="filter-actions-content">
+            {isDirty && !isEditingCollection && <button
+              className="filter-collection-save"
+              disabled={isCollectionSaved}
+              onClick={openCollectionSaveSheet}
+              type="button"
+            >
+              <span aria-hidden="true" className="filter-collection-save-icon">
+                <img alt="" src={assetUrl("save-collection-star.svg")} />
+              </span>
+              <span>{isCollectionSaved ? "подборка сохранена" : "сохранить в подборку"}</span>
+            </button>}
+            {!isDirty && !hasAppliedFilters ? (
+              <div className="filter-actions-row">
+                <button className="filter-action-reset filter-action-single" onClick={onBack} type="button">закрыть</button>
+              </div>
+            ) : !isDirty ? (
+              <div className="filter-actions-row">
+                <button className="filter-action-reset" onClick={onBack} type="button">закрыть</button>
+                <button className="filter-action-reset" onClick={resetAllFilters} type="button">сбросить</button>
+              </div>
+            ) : (
+              <div className="filter-actions-row">
+                <button className="filter-action-reset" onClick={onBack} type="button">отмена</button>
+                <button className="filter-action-save" onClick={saveFilters} type="button">{isDraftEmpty ? "показать все" : "применить"}</button>
+              </div>
+            )}
           </div>
+          <span aria-hidden="true" className="filter-actions-home-indicator" />
         </div>
-      )}
 
       {isCollectionSaveSheetOpen && <div className="collection-save-sheet-layer" onClick={() => setIsCollectionSaveSheetOpen(false)}>
         <section
@@ -1521,6 +1910,8 @@ function FiltersScreen({ initialFilters, initialLocation, initialRadius, isEditi
             <textarea aria-label="Название подборки" onChange={(event) => setCollectionName(event.target.value)} rows="2" value={collectionName} />
             {collectionName && <button aria-label="Очистить название подборки" className="collection-name-clear" onClick={() => setCollectionName("")} type="button" />}
           </label>
+
+          {initialCollectionAvailability && <p className="collection-availability-note">доступность: {initialCollectionAvailability.label}</p>}
 
           <h2>присылать обновления через</h2>
           <label className="collection-notification-row">
@@ -1558,8 +1949,8 @@ export function App() {
   const persistedStateRef = useRef(readPrototypeState());
   const persistedState = persistedStateRef.current;
   const [activeTab, setActiveTab] = useState(0);
-  const [activeDay, setActiveDay] = useState("1");
-  const [onlyMatching, setOnlyMatching] = useState(true);
+  const [activeDay, setActiveDay] = useState(days[0].id);
+  const [onlyMatching, setOnlyMatching] = useState(false);
   const [networkFilter, setNetworkFilter] = useState("торговая сеть");
   const [filterScrollState, setFilterScrollState] = useState("at-start");
   const [isBottomChromeHidden, setIsBottomChromeHidden] = useState(false);
@@ -1568,22 +1959,24 @@ export function App() {
   const [isScrollTopVisible, setIsScrollTopVisible] = useState(false);
   const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
   const [cardSheet, setCardSheet] = useState(null);
-  const [sortBy, setSortBy] = useState("recommended");
-  const [hasAppliedSort, setHasAppliedSort] = useState(false);
-  const [searchRadius, setSearchRadius] = useState(null);
-  const [searchLocation, setSearchLocation] = useState(emptySearchLocation);
-  const [appliedFilters, setAppliedFilters] = useState(emptyFilters);
-  const [favoriteCollections, setFavoriteCollections] = useState(persistedState.favoriteCollections || []);
+  const [sortBy, setSortBy] = useState(persistedState.sortBy || "recommended");
+  const [hasAppliedSort, setHasAppliedSort] = useState(Boolean(persistedState.hasAppliedSort));
+  const [searchRadius, setSearchRadius] = useState(persistedState.searchRadius ?? null);
+  const [searchLocation, setSearchLocation] = useState(persistedState.searchLocation || emptySearchLocation);
+  const [appliedFilters, setAppliedFilters] = useState(persistedState.appliedFilters || emptyFilters);
+  const [favoriteCollections, setFavoriteCollections] = useState(persistedState.favoriteCollections || defaultFavoriteCollections);
+  const [favoriteServiceRecords, setFavoriteServiceRecords] = useState(demoFavoriteServiceRecords);
+  const [signingTaskRecords, setSigningTaskRecords] = useState(demoSigningTaskRecords);
+  const [pendingCollectionAvailability, setPendingCollectionAvailability] = useState(null);
   const [editingCollection, setEditingCollection] = useState(null);
-  const [catalogVersion, setCatalogVersion] = useState(0);
+  const [catalogVersion, setCatalogVersion] = useState(persistedState.catalogVersion || 0);
   const [selectedAvailabilityDates, setSelectedAvailabilityDates] = useState([]);
   const [selectedAvailabilityWeekdays, setSelectedAvailabilityWeekdays] = useState([]);
   const [availabilityTime, setAvailabilityTime] = useState(emptyAvailabilityTime);
   const [selectedAvailabilityDuration, setSelectedAvailabilityDuration] = useState([]);
   const [bookedTasks, setBookedTasks] = useState(persistedState.bookedTasks || []);
-  const [favoriteServiceRecords, setFavoriteServiceRecords] = useState(demoFavoriteServiceRecords);
-  const [signingTaskRecords, setSigningTaskRecords] = useState(demoSigningTaskRecords);
   const [currentView, setCurrentView] = useState("tasks");
+  const [isFiltersClosing, setIsFiltersClosing] = useState(false);
   const [isSettingsOnboardingVisible, setIsSettingsOnboardingVisible] = useState(true);
   const [settingsOnboardingAnchor, setSettingsOnboardingAnchor] = useState(null);
   const [startupPhase, setStartupPhase] = useState("spinner");
@@ -1591,6 +1984,33 @@ export function App() {
   const [scrollTargetDay, setScrollTargetDay] = useState(null);
   const [isTimelineLoading, setIsTimelineLoading] = useState(false);
   const [expandedFilteredDays, setExpandedFilteredDays] = useState([]);
+  const [catalogRuntimeState, setCatalogRuntimeState] = useState(readCatalogRuntimeState);
+
+  function closeFilters() {
+    setIsFiltersClosing(true);
+    window.setTimeout(() => {
+      setIsFiltersClosing(false);
+      setCurrentView("tasks");
+    }, 260);
+  }
+
+  function clearCatalogRuntimeState() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("catalogState");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    setCatalogRuntimeState("ready");
+  }
+  const hasFilterChangesFromDefault = appliedFilters.brands.length > 0
+    || Boolean(appliedFilters.minimumPayment)
+    || normalizeSelectedServices(appliedFilters.service).length > 0
+    || normalizeSelectedStores(appliedFilters.stores).length > 0
+    || searchRadius !== null
+    || searchLocation.label !== emptySearchLocation.label;
+  const hasAvailabilityChangesFromDefault = Boolean(selectedAvailabilityDates.length > 0
+    || selectedAvailabilityWeekdays.length > 0
+    || selectedAvailabilityDuration.length > 0
+    || ((availabilityTime.from || availabilityTime.to || availabilityTime.preset || availabilityTime.presets?.length)
+      && !isVisualDefaultAvailability(availabilityTime)));
   const screenRef = useRef(null);
   const scheduleSettingsButtonRef = useRef(null);
   const daySectionRefs = useRef({});
@@ -1646,11 +2066,17 @@ export function App() {
 
   useEffect(() => {
     window.localStorage.setItem(prototypeStorageKey, JSON.stringify({
+      appliedFilters,
       bookedTasks,
+      catalogVersion,
       defaultStateVersion: prototypeDefaultStateVersion,
       favoriteCollections,
+      hasAppliedSort,
+      searchLocation,
+      searchRadius,
+      sortBy,
     }));
-  }, [bookedTasks, favoriteCollections]);
+  }, [appliedFilters, bookedTasks, catalogVersion, favoriteCollections, hasAppliedSort, searchLocation, searchRadius, sortBy]);
 
   useEffect(() => {
     const timeline = document.querySelector(".date-timeline");
@@ -1673,7 +2099,7 @@ export function App() {
     if (!scrollTargetDay) return;
 
     const screen = document.querySelector(".screen");
-    const section = screen?.querySelector(`[data-day="${scrollTargetDay}"]`);
+    const section = screen?.querySelector(`[data-day-key="${scrollTargetDay}"]`);
     if (screen && section) {
       screen.scrollTo({
         top: Math.max(0, section.offsetTop - (isControlsRevealed ? 226 : 154)),
@@ -1694,7 +2120,7 @@ export function App() {
     onScroll();
 
     return () => screen.removeEventListener("scroll", onScroll);
-  }, [currentView, startupPhase]);
+  }, [currentView]);
 
   function handleFilterScroll(event) {
     const { clientWidth, scrollLeft, scrollWidth } = event.currentTarget;
@@ -1728,7 +2154,7 @@ export function App() {
 
     lastScrollTopRef.current = currentScrollTop;
     const activationLine = screen.getBoundingClientRect().top + 154;
-    let nextActiveDay = dayGroups[0].date;
+    let nextActiveDay = dayGroups[0].id;
     const targetDay = programmaticDayRef.current;
 
     if (targetDay) {
@@ -1742,9 +2168,9 @@ export function App() {
 
     if (!programmaticDayRef.current) {
       dayGroups.forEach((day) => {
-        const section = daySectionRefs.current[day.date];
+        const section = daySectionRefs.current[day.id];
         if (section && section.getBoundingClientRect().top <= activationLine) {
-          nextActiveDay = day.date;
+          nextActiveDay = day.id;
         }
       });
     }
@@ -1756,22 +2182,22 @@ export function App() {
     setIsScrollTopVisible((current) => current === (currentScrollTop >= 320) ? current : currentScrollTop >= 320);
   }
 
-  function scrollToDay(date) {
-    const distance = Math.abs(Number(date) - Number(activeDay));
-    programmaticDayRef.current = date;
-    setActiveDay(date);
+  function scrollToDay(dayId) {
+    const distance = Math.abs(days.findIndex((day) => day.id === dayId) - days.findIndex((day) => day.id === activeDay));
+    programmaticDayRef.current = dayId;
+    setActiveDay(dayId);
 
     if (distance > 4) {
       window.clearTimeout(timelineLoadTimerRef.current);
       setIsTimelineLoading(true);
       timelineLoadTimerRef.current = window.setTimeout(() => {
         setIsTimelineLoading(false);
-        setScrollTargetDay(date);
+        setScrollTargetDay(dayId);
       }, 100);
       return;
     }
 
-    setScrollTargetDay(date);
+    setScrollTargetDay(dayId);
   }
 
   function scrollToTop() {
@@ -1791,10 +2217,12 @@ export function App() {
 
   function getBookingState(candidate) {
     if (bookedTasks.some((booking) => booking.id === candidate.task.id)) return "booked";
-    if (!isAvailableForMatching(candidate.day.date) || !isTaskWithinAvailability(candidate.task, availabilityTime)) return "conflict";
+    if (!isAvailableForMatching(candidate.day.id) || !isTaskWithinAvailability(candidate.task, availabilityTime)) return "conflict";
     const sameDayBookings = [
-      ...(acceptedGigByDate[candidate.day.date] ? [acceptedGigByDate[candidate.day.date]] : []),
-      ...bookedTasks.filter((booking) => booking.day.date === candidate.day.date).map((booking) => booking.task),
+      ...(acceptedGigByDate[candidate.day.id] || acceptedGigByDate[candidate.day.date]
+        ? [acceptedGigByDate[candidate.day.id] ?? acceptedGigByDate[candidate.day.date]]
+        : []),
+      ...bookedTasks.filter((booking) => booking.day.id === candidate.day.id).map((booking) => booking.task),
     ];
     if (sameDayBookings.some((shift) => shiftsOverlap(candidate.task, shift))) return "conflict";
     return "available";
@@ -1806,14 +2234,14 @@ export function App() {
     setIsSortSheetOpen(false);
   }
 
-  function isAvailableForMatching(date) {
-    if (availabilityByDate[date] !== "free") return false;
+  function isAvailableForMatching(dayId) {
+    if (availabilityByDate[dayId] !== "free") return false;
 
     const hasManualAvailability = selectedAvailabilityDates.length > 0 || selectedAvailabilityWeekdays.length > 0;
     if (!hasManualAvailability) return true;
 
-    const weekday = days.find((day) => day.date === date)?.weekday;
-    return selectedAvailabilityDates.includes(date) || selectedAvailabilityWeekdays.includes(weekday);
+    const day = days.find((candidate) => candidate.id === dayId);
+    return selectedAvailabilityDates.includes(dayId) || selectedAvailabilityWeekdays.includes(day?.weekday);
   }
 
   function getLocationTasks(day, dayIndex) {
@@ -1825,15 +2253,25 @@ export function App() {
       [1200, 1900],
       [320, 880],
       [15000, 47000],
+      [52000, 72000],
+    ];
+    const shiftPatterns = [
+      { duration: 4, startHour: 8 },
+      { duration: 4, startHour: 12 },
+      { duration: 4, startHour: 16 },
+      { duration: 7, startHour: 23 },
+      { duration: 7, startHour: 9 },
     ];
     const locationAddress = effectiveSearchLocation.label.replace(/, Россия$/, "");
 
-    return distanceBands.map(([minDistance, maxDistance], taskIndex) => {
-      const seed = `${locationKey}-${day.date}-${taskIndex}`;
-      const source = taskTemplates[Math.floor(seededValue(`${seed}-template`) * taskTemplates.length)];
+    return Array.from({ length: DEMO_TASKS_PER_DAY }, (_, taskIndex) => {
+      const distanceBandIndex = taskIndex % distanceBands.length;
+      const [minDistance, maxDistance] = distanceBands[distanceBandIndex];
+      const seed = `${locationKey}-${day.id}-${taskIndex}`;
+      const source = taskTemplates[(dayIndex * DEMO_TASKS_PER_DAY + taskIndex) % taskTemplates.length];
+      const store = DEMO_STORES[taskIndex % DEMO_STORES.length];
       const rate = 210 + Math.floor(seededValue(`${seed}-rate`) * 151);
-      const startHour = 8 + Math.floor(seededValue(`${seed}-start`) * 4);
-      const duration = 7 + Math.floor(seededValue(`${seed}-duration`) * 3);
+      const { duration, startHour } = shiftPatterns[taskIndex % shiftPatterns.length];
       const endHour = (startHour + duration) % 24;
       const distanceInMeters = minDistance + Math.floor(seededValue(`${seed}-distance`) * (maxDistance - minDistance));
       const hasBreak = duration > 8;
@@ -1841,19 +2279,21 @@ export function App() {
 
       return {
         ...source,
-        title: DEMO_SERVICE_TITLES[(dayIndex * distanceBands.length + taskIndex) % DEMO_SERVICE_TITLES.length],
-        address: `${locationAddress}, д. ${1 + Math.floor(seededValue(`${seed}-building`) * 96)}`,
-        badge: taskIndex < 2 ? "подходит вам" : undefined,
+        brand: DEMO_TASK_BRANDS[taskIndex % DEMO_TASK_BRANDS.length],
+        title: DEMO_SERVICE_TITLES[(dayIndex * DEMO_TASKS_PER_DAY + taskIndex) % DEMO_SERVICE_TITLES.length],
+        address: getStoreAddress(locationAddress, store),
+        badge: undefined,
         breakInfo: hasBreak ? `${duration - 1} ч + 1 ч перерыв` : `${duration} ч без перерыва`,
         distance: distanceInMeters >= 1000 ? `${(distanceInMeters / 1000).toFixed(1).replace(".", ",")} км` : `${distanceInMeters} м`,
         hours: `${String(startHour).padStart(2, "0")}:00 – ${String(endHour).padStart(2, "0")}:00`,
-        id: `${day.date}-${catalogVersion}-${taskIndex}-${source.id}`,
+        id: `${day.id}-${catalogVersion}-${taskIndex}-${source.id}`,
         metro: undefined,
         payment: formatPayment(payment),
         recommendation: Math.floor(seededValue(`${seed}-recommendation`) * 100),
         rate: `${rate} ₽/час`,
-        mismatchHints: taskIndex === 2 ? ["Пересекается со сменой"] : [],
-        variant: taskIndex === 3 ? "special" : undefined,
+        mismatchHints: taskIndex % 10 === 2 ? ["Пересекается со сменой"] : [],
+        variant: taskIndex === 3 && [0, 1, 4].includes(dayIndex) ? "special" : undefined,
+        storeId: store.id,
       };
     });
   }
@@ -1902,17 +2342,19 @@ export function App() {
 
         <div className="sticky-timeline">
           <div aria-label="Даты" className="date-timeline">
-            {days.map(({ date, weekday }) => (
+            {days.map(({ date, id, isMonthStart, monthLabel, weekday }) => (
               <button
-                aria-pressed={activeDay === date}
-                className={activeDay === date ? "day-card day-card-active" : "day-card"}
-                key={`${date}-${weekday}`}
-                onClick={() => scrollToDay(date)}
-                ref={(node) => { timelineDayRefs.current[date] = node; }}
+                aria-pressed={activeDay === id}
+                className={activeDay === id ? "day-card day-card-active" : "day-card"}
+                data-date-key={id}
+                data-month-start={isMonthStart || undefined}
+                key={id}
+                onClick={() => scrollToDay(id)}
+                ref={(node) => { timelineDayRefs.current[id] = node; }}
                 type="button"
               >
                 <span>{date}</span>
-                <small>{weekday}</small>
+                <small>{isMonthStart ? monthLabel : weekday}</small>
               </button>
             ))}
           </div>
@@ -1934,6 +2376,7 @@ export function App() {
                 </button>
                 <button aria-label="Открыть фильтры" className="filter-icon-button" onClick={() => setCurrentView("filters")} type="button">
                   <img alt="" src={assetUrl("funnel.svg")} />
+                  {hasFilterChangesFromDefault && <span aria-hidden="true" className="filter-settings-badge" />}
                 </button>
                 <button
                   aria-label="Открыть настройки доступности"
@@ -1945,7 +2388,8 @@ export function App() {
                   ref={scheduleSettingsButtonRef}
                   type="button"
                 >
-                  <img alt="" src={assetUrl("schedule_ic.svg")} />
+                  <img alt="" src={assetUrl("calendar_clock.svg")} />
+                  {hasAvailabilityChangesFromDefault && <span aria-hidden="true" className="filter-settings-badge" />}
                 </button>
               </div>
               <label className="toggle-label">
@@ -1958,34 +2402,31 @@ export function App() {
                 <span aria-hidden="true" className="toggle" />
               </label>
               <button
-                aria-expanded={networkFilter !== "торговая сеть"}
+                aria-expanded={cardSheet === "network"}
                 className="network-filter"
-                onClick={() => setNetworkFilter(networkFilter === "торговая сеть" ? "все сети" : "торговая сеть")}
+                onClick={() => setCardSheet("network")}
                 type="button"
               >
-                <span>{networkFilter}</span>
+                <span>{appliedFilters.brands.length ? `${appliedFilters.brands.length} ${getRussianPlural(appliedFilters.brands.length, ["сеть", "сети", "сетей"])}` : "торговая сеть"}</span>
                 <span aria-hidden="true" className="filter-chevron" />
               </button>
-              <button aria-expanded="false" className="network-filter" type="button">
-                <span>оплата</span>
+              <button aria-expanded={cardSheet === "payment"} className="network-filter" onClick={() => setCardSheet("payment")} type="button">
+                <span>{appliedFilters.minimumPayment ? `от ${appliedFilters.minimumPayment} ₽` : "оплата"}</span>
                 <span aria-hidden="true" className="filter-chevron" />
               </button>
-              <button aria-expanded="false" className="network-filter" type="button">
-                <span>расстояние</span>
+              <button aria-expanded={cardSheet === "distance"} className="network-filter" onClick={() => setCardSheet("distance")} type="button">
+                <span>{searchRadius ? `до ${searchRadius} км` : "расстояние"}</span>
                 <span aria-hidden="true" className="filter-chevron" />
               </button>
             </div>
           </div>
         </section>}
 
-        <section
-          aria-label={activeTab === 2 ? "Мои задания" : activeTab === 1 ? "Избранное" : activeTab === 3 ? "Задания на подписание" : "Список заданий"}
-          className={isTaskListLoading ? "task-list task-list-loading" : "task-list"}
-        >
+        <section aria-label={activeTab === 3 ? "Задания на подписание" : activeTab === 2 ? "Мои задания" : activeTab === 1 ? "Избранное" : "Список заданий"} className={isTaskListLoading ? "task-list task-list-loading" : "task-list"}>
           {activeTab === 1 ? <FavoritesView
             collections={favoriteCollections}
             defaultBrands={defaultCollectionBrands}
-            favoriteStore={demoFavoriteStore}
+            favoriteStores={defaultFavoriteStores}
             onApplyCollection={(collection) => {
               const hasLocationChanged = collection.location.label !== searchLocation.label
                 || collection.location.coords[0] !== searchLocation.coords[0]
@@ -1993,7 +2434,12 @@ export function App() {
               setAppliedFilters(collection.filters);
               setSearchLocation(collection.location);
               setSearchRadius(collection.radius);
+              if (collection.availability?.dateKeys?.length) setSelectedAvailabilityDates(collection.availability.dateKeys);
               if (hasLocationChanged) setCatalogVersion((current) => current + 1);
+              setActiveTab(0);
+            }}
+            onApplyStore={(store) => {
+              setAppliedFilters({ ...emptyFilters, stores: [store.id] });
               setActiveTab(0);
             }}
             onEditCollection={(collection) => {
@@ -2002,21 +2448,32 @@ export function App() {
             }}
             onOpenService={openTaskDetails}
             onRemoveCollection={(id) => setFavoriteCollections((collections) => collections.filter((collection) => collection.id !== id))}
-            onRemoveService={(id) => setFavoriteServiceRecords((records) => records.filter((record) => record.service.id !== id))}
-            serviceRecords={favoriteServiceRecords.filter((record) => !bookedTasks.some((booking) => booking.id === record.service.id))}
-          /> : activeTab === 2 ? <MyTasksList bookedTasks={bookedTasks} demoRecords={demoMyTaskRecords} />
-            : activeTab === 3 ? <SigningList
-              onPrimaryAction={(recordId) => setSigningTaskRecords((records) => records.map((record) => (
-                record.id === recordId
-                  ? { ...record, signing: { actor: "system", status: "processing" } }
-                  : record
+            onRemoveService={(id) => setFavoriteServiceRecords((records) => records.filter(({ service }) => service.id !== id))}
+            serviceRecords={favoriteServiceRecords}
+          /> : activeTab === 2 ? (
+            <MyTasksList bookedTasks={bookedTasks} demoRecords={demoMyTaskRecords} />
+          ) : activeTab === 3 ? (
+            <SigningList
+              onPrimaryAction={(id) => setSigningTaskRecords((records) => records.map((record) => (
+                record.id === id ? { ...record, signing: { ...record.signing, status: "processing" } } : record
               )))}
               records={signingTaskRecords}
             />
-              : isTaskListLoading ? <CatalogLoadingState />
-                : <TaskFeed
+          ) : isTaskListLoading ? (
+            <CatalogLoadingState />
+          ) : (
+            <>
+              {catalogRuntimeState === "stale" && <CatalogStaleState onRefresh={clearCatalogRuntimeState} />}
+              {catalogRuntimeState === "error" ? (
+                <CatalogErrorState onRetry={clearCatalogRuntimeState} />
+              ) : (
+                <TaskFeed
                   dayGroups={dayGroups}
-                  employeeShiftContext={{ acceptedGigByDate, availabilityByDate, bookedTasks }}
+                  employeeShiftContext={{
+                    acceptedGigByDate,
+                    availabilityByDate,
+                    bookedTasks,
+                  }}
                   expandedFilteredDays={expandedFilteredDays}
                   feedContext={{
                     acceptedGigByDate,
@@ -2024,7 +2481,6 @@ export function App() {
                     availabilityByDate,
                     availabilityTime,
                     bookedTasks,
-                    days,
                     hasAppliedSort,
                     onlyMatching,
                     searchRadius,
@@ -2035,14 +2491,19 @@ export function App() {
                   }}
                   getLocationTasks={getLocationTasks}
                   onChangeFilters={() => setCurrentView("filters")}
-                  onCollapseDay={(date) => setExpandedFilteredDays((current) => current.filter((item) => item !== date))}
-                  onExpandDay={(date) => setExpandedFilteredDays((current) => [...current, date])}
+                  onCollapseDay={(dayId) => setExpandedFilteredDays((current) => current.filter((id) => id !== dayId))}
+                  onExpandDay={(dayId) => setExpandedFilteredDays((current) => current.includes(dayId) ? current : [...current, dayId])}
                   onOpenTask={openTaskDetails}
-                  onShowAllServices={() => setOnlyMatching(false)}
-                  registerDaySection={(date, node) => { daySectionRefs.current[date] = node; }}
-                />}
+                  onSubscribe={(day) => {
+                    setPendingCollectionAvailability({ key: day.id, label: `${day.label}, ${day.secondaryLabel}` });
+                    setCurrentView("filters");
+                  }}
+                  registerDaySection={(dayId, node) => { daySectionRefs.current[dayId] = node; }}
+                />
+              )}
+            </>
+          )}
         </section>
-
       </section> : currentView === "settings" ? <ScheduleSettings
         initialAvailabilityTime={availabilityTime}
         initialSelectedDates={selectedAvailabilityDates}
@@ -2081,27 +2542,31 @@ export function App() {
         }}
         onBack={() => setCurrentView("tasks")}
       /> : <FiltersScreen
+        isClosing={isFiltersClosing}
+        initialCollectionAvailability={pendingCollectionAvailability}
         initialFilters={editingCollection?.filters || appliedFilters}
         initialLocation={editingCollection?.location || searchLocation}
         initialRadius={editingCollection?.radius || searchRadius}
         isEditingCollection={Boolean(editingCollection)}
         onBack={() => {
           setEditingCollection(null);
-          setCurrentView("tasks");
+          setPendingCollectionAvailability(null);
+          closeFilters();
         }}
         onSave={({ filters, location, radius }) => {
           if (editingCollection) {
+            const minimumPaymentValue = Number.parseInt(String(filters.minimumPayment).replace(/\D/g, ""), 10) || 0;
             setFavoriteCollections((collections) => collections.map((collection) => collection.id === editingCollection.id ? {
               ...collection,
               filters: { ...filters, brands: [...filters.brands] },
               location: { ...location, coords: [...location.coords] },
               radius,
-              resultCount: getSavedCollectionResultCount(filters, radius),
+              resultCount: minimumPaymentValue > 10_000 ? 0 : undefined,
               title: editingCollection.title,
             } : collection));
             setEditingCollection(null);
             setActiveTab(1);
-            setCurrentView("tasks");
+            closeFilters();
             return;
           }
           const hasLocationChanged = location.label !== searchLocation.label
@@ -2111,21 +2576,24 @@ export function App() {
           setSearchRadius(radius);
           setAppliedFilters(filters);
           if (hasLocationChanged) setCatalogVersion((current) => current + 1);
-          setCurrentView("tasks");
+          closeFilters();
         }}
-        onSaveCollection={({ filters, location, notifications, radius, title }) => {
+        onSaveCollection={({ availability, filters, location, notifications, radius, title }) => {
+          const minimumPaymentValue = Number.parseInt(String(filters.minimumPayment).replace(/\D/g, ""), 10) || 0;
           setFavoriteCollections((collections) => [
             {
+              availability,
               filters: { ...filters, brands: [...filters.brands] },
               id: `collection-${Date.now()}`,
               location,
               notifications,
               radius,
-              resultCount: getSavedCollectionResultCount(filters, radius),
+              resultCount: minimumPaymentValue > 10_000 ? 0 : undefined,
               title,
             },
             ...collections,
           ]);
+          setPendingCollectionAvailability(null);
         }}
       />}
 
@@ -2198,6 +2666,18 @@ export function App() {
         </div>
       )}
 
+      {currentView === "tasks" && ["network", "payment", "distance"].includes(cardSheet) && <QuickFilterSheet
+        filters={appliedFilters}
+        onApply={({ filters, radius }) => {
+          setAppliedFilters(filters);
+          setSearchRadius(radius);
+          setCardSheet(null);
+        }}
+        onClose={() => setCardSheet(null)}
+        radius={searchRadius}
+        type={cardSheet}
+      />}
+
       {currentView === "tasks" && cardSheet === "filters" && <CardFiltersSheet
         filters={appliedFilters}
         onApply={(filters) => {
@@ -2241,8 +2721,8 @@ export function App() {
             type="button"
           />
           <aside aria-hidden="true" className="settings-onboarding-tooltip">
-            <strong>настройте выдачу под себя</strong>
-            <span>Укажите свободное время и место поиска. Покажем задания без пересечений с основным графиком</span>
+            <strong>настройте дни и часы доступности к подработкам</strong>
+            <span>Покажем задания без пересечений с основным графиком работы, учитывая ваши пожелания</span>
           </aside>
           <button
             aria-label="Открыть настройки расписания"
@@ -2253,7 +2733,7 @@ export function App() {
             }}
             type="button"
           >
-            <img alt="" src={assetUrl("schedule_ic.svg")} />
+            <img alt="" src={assetUrl("calendar_clock.svg")} />
           </button>
         </div>
       )}

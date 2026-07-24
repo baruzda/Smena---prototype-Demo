@@ -19,14 +19,15 @@ export function resolveEmployeeShiftsForDay({
   bookedTasks,
   day,
 }) {
+  const dayValue = (record) => record?.[day.id] ?? record?.[day.date];
   const acceptedShifts = [
-    ...(acceptedGigByDate[day.date] ? [{ ...acceptedGigByDate[day.date], type: "gig" }] : []),
+    ...(dayValue(acceptedGigByDate) ? [{ ...dayValue(acceptedGigByDate), type: "gig" }] : []),
     ...bookedTasks
-      .filter((booking) => booking.day.date === day.date)
+      .filter((booking) => booking.day.id === day.id || booking.day.date === day.date)
       .map((booking) => ({ ...booking.task, type: "gig" })),
   ];
 
   if (acceptedShifts.length > 0) return Object.freeze(acceptedShifts);
-  if (availabilityByDate[day.date] !== "busy") return Object.freeze([]);
+  if (dayValue(availabilityByDate) !== "busy") return Object.freeze([]);
   return Object.freeze([{ ...DEFAULT_PRIMARY_SHIFT }]);
 }

@@ -14,8 +14,9 @@ const FAVORITES_SECTIONS = Object.freeze([
 export function FavoritesView({
   collections,
   defaultBrands,
-  favoriteStore,
+  favoriteStores,
   onApplyCollection,
+  onApplyStore,
   onEditCollection,
   onOpenService,
   onRemoveCollection,
@@ -23,6 +24,7 @@ export function FavoritesView({
   serviceRecords,
 }) {
   const [section, setSection] = useState("services");
+  const [stores, setStores] = useState(favoriteStores);
   const [removingServiceIds, setRemovingServiceIds] = useState([]);
   const removeTimersRef = useRef(new Map());
   const onRemoveServiceRef = useRef(onRemoveService);
@@ -142,8 +144,19 @@ export function FavoritesView({
               </section>
             )}
           </div>
-        ) : section === "stores" ? (
-          <FavoriteStoreCard onApply={() => selectSection("collections")} store={favoriteStore} />
+        ) : section === "stores" ? stores.length === 0 ? (
+          <p className={styles.empty}>Сохранённых магазинов пока нет</p>
+        ) : (
+          <div className={styles.list}>
+            {stores.map((store) => (
+              <FavoriteStoreCard
+                key={store.id}
+                onApply={() => onApplyStore(store)}
+                onRemove={() => setStores((current) => current.filter(({ id }) => id !== store.id))}
+                store={store}
+              />
+            ))}
+          </div>
         ) : collections.length === 0 ? (
           <p className={styles.empty}>Сохранённых подборок пока нет</p>
         ) : (

@@ -1042,6 +1042,42 @@
       },
       "executionStatus": "verified",
       "testEvidence": "tests/app.spec.mjs"
+    },
+    {
+      "id": "SCN-CATALOG-006",
+      "name": "Ошибка обновления без сохранённых данных",
+      "given": {
+        "surface": "tasks",
+        "catalog": {
+          "requestState": "error",
+          "hasCachedData": false
+        }
+      },
+      "expected": {
+        "uiStates": ["catalog.error"],
+        "actions": ["retry"],
+        "cardsVisible": false
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/app.spec.mjs"
+    },
+    {
+      "id": "SCN-CATALOG-007",
+      "name": "Старые данные остаются при ошибке обновления",
+      "given": {
+        "surface": "tasks",
+        "catalog": {
+          "requestState": "error",
+          "hasCachedData": true
+        }
+      },
+      "expected": {
+        "uiStates": ["catalog.stale"],
+        "actions": ["refresh"],
+        "cardsVisible": true
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/app.spec.mjs"
     }
   ]
 }

@@ -1,64 +1,73 @@
-**Comparison Target**
+# Design QA: финальная миграция карточек
 
-- Source visual truth: Figma node `10451:105590`, saved at `qa/figma-reference.png`.
-- Implementation screenshots: `qa/implementation-final.png` and `qa/timeline-filters-final.png`.
-- Full-view comparisons: `qa/comparison-final.png` and `qa/timeline-filters-comparison.png`.
-- Viewport: mobile surface `393 x 860`; review scope is the status bar, navigation controls, heading, tabs, date timeline, and filter row.
-- State: first tab, `задания`, selected; 1 пн is the active date and the `подходит мне` toggle is on. Interaction tested: clicking `мои задания` moved `aria-current="page"` to that tab; selecting 3 ср moved the active-day state; the toggle and network selector update their visible states. Browser console errors: none.
+## Comparison target
 
-**Findings**
+- Source visual truth: Figma node `10451:105590`, сохранённый как `qa/figma-reference.png`; card contract — Figma component `mobile card`, node `10451:106630`, зафиксированный в `docs/card-style-matrix.md`.
+- Browser-rendered implementation: `qa/card-migration-implementation-final.png`.
+- Combined comparison input: `qa/card-migration-comparison-final.png`.
+- Focused card evidence: `tests/card-variants.visual.spec.mjs-snapshots/` и `tests/card-visual.spec.mjs-snapshots/`.
+- Viewport and normalization: source `393 × 860 px`, implementation `393 × 860 px`, CSS viewport `393 × 860`, `deviceScaleFactor: 1`; combined input `806 × 860 px` with a 20 px neutral separator. Density normalization was not required.
+- State: tasks tab, current date selected, matching toggle enabled, first catalog cards visible. Dynamic dates, the Favorites tab, the availability control and matching badges are approved product changes, not design drift.
 
-- No actionable P0, P1, or P2 visual differences in the scoped header and controls region.
-- [P3] Fallback font differs slightly from the Figma `X5 Sans VF` source.
-  Location: header, tabs, and status time.
-  Evidence: the implementation uses the closest installed system fallback because no web-font asset was supplied by the selected Figma node.
-  Impact: minor glyph-shape variance only; sizing, hierarchy, spacing, and wrapping match the reference within this first slice.
-  Fix: load the licensed `X5 Sans VF` web font when it is available to the project.
+## Findings
 
-**Required Fidelity Surfaces**
+- No actionable P0, P1 or P2 findings remain.
+- [P3] The combined capture retains a purple `focus-visible` ring on the matching toggle because the browser had just checked it.
+  - Evidence: Figma shows the normal checked state; the implementation screenshot shows the same control with keyboard focus.
+  - Impact: capture-state difference only; layout, color tokens, sizing and interaction semantics are correct.
+  - Follow-up: blur the control before a future normal-state marketing capture.
 
-- Fonts and typography: title uses 34/34 with -0.34px tracking; tab labels use 16/20. Fallback family is the only residual difference.
-- Spacing and layout rhythm: status bar 56px, navigation row 48px, heading bottom inset 12px, tabs 40px with 16px page insets; date tiles 44x56px and the 20px timeline-to-filter gap match the Figma context.
-- Colors and visual tokens: white surface, black title and active tab, white active-tab text, and neutral inactive controls match the source.
-- Image quality and asset fidelity: back, filter, help, and status indicators are source Figma SVG assets, rendered without replacement icons.
-- Copy and content: `смена X5`, `задания`, `мои задания`, and `задания на подписание` match the source.
+## Required fidelity surfaces
 
-**Comparison History**
+- Fonts and typography: X5 Sans assets, weights, hierarchy, line heights and card wrapping are consistent with the Figma source. Long dates in My Tasks and Signing now wrap in the right column without splitting payment or hourly-rate values.
+- Spacing and layout rhythm: the 393 px frame, 16 px page/card insets, 12 px card padding, 16 px radii, dividers and vertical rhythm match the source system. Narrow-viewport evidence remains readable without horizontal overflow.
+- Colors and visual tokens: white surfaces, black primary copy, neutral secondary copy, borders, lavender matching badges and semantic status colors are consistent. The remaining purple outline is an intentional focus state.
+- Image quality and asset fidelity: brand, metro and navigation assets render sharply. The missing profile image was restored as a native `28 × 28` crop from the supplied Figma source; no placeholder remains.
+- Copy and content: task, status, error/stale, empty, subscription, Favorites and Signing copy follow the approved repository decisions. Dynamic catalog content differences are intentional.
 
-1. Initial capture found broken Figma assets because SVG files were saved with `.png` extensions. Fixed by preserving the source SVG format and updating image references.
-2. Second capture found the mobile surface lacked the source corner treatment. Fixed by retaining the 40px frame radius at the mobile width.
-3. Final capture shows no actionable P0/P1/P2 differences in the scoped region.
+## Full-view comparison evidence
 
-**Implementation Checklist**
+`qa/card-migration-comparison-final.png` contains the source and implementation at the same viewport and density. The global hierarchy, card widths, borders, title/address/payment/time anatomy, sticky map action and bottom navigation remain aligned. Intentional product evolution is limited to the approved additional tab/control, dynamic date/content and matching markers.
 
-- [x] Reproduce status bar, navigation, title, and horizontal tabs.
-- [x] Use Figma-sourced icons.
-- [x] Make tabs interactive and expose the active state semantically.
-- [x] Add horizontally scrolling date timeline and filter row.
-- [x] Add horizontally scrolling filter rail with contextual edge fades.
-- [x] Verify rendering, control state changes, and browser console.
+## Focused region comparison evidence
 
-**Follow-up Polish**
+Focused snapshots are required because the full view cannot make every card family and small typography surface readable. The structural suite covers all registered variants:
 
-- Add the licensed `X5 Sans VF` font asset when supplied.
+- service offers: default, special, restriction status, restriction status plus, restriction tags and favorite unavailable;
+- employee shifts: primary and accepted overtime;
+- my services: pending, booked, active, completed and cancelled;
+- signing: waiting user, processing, signed and rejected;
+- saved collections: active and empty;
+- favorite store: complete title, brand, metro/address, chips and CTA.
 
-**Latest Iteration**
+Runtime snapshots additionally cover loading, skeletons, filtered empty, empty day, partially hidden, error, stale, Favorites and narrow viewport.
 
-- Filter rail evidence: `qa/filters-fade-start.png` and `qa/filters-fade-scrolled.png`.
-- Verified the initial right-edge fade and the scrolled state, where the left fade appears and additional filters (`оплата`, `расстояние`) become reachable.
-- No application-console errors. The browser sandbox reports a Vite HMR WebSocket transport warning only; it does not affect rendering or interaction.
+## Comparison history
 
-final result: passed
+1. Initial independent review found a P1 layout regression in every MyServiceCard and SigningCard snapshot: payment/rate split into multiple lines because the long date consumed the flex row. Fixed with a two-column grid, a constrained date column and no-wrap payment/rate values. Post-fix snapshots show readable columns.
+2. Initial review found a P2 evidence gap in `favorite_store_card:default`: the fixture rendered only controls. Fixed by adding realistic title, brand, metro/address and chips. Post-fix snapshot covers the complete anatomy.
+3. Initial review found a P2 asset mismatch: the bottom-navigation avatar was a white placeholder. Fixed by restoring the native 28 px subject/crop from the supplied Figma screenshot. Post-fix browser evidence matches the source.
+4. Initial review found a P3 masked special-offer timer. The structural visual test now installs Playwright clock and captures the real deterministic countdown without a mask.
+5. Independent post-fix re-review found no remaining P0/P1/P2 issues and returned `passed`.
 
-## Favorites services — DEC-013
+## Runtime and interaction evidence
 
-- Scope: shared `service_offer_card` on Favorites plus the local Favorites tab shell.
-- Evidence: `favorite-service-available.png`, `favorite-service-unavailable.png`, `favorites-services-narrow.png`, and `service-offer-card--favorite-unavailable.png`.
-- Checked at 393 × 860 and 320 × 700; tabs fit without horizontal clipping.
-- Available service opens details. `favorite_unavailable` has no details/booking control and only exposes `удалить из избранного`.
-- Tabs use a stable `tabpanel`, roving focus, arrow/Home/End navigation, and selected-state semantics.
-- `favorite_unavailable` semantic layout styles are isolated from other service-card variants; only approved neutral atoms remain shared.
-- Removal exits softly for normal motion, uses independent pending timers, flushes on unmount, and commits immediately under reduced motion.
-- Independent design-QA re-review: no remaining actionable findings, score 10/10.
+- Primary interactions checked: reload spinner → skeletons → onboarding, onboarding dismissal, matching toggle, tab/date controls, card opening, keyboard activation, booking, filters, availability, Favorites and Signing flows.
+- Browser log check after the final reload added zero warnings or errors.
+- Automated runtime test also verifies no console warnings/errors, page errors or unhandled rejections.
+
+## Implementation checklist
+
+- [x] Compare source and implementation in one normalized image.
+- [x] Verify every registered structural variant.
+- [x] Fix My Tasks and Signing payment/date wrapping.
+- [x] Replace incomplete favorite-store visual fixture.
+- [x] Restore the Figma profile asset.
+- [x] Capture the special-offer timer deterministically.
+- [x] Repeat independent post-fix review.
+
+## Historical QA retained
+
+The earlier header/control QA established the same Figma source, mobile viewport, exported icons, date timeline and filter-rail behavior. Its only residual note was the availability of the licensed X5 Sans asset; that asset is now present and used by the prototype.
 
 final result: passed

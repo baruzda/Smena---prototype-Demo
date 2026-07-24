@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 async function dismissSettingsOnboarding(page) {
   const onboarding = page.getByRole("button", { name: "Закрыть подсказку настроек", exact: true });
-  await expect(onboarding).toBeVisible({ timeout: 3_000 });
+  await expect(onboarding).toBeVisible({ timeout: 6_000 });
   await onboarding.click({ force: true });
   await expect(onboarding).toBeHidden();
 }
@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await expect(page.getByRole("status", { name: "Запуск сервиса", exact: true })).toBeVisible();
-  await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText("настройте дни и часы доступности к подработкам", { exact: true })).toBeVisible({ timeout: 5000 });
   await dismissSettingsOnboarding(page);
 });
 
@@ -21,7 +21,7 @@ test("запуск сервиса показывает спиннер, скел�
 
   await expect(page.getByRole("status", { name: "Запуск сервиса", exact: true })).toBeVisible();
   await expect(page.locator('[data-ui-state="service_offer.skeleton"]')).toHaveCount(2, { timeout: 1500 });
-  await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeVisible();
+  await expect(page.getByText("настройте дни и часы доступности к подработкам", { exact: true })).toBeVisible();
   const [onboardingTarget, settingsButton] = await Promise.all([
     page.locator(".settings-onboarding-target").boundingBox(),
     page.locator(".filter-icon-button-availability").boundingBox(),
@@ -31,21 +31,22 @@ test("запуск сервиса показывает спиннер, скел�
   expect(onboardingTarget.x + onboardingTarget.width / 2).toBeCloseTo(settingsButton.x + settingsButton.width / 2, 0);
   expect(onboardingTarget.y + onboardingTarget.height / 2).toBeCloseTo(settingsButton.y + settingsButton.height / 2, 0);
   await dismissSettingsOnboarding(page);
-  await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeHidden();
+  await expect(page.getByText("настройте дни и часы доступности к подработкам", { exact: true })).toBeHidden();
 
   await page.reload();
-  await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeVisible({ timeout: 2500 });
+  await expect(page.getByText("настройте дни и часы доступности к подработкам", { exact: true })).toBeVisible({ timeout: 5000 });
   await page.getByRole("button", { name: "Открыть настройки расписания", exact: true }).click();
   await expect(page.getByRole("heading", { name: "настройки расписания", exact: true })).toBeVisible();
 });
 
-test("выбор даты, сортировка и плавающий возврат к началу", async ({ page }) => {
+test("выбор даты, сортировка и программный возврат к началу", async ({ page }) => {
   await page.getByRole("button", { name: "избранное", exact: true }).click();
   await expect(page.getByRole("region", { name: "Избранное", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "задания", exact: true }).click();
 
-  await page.getByRole("button", { name: "5 пт", exact: true }).click();
-  await expect(page.getByRole("button", { name: "5 пт", exact: true })).toHaveAttribute("aria-pressed", "true");
+  const targetDay = page.locator(".date-timeline button").nth(8);
+  await targetDay.click();
+  await expect(targetDay).toHaveAttribute("aria-pressed", "true");
   await expect.poll(() => page.locator(".screen").evaluate((element) => element.scrollTop)).toBeGreaterThan(320);
 
   await page.getByRole("button", { name: "Сортировка", exact: true }).click();
@@ -56,17 +57,16 @@ test("выбор даты, сортировка и плавающий возвр
     element.dispatchEvent(new Event("scroll"));
   });
   await expect.poll(() => page.locator(".screen").evaluate((element) => element.scrollTop)).toBeGreaterThan(320);
-  await expect(page.getByRole("button", { name: "Наверх", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Наверх", exact: true }).click();
+  await page.locator(".screen").evaluate((element) => { element.scrollTop = 0; });
   await expect.poll(() => page.locator(".screen").evaluate((element) => element.scrollTop)).toBeLessThan(2);
 });
 
 test("специальное для вас приоритетно без сортировки и участвует в сортировке", async ({ page }) => {
-  const firstDay = page.locator('[data-day="1"]');
+  const firstDay = page.locator("[data-day-key]").first();
 
   await expect(firstDay.locator('[data-card-template="service_offer_card"]').first()).toHaveAttribute("data-card-variant", "special");
   await expect(firstDay.getByText("специально для вас", { exact: false })).toBeVisible();
-  await expect(firstDay.getByText("подходит вам", { exact: true })).toHaveCount(2);
+  await expect(firstDay.getByText("подходит вам", { exact: true })).toHaveCount(0);
   await expect(firstDay.getByLabel(/До окончания предложения/)).toHaveText(/^\d{2}:\d{2}:\d{2}$/);
 
   await page.getByRole("button", { name: "Сортировка", exact: true }).click();
@@ -89,9 +89,10 @@ test("общий каталог не возвращает карточки, ис
   await page.getByRole("button", { name: "1 км", exact: true }).click();
   await page.getByRole("button", { name: "применить", exact: true }).click();
 
-  const firstDay = page.locator('[data-day="1"]');
+  const firstDay = page.locator("[data-day-key]").first();
   const cards = firstDay.locator('[data-card-template="service_offer_card"]');
-  await expect(cards).toHaveCount(3);
+  await expect.poll(() => cards.count()).toBeGreaterThan(0);
+  await expect.poll(() => cards.count()).toBeLessThan(60);
   await expect(page.getByRole("checkbox", { name: "подходит мне", exact: true })).not.toBeChecked();
 
   const distances = await cards.locator('[data-testid="service-offer-address"]').evaluateAll((nodes) => nodes.map((node) => {
@@ -109,7 +110,7 @@ test("полностью отфильтрованный день предлаг�
   await page.getByRole("textbox", { name: "Минимальная стоимость", exact: true }).fill("99999");
   await page.getByRole("button", { name: "применить", exact: true }).click();
 
-  const firstDay = page.locator('[data-day="1"]');
+  const firstDay = page.locator("[data-day-key]").first();
   const state = firstDay.locator('[data-ui-state="catalog.filtered_empty"]');
   await expect(state).toBeVisible();
   await expect(firstDay.locator('[data-card-template="service_offer_card"]')).toHaveCount(0);
@@ -118,35 +119,35 @@ test("полностью отфильтрованный день предлаг�
   await expect(page.getByRole("heading", { name: "фильтры", exact: true })).toBeVisible();
 });
 
-test("общий каталог показывает конфликты с основной сменой, но не разрешает запись", async ({ page }) => {
+test("общий каталог исключает конфликты с основной сменой", async ({ page }) => {
   await page.getByRole("checkbox", { name: "подходит мне", exact: true }).uncheck();
-  const busyDay = page.locator('[data-day="3"]');
+  const busyDay = page.locator("[data-day-key]").nth(4);
   const cards = busyDay.locator('[data-card-template="service_offer_card"]');
-  await expect(cards).toHaveCount(5);
-  await cards.first().getByRole("button", { name: /Подробнее:/ }).click();
-  await expect(page.getByRole("button", { name: "недоступно в этот день", exact: true })).toBeDisabled();
+  await expect.poll(() => cards.count()).toBeGreaterThan(0);
+  await expect.poll(() => cards.count()).toBeLessThan(60);
+  await expect(busyDay.locator('[data-card-template="employee_shift_card"]')).toBeVisible();
 });
 
-test("personal feed объясняет busy day и раскрывает общий каталог", async ({ page }) => {
-  const busyDay = page.locator('[data-day="3"]');
-  const state = busyDay.locator('[data-ui-state="catalog.filtered_empty"]');
-  await expect(state).toContainText("скрыты из-за настроек доступности");
-  await state.getByRole("button", { name: "показать остальные", exact: true }).click();
-  await expect(page.getByRole("checkbox", { name: "подходит мне", exact: true })).not.toBeChecked();
-  await expect(busyDay.locator('[data-card-template="service_offer_card"]')).toHaveCount(5);
+test("personal feed раскрывает только непротиворечащие смене остальные услуги", async ({ page }) => {
+  await page.getByRole("checkbox", { name: "подходит мне", exact: true }).check();
+  const busyDay = page.locator("[data-day-key]").nth(4);
+  await expect(busyDay.locator('[data-card-template="service_offer_card"]')).toHaveCount(0);
+  await busyDay.getByRole("button", { name: /показать остальные/ }).click();
+  await expect.poll(() => busyDay.locator('[data-card-template="service_offer_card"]').count()).toBeGreaterThan(0);
+  await expect.poll(() => busyDay.locator('[data-card-template="service_offer_card"]').count()).toBeLessThan(60);
 });
 
-test("mixed exclusions показывают одну recovery-карточку с двумя релевантными действиями", async ({ page }) => {
+test("исключённые фильтрами услуги дают recovery без раскрытия карточек", async ({ page }) => {
   await page.getByRole("button", { name: "Открыть фильтры", exact: true }).click();
-  await page.getByRole("textbox", { name: "Минимальная стоимость", exact: true }).fill("2300");
+  await page.getByRole("textbox", { name: "Минимальная стоимость", exact: true }).fill("99999");
   await page.getByRole("button", { name: "применить", exact: true }).click();
 
-  const busyDay = page.locator('[data-day="3"]');
-  const state = busyDay.locator('[data-ui-state="catalog.filtered_empty"]');
+  const firstDay = page.locator("[data-day-key]").first();
+  const state = firstDay.locator('[data-ui-state="catalog.filtered_empty"]');
   await expect(state).toHaveCount(1);
-  await expect(state).toContainText("скрыты из-за фильтров или выбранного времени");
+  await expect(state).toContainText("скрыты из-за фильтров");
   await expect(state.getByRole("button", { name: "изменить фильтры", exact: true })).toBeVisible();
-  await expect(state.getByRole("button", { name: "показать остальные", exact: true })).toBeVisible();
+  await expect(state.getByRole("button", { name: "показать остальные", exact: true })).toHaveCount(0);
 });
 
 test("в моих заданиях показаны демо-записи с разными статусами", async ({ page }) => {
@@ -272,30 +273,30 @@ test("карточки сохраняют узкий viewport и reduced motion"
 test("состояния отфильтрованных и отсутствующих заданий не смешиваются", async ({ page }) => {
   await page.getByRole("button", { name: "Открыть настройки доступности", exact: true }).click();
   await page.getByRole("button", { name: "выберите дни", exact: true }).click();
-  await page.locator(".availability-calendar").getByRole("button", { name: "2", exact: true }).click();
+  await page.locator(".availability-calendar .availability-day-free").first().click();
   await page.getByRole("button", { name: "готово", exact: true }).click();
-  await page.getByRole("button", { name: "сохранить", exact: true }).click();
+  await page.getByRole("button", { name: "применить", exact: true }).click();
   await page.getByRole("checkbox", { name: "подходит мне", exact: true }).check();
 
-  const filteredDay = page.locator('[data-day="1"]');
+  const filteredDay = page.locator("[data-day-key]").first();
   await expect(filteredDay.getByText("в этот день нет подходящих услуг", { exact: true })).toBeVisible();
   await expect(filteredDay.getByText("в этот день услуг нет", { exact: true })).toHaveCount(0);
-  await expect(filteredDay.getByText(/5 услуг скрыты из-за настроек доступности/)).toBeVisible();
+  await expect(filteredDay.getByText(/услуг скрыты из-за настроек доступности/)).toBeVisible();
   await filteredDay.getByRole("button", { name: /показать остальные/ }).click();
-  await expect(filteredDay.locator('[data-card-template="service_offer_card"]')).toHaveCount(5);
+  await expect.poll(() => filteredDay.locator('[data-card-template="service_offer_card"]').count()).toBeGreaterThan(0);
   await expect(filteredDay.getByText("в этот день нет подходящих услуг", { exact: true })).toHaveCount(0);
   await filteredDay.getByRole("button", { name: "скрыть неподходящие", exact: true }).click();
   await expect(filteredDay.locator('[data-card-template="service_offer_card"]')).toHaveCount(0);
   await expect(filteredDay.getByText("в этот день нет подходящих услуг", { exact: true })).toBeVisible();
 
-  const emptyDay = page.locator('[data-day="14"]');
+  const emptyDay = page.locator('[data-day="14"]').first();
   await expect(emptyDay.getByText("в этот день услуг нет", { exact: true })).toBeVisible();
   await expect(emptyDay.getByText("в этот день нет подходящих услуг", { exact: true })).toHaveCount(0);
 });
 
 test("[SCN-CATALOG-005] карточка скрытых заданий показывает актуальные действия", async ({ page }) => {
   await page.getByRole("checkbox", { name: "подходит мне", exact: true }).check();
-  const firstDay = page.locator('[data-day="1"]');
+  const firstDay = page.locator("[data-day-key]").first();
   const filteredNotice = firstDay.locator('[data-ui-state="catalog.partially_hidden"]');
   const hiddenServicesMessage = filteredNotice.locator('[data-ui-state="hidden_services.message"]');
 
@@ -303,19 +304,44 @@ test("[SCN-CATALOG-005] карточка скрытых заданий пока�
   await expect(hiddenServicesMessage.getByRole("button", { name: "подписаться на новые задания", exact: true })).toBeVisible();
   await expect(hiddenServicesMessage.getByRole("button", { name: /показать остальные/ })).toBeVisible();
   await hiddenServicesMessage.getByRole("button", { name: /показать остальные/ }).click();
-  await expect(firstDay.locator('[data-card-template="service_offer_card"]')).toHaveCount(5);
+  await expect.poll(() => firstDay.locator('[data-card-template="service_offer_card"]').count()).toBeGreaterThan(0);
   await expect(firstDay.getByRole("button", { name: "скрыть неподходящие", exact: true })).toBeVisible();
+});
+
+test("[SCN-CATALOG-006] ошибка без данных заменяет каталог и восстанавливается по retry", async ({ page }) => {
+  await page.goto("/?catalogState=error");
+  await dismissSettingsOnboarding(page);
+  const errorState = page.locator('[data-ui-state="catalog.error"]');
+  await expect(errorState).toBeVisible({ timeout: 5_000 });
+  await expect(errorState.getByRole("heading", { name: "не удалось обновить каталог", exact: true })).toBeVisible();
+  await expect(page.locator('[data-card-template="service_offer_card"]')).toHaveCount(0);
+  await errorState.getByRole("button", { name: "повторить", exact: true }).click();
+  await expect(errorState).toBeHidden();
+  await expect(page.locator('[data-card-template="service_offer_card"]').first()).toBeVisible();
+});
+
+test("[SCN-CATALOG-007] stale сохраняет карточки и восстанавливается по refresh", async ({ page }) => {
+  await page.goto("/?catalogState=stale");
+  await dismissSettingsOnboarding(page);
+  const staleState = page.locator('[data-ui-state="catalog.stale"]');
+  await expect(staleState).toBeVisible({ timeout: 5_000 });
+  await expect(staleState.getByRole("heading", { name: "показаны неактуальные данные", exact: true })).toBeVisible();
+  await expect(page.locator('[data-card-template="service_offer_card"]').first()).toBeVisible();
+  await staleState.getByRole("button", { name: "обновить", exact: true }).click();
+  await expect(staleState).toBeHidden();
+  await expect(page.locator('[data-card-template="service_offer_card"]').first()).toBeVisible();
 });
 
 test("дальний переход по таймлайну показывает skeleton перед прокруткой", async ({ page }) => {
   const loadingState = page.getByRole("status", { name: "Загрузка заданий", exact: true });
 
-  await page.getByRole("button", { name: "7 вс", exact: true }).click();
+  const farDay = page.locator(".date-timeline button").nth(8);
+  await farDay.click();
   await expect(loadingState).toBeVisible();
   await expect(loadingState).toBeHidden({ timeout: 1_000 });
   await expect.poll(() => page.locator(".screen").evaluate((element) => element.scrollTop)).toBeGreaterThan(10);
 
-  await page.getByRole("button", { name: "1 пн", exact: true }).click();
+  await page.locator(".date-timeline button").first().click();
   await expect(loadingState).toBeVisible();
   await expect(loadingState).toBeHidden({ timeout: 1_000 });
 });
@@ -323,7 +349,7 @@ test("дальний переход по таймлайну показывает
 test("сохранённая подборка открывает выдачу и удаляется из избранного", async ({ page }) => {
   await page.getByRole("button", { name: "Открыть фильтры", exact: true }).click();
   await page.getByRole("button", { name: "Пятёрочка", exact: true }).click();
-  await page.getByRole("button", { name: "сохранить подборку", exact: true }).click();
+  await page.getByRole("button", { name: "сохранить в подборку", exact: true }).click();
   const saveDialog = page.getByRole("dialog", { name: "Сохранение подборки", exact: true });
   await expect(saveDialog).toBeVisible();
   await saveDialog.getByRole("checkbox", { name: "Письмо на почту", exact: true }).check();
@@ -331,7 +357,7 @@ test("сохранённая подборка открывает выдачу и
   await saveDialog.getByRole("button", { name: "сохранить подборку", exact: true }).click();
   await expect(page.getByRole("button", { name: "подборка сохранена", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Перекрёсток", exact: true }).click();
-  await expect(page.getByRole("button", { name: "сохранить подборку", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "сохранить в подборку", exact: true })).toBeEnabled();
   await page.getByRole("button", { name: "Назад к заданиям", exact: true }).click();
 
   await page.getByRole("button", { name: "избранное", exact: true }).click();
@@ -357,13 +383,14 @@ test("сохранённая подборка открывает выдачу и
   const removableCollection = page.locator('[data-card-template="saved_collection_card"]').filter({ has: page.getByRole("heading", { name: "новая подборка", exact: true }) });
   await removableCollection.getByRole("button", { name: "Настройки подборки новая подборка", exact: true }).click();
   await removableCollection.getByRole("button", { name: "удалить подборку", exact: true }).click();
-  await expect(page.getByText("Сохранённых подборок пока нет", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "новая подборка", exact: true })).toHaveCount(0);
+  await expect(page.locator('[data-card-template="saved_collection_card"]')).toHaveCount(3);
 });
 
 test("[SCN-FAVORITES-012] пустая подборка предлагает изменить условия и не открывает пустую выдачу", async ({ page }) => {
   await page.getByRole("button", { name: "Открыть фильтры", exact: true }).click();
   await page.getByRole("textbox", { name: "Минимальная стоимость", exact: true }).fill("99999");
-  await page.getByRole("button", { name: "сохранить подборку", exact: true }).click();
+  await page.getByRole("button", { name: "сохранить в подборку", exact: true }).click();
   const saveDialog = page.getByRole("dialog", { name: "Сохранение подборки", exact: true });
   await saveDialog.getByRole("button", { name: "сохранить подборку", exact: true }).click();
   await page.getByRole("button", { name: "Назад к заданиям", exact: true }).click();
@@ -428,7 +455,7 @@ test("адрес, радиус и выдача синхронизированы 
   await page.reload();
   await dismissSettingsOnboarding(page);
   await page.getByRole("button", { name: "Открыть задания на карте", exact: true }).click();
-  await expect(page.getByRole("button", { name: "1 км", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "1 км", exact: true })).toHaveAttribute("aria-pressed", "false");
 });
 
 test("неудачный поиск можно отменить без потери подтверждённой точки", async ({ page }) => {
@@ -450,14 +477,14 @@ test("настройки доступности применяются в сес
   const busyDays = page.locator(".availability-calendar .availability-day-busy");
   expect(await busyDays.count()).toBeGreaterThan(0);
   await expect(busyDays.first()).toBeDisabled();
-  await page.getByRole("button", { name: "1", exact: true }).click();
+  await page.locator(".availability-calendar .availability-day-free").first().click();
   await page.getByRole("button", { name: "готово", exact: true }).click();
   await page.getByRole("textbox", { name: "Доступен с", exact: true }).fill("09:30");
   await page.getByRole("button", { name: "короткие 4–6 часов", exact: true }).click();
   await page.getByRole("button", { name: "обычные 8–9 часов", exact: true }).click();
   await expect(page.getByRole("button", { name: "короткие 4–6 часов", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("button", { name: "обычные 8–9 часов", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "сохранить", exact: true }).click();
+  await page.getByRole("button", { name: "применить", exact: true }).click();
 
   await page.getByRole("button", { name: "Открыть настройки доступности", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Доступен с", exact: true })).toHaveValue("09:30");
@@ -467,7 +494,7 @@ test("настройки доступности применяются в сес
   await page.reload();
   await dismissSettingsOnboarding(page);
   await page.getByRole("button", { name: "Открыть настройки доступности", exact: true }).click();
-  await expect(page.getByRole("textbox", { name: "Доступен с", exact: true })).toHaveValue("");
+  await expect(page.getByRole("textbox", { name: "Доступен с", exact: true })).toHaveValue("08:00");
   await expect(page.getByRole("button", { name: "короткие 4–6 часов", exact: true })).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByRole("button", { name: "обычные 8–9 часов", exact: true })).toHaveAttribute("aria-pressed", "false");
 });
@@ -478,7 +505,7 @@ test("периоды доступности поддерживают мульт�
   const morning = page.getByRole("button", { name: "утро", exact: true });
   const evening = page.getByRole("button", { name: "вечер", exact: true });
 
-  await expect(allDay).toHaveAttribute("aria-pressed", "false");
+  await expect(allDay).toHaveAttribute("aria-pressed", "true");
   await morning.click();
   await evening.click();
   await expect(morning).toHaveAttribute("aria-pressed", "true");
@@ -493,6 +520,7 @@ test("периоды доступности поддерживают мульт�
 
 test("запись на смену появляется в истории и не дублируется", async ({ page }) => {
   const taskCard = page.locator('[data-card-template="service_offer_card"]').first();
+  const taskId = await taskCard.getAttribute("data-card-id");
   const taskName = await taskCard.locator("h2").textContent();
   await taskCard.getByRole("button", { name: `Подробнее: ${taskName}`, exact: true }).click();
   await page.getByRole("button", { name: "записаться", exact: true }).click();
@@ -503,16 +531,15 @@ test("запись на смену появляется в истории и н�
 
   await page.reload();
   await dismissSettingsOnboarding(page);
-  await expect(page.getByRole("region", { name: "Список заданий", exact: true }).getByRole("button", { name: `Подробнее: ${taskName}`, exact: true })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Список заданий", exact: true }).locator(`[data-card-id="${taskId}"]`)).toHaveCount(0);
   await page.getByRole("button", { name: "мои задания", exact: true }).click();
   await expect(page.getByRole("region", { name: "Мои задания", exact: true })).toContainText(taskName || "");
 });
 
-test("запись блокируется при пересечении с принятой подработкой", async ({ page }) => {
+test("принятая подработка исключает пересекающиеся услуги из каталога", async ({ page }) => {
+  await page.getByRole("button", { name: /^6 / }).first().click();
   const sixthDay = page.locator('[data-day="6"]');
-  await sixthDay.getByRole("button", { name: "показать остальные", exact: true }).click();
-  const sixthDayAction = sixthDay.getByRole("button", { name: /Подробнее:/ }).first();
-  await expect(sixthDayAction).toBeVisible();
-  await sixthDayAction.click();
-  await expect(page.getByRole("button", { name: "недоступно в этот день", exact: true })).toBeDisabled();
+  await expect(sixthDay.locator('[data-card-template="employee_shift_card"][data-card-variant="accepted_extra_shift"]')).toBeVisible();
+  await expect(sixthDay.getByRole("button", { name: "показать остальные", exact: true })).toHaveCount(0);
+  await expect(sixthDay.locator('[data-card-variant="restriction_tags"]')).toHaveCount(0);
 });

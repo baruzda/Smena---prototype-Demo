@@ -24,6 +24,7 @@ const variants = [
 ];
 
 test("every registered structural variant has visual evidence", async ({ page }) => {
+  await page.clock.install();
   await page.goto("/card-fixtures.html");
 
   for (const id of variants) {
@@ -31,7 +32,6 @@ test("every registered structural variant has visual evidence", async ({ page })
     await expect(fixture).toHaveCount(1);
     await expect(fixture).toHaveScreenshot(`${id.replaceAll(":", "--")}.png`, {
       animations: "disabled",
-      mask: id === "service_offer_card:special" ? [fixture.getByLabel(/До окончания предложения/)] : [],
     });
   }
 

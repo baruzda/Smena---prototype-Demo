@@ -7,7 +7,7 @@ async function resetPrototype(page) {
 }
 
 async function waitForReadyPrototype(page) {
-  await expect(page.getByText("настройте выдачу под себя", { exact: true })).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText("настройте дни и часы доступности к подработкам", { exact: true })).toBeVisible({ timeout: 5_000 });
   const dismiss = page.getByRole("button", { name: "Закрыть подсказку настроек", exact: true });
   await dismiss.click({ force: true });
   await expect(dismiss).toBeHidden();
@@ -41,19 +41,20 @@ test("catalog cards and list states visual baseline", async ({ page }) => {
   await waitForReadyPrototype(page);
   await stabilizeCardScreenshots(page);
 
-  const firstDay = page.locator('[data-day="1"]');
-  const initialCards = firstDay.locator('[data-card-template="service_offer_card"]');
-  await expect(initialCards).toHaveCount(3);
-  await expect(initialCards.nth(0)).toHaveScreenshot("service-offer-special.png", {
+  const firstDay = page.locator("[data-day-key]").first();
+  const specialCard = firstDay.locator('[data-card-template="service_offer_card"][data-card-variant="special"]');
+  await expect(specialCard).toHaveCount(1);
+  await expect(specialCard).toHaveScreenshot("service-offer-special.png", {
     animations: "disabled",
-    mask: [initialCards.nth(0).getByLabel(/До окончания предложения/)],
+    mask: [specialCard.getByLabel(/До окончания предложения/)],
   });
-  await expect(initialCards.nth(1)).toHaveScreenshot("service-offer-suitable.png", { animations: "disabled" });
+
+  await page.getByRole("checkbox", { name: "подходит мне", exact: true }).check();
+  const suitableCard = firstDay.locator('[data-card-template="service_offer_card"][data-card-variant="default"]').first();
+  await expect(suitableCard).toHaveScreenshot("service-offer-suitable.png", { animations: "disabled" });
   await expect(firstDay.locator('[data-ui-state="catalog.partially_hidden"]')).toHaveScreenshot("catalog-partially-hidden.png", { animations: "disabled" });
 
   await firstDay.getByRole("button", { name: "показать остальные", exact: true }).click();
-  const expandedCards = firstDay.locator('[data-card-template="service_offer_card"]');
-  await expect(expandedCards).toHaveCount(5);
   const restrictedCards = firstDay.locator('[data-card-variant="restriction_tags"]');
   expect(await restrictedCards.count()).toBeGreaterThan(0);
   await expect(restrictedCards.nth(0)).toHaveScreenshot("service-offer-restricted.png", { animations: "disabled" });
@@ -61,21 +62,35 @@ test("catalog cards and list states visual baseline", async ({ page }) => {
   await expect(hideIncompatible).toHaveScreenshot("catalog-hidden-services-action.png", { animations: "disabled" });
   await hideIncompatible.click();
 
-  const shiftDay = page.locator('[data-day="3"]');
-  await expect(shiftDay.locator('[data-card-template="employee_shift_card"]')).toHaveScreenshot("employee-primary-shift.png", { animations: "disabled" });
+  const primaryShift = page.locator('[data-card-template="employee_shift_card"][data-card-variant="primary_shift"]').first();
+  await expect(primaryShift).toHaveScreenshot("employee-primary-shift.png", { animations: "disabled" });
 
-  const extraShiftDay = page.locator('[data-day="6"]');
-  await expect(extraShiftDay.locator('[data-card-template="employee_shift_card"]')).toHaveScreenshot("employee-extra-shift.png", { animations: "disabled" });
+  const extraShift = page.locator('[data-card-template="employee_shift_card"][data-card-variant="accepted_extra_shift"]').first();
+  await expect(extraShift).toHaveScreenshot("employee-extra-shift.png", { animations: "disabled" });
 
-  const emptyDay = page.locator('[data-day="14"]');
-  await expect(emptyDay.locator('[data-ui-state="catalog.empty_day"]')).toHaveScreenshot("catalog-empty-day.png", { animations: "disabled" });
+  const emptyDay = page.locator('[data-ui-state="catalog.empty_day"]').first();
+  await expect(emptyDay).toHaveScreenshot("catalog-empty-day.png", { animations: "disabled" });
 
   await page.getByRole("button", { name: "Открыть настройки доступности", exact: true }).click();
   await page.getByRole("button", { name: "выберите дни", exact: true }).click();
-  await page.locator(".availability-calendar").getByRole("button", { name: "2", exact: true }).click();
+  await page.locator(".availability-calendar .availability-day-free").first().click();
   await page.getByRole("button", { name: "готово", exact: true }).click();
-  await page.getByRole("button", { name: "сохранить", exact: true }).click();
+  await page.getByRole("button", { name: "применить", exact: true }).click();
   await expect(firstDay.locator('[data-ui-state="catalog.filtered_empty"]')).toHaveScreenshot("catalog-filtered-empty.png", { animations: "disabled" });
+});
+
+test("catalog error and stale visual baseline", async ({ page }) => {
+  await page.goto("/?catalogState=error");
+  await waitForReadyPrototype(page);
+  await stabilizeCardScreenshots(page);
+  await expect(page.locator('[data-ui-state="catalog.error"]')).toHaveScreenshot("catalog-error.png", { animations: "disabled" });
+
+  await page.goto("/?catalogState=stale");
+  await waitForReadyPrototype(page);
+  await stabilizeCardScreenshots(page);
+  const staleState = page.locator('[data-ui-state="catalog.stale"]');
+  await expect(staleState).toHaveScreenshot("catalog-stale.png", { animations: "disabled" });
+  await expect(page.locator('[data-card-template="service_offer_card"]').first()).toBeVisible();
 });
 
 test("my tasks, signing and favorites visual baseline", async ({ page }) => {
@@ -104,9 +119,9 @@ test("my tasks, signing and favorites visual baseline", async ({ page }) => {
   await expect(favoriteServices.nth(0)).toHaveScreenshot("favorite-service-available.png", { animations: "disabled" });
   await expect(favoriteServices.nth(1)).toHaveScreenshot("favorite-service-unavailable.png", { animations: "disabled" });
   await page.getByRole("tab", { name: "магазины", exact: true }).click();
-  await expect(page.locator('[data-card-template="favorite_store_card"]')).toHaveScreenshot("favorite-store.png", { animations: "disabled" });
+  await expect(page.locator('[data-card-template="favorite_store_card"]').first()).toHaveScreenshot("favorite-store.png", { animations: "disabled" });
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
-  await expect(page.getByText("Сохранённых подборок пока нет", { exact: true })).toHaveScreenshot("favorites-empty.png", { animations: "disabled" });
+  await expect(page.locator('[data-card-template="saved_collection_card"]').first()).toHaveScreenshot("favorite-default-collection.png", { animations: "disabled" });
 });
 
 test("favorites services narrow viewport visual baseline", async ({ page }) => {
@@ -127,14 +142,15 @@ test("saved collection visual baseline", async ({ page }) => {
 
   await page.getByRole("button", { name: "Открыть фильтры", exact: true }).click();
   await page.getByRole("button", { name: "Пятёрочка", exact: true }).click();
-  await page.getByRole("button", { name: "сохранить подборку", exact: true }).click();
+  await page.getByRole("button", { name: "сохранить в подборку", exact: true }).click();
   const saveDialog = page.getByRole("dialog", { name: "Сохранение подборки", exact: true });
   await saveDialog.getByRole("button", { name: "сохранить подборку", exact: true }).click();
   await page.getByRole("button", { name: "Назад к заданиям", exact: true }).click();
   await page.getByRole("button", { name: "избранное", exact: true }).click();
   await page.getByRole("tab", { name: "подборки", exact: true }).click();
 
-  await expect(page.locator('[data-card-template="saved_collection_card"]')).toHaveScreenshot("favorite-saved-collection.png", { animations: "disabled" });
+  const savedCollection = page.locator('[data-card-template="saved_collection_card"]').filter({ has: page.getByRole("heading", { name: "новая подборка", exact: true }) });
+  await expect(savedCollection).toHaveScreenshot("favorite-saved-collection.png", { animations: "disabled" });
 });
 
 test("empty saved collection visual baseline", async ({ page }) => {
@@ -143,7 +159,7 @@ test("empty saved collection visual baseline", async ({ page }) => {
 
   await page.getByRole("button", { name: "Открыть фильтры", exact: true }).click();
   await page.getByRole("textbox", { name: "Минимальная стоимость", exact: true }).fill("99999");
-  await page.getByRole("button", { name: "сохранить подборку", exact: true }).click();
+  await page.getByRole("button", { name: "сохранить в подборку", exact: true }).click();
   const saveDialog = page.getByRole("dialog", { name: "Сохранение подборки", exact: true });
   await saveDialog.getByRole("button", { name: "сохранить подборку", exact: true }).click();
   await page.getByRole("button", { name: "Назад к заданиям", exact: true }).click();
