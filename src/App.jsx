@@ -1,19 +1,20 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { getTaskHours, shiftsOverlap } from "./schedule-utils.js";
+import { shiftsOverlap } from "./schedule-utils.js";
+import {
+  CatalogErrorState,
+  CatalogLoadingState,
+  CatalogStaleState,
+} from "./entities/catalog-state/ui/CatalogStates/CatalogStates.jsx";
+import { isTaskWithinAvailability } from "./features/catalog-feed/model/resolveTaskFeed.js";
+import { assetUrl } from "./shared/lib/assets.js";
+import { formatPayment, getShortLocationLabel, seededValue } from "./shared/lib/demoCatalog.js";
+import { BrandMark } from "./shared/ui/BrandMark/BrandMark.jsx";
 import { Badge, Button } from "./shared/ui/index.js";
-import { MyTaskCard as MyTaskCardView } from "./features/my-tasks/components/MyTaskCard/index.js";
-import { EmployeeShiftCard as EmployeeShiftCardView } from "./features/schedule/components/EmployeeShiftCard/index.js";
-import { TaskCardShell } from "./features/tasks/components/TaskCardShell/index.js";
-import { taskCardStyles } from "./features/tasks/components/TaskCard/index.js";
-
-const assetUrl = (name) => `${import.meta.env.BASE_URL}figma-assets/${name}`;
+import { FavoritesView } from "./widgets/favorites-view/ui/FavoritesView/FavoritesView.jsx";
+import { MyTasksList } from "./widgets/my-tasks-list/ui/MyTasksList/MyTasksList.jsx";
+import { SigningList } from "./widgets/signing-list/ui/SigningList/SigningList.jsx";
+import { TaskFeed } from "./widgets/task-feed/ui/TaskFeed/TaskFeed.jsx";
 const tabs = ["задания", "избранное", "мои задания", "задания на подписание"];
-const metroIconPaths = {
-  msk: "M6.86577 9.42218C7.17552 8.94747 7.48649 8.4107 7.78377 7.92562L9.62751 4.91211C9.82141 5.33387 10.0149 5.82291 10.1978 6.25469L11.2939 8.84062L12.3706 11.3788C12.5415 11.782 12.7498 12.2396 12.9055 12.6423L13.8672 12.6414L13.8677 13.8137L8.91435 13.8138C8.9073 13.43 8.91313 13.0255 8.91282 12.6403L9.64631 12.6414C9.60218 12.5048 9.54007 12.351 9.48868 12.2149L9.13706 11.2765C9.07249 11.1039 8.99414 10.9083 8.93816 10.7349C8.85244 10.8572 8.76582 10.9926 8.68583 11.1188C8.0926 12.0548 7.45717 12.9746 6.86763 13.9121C6.72923 13.671 6.49912 13.3421 6.34091 13.0994L5.29392 11.4917C5.16722 11.2965 4.90366 10.9191 4.80348 10.7306C4.57554 11.3678 4.3175 12.0041 4.08989 12.6425C4.32395 12.6357 4.58966 12.6411 4.82618 12.6408L4.82604 13.8136L-0.126558 13.8137C-0.138715 13.448 -0.127886 13.0109 -0.127794 12.6405C0.190856 12.6393 0.509507 12.6402 0.828137 12.6429C1.06749 12.0984 1.29812 11.5406 1.53018 10.9924L2.6371 8.38351L3.58718 6.14398C3.75775 5.74187 3.94209 5.32372 4.10366 4.92023C4.15104 4.95599 4.66252 5.81442 4.72641 5.91898L6.17844 8.29488C6.39142 8.6438 6.67504 9.07332 6.86577 9.42218Z",
-  spb: "M9.12631 3.94434C9.66034 4.15789 10.1632 4.44166 10.6214 4.78809L10.8148 4.94043L11.0482 5.14062C12.1904 6.17087 12.9747 7.61548 13.1244 9.16113C13.3041 11.0175 12.6624 12.5983 11.5179 13.9961L11.4574 14.0693L8.58822 14.0703L8.50229 13.6895C8.63669 13.6255 8.76574 13.5641 8.89096 13.498C10.1023 12.8587 11.0157 11.8423 11.4163 10.5332C11.7565 9.42414 11.6453 8.22568 11.1068 7.19824C10.997 6.9915 10.8241 6.71049 10.6224 6.46094C10.4151 6.20453 10.1975 6.00618 10.0052 5.93066C9.97613 5.91936 9.92707 5.913 9.86654 5.91992C9.80686 5.9268 9.75156 5.94545 9.7142 5.9668C9.6424 6.00802 9.58835 6.07597 9.54233 6.17773C9.49372 6.2853 9.46525 6.40269 9.42416 6.54004L9.29819 6.96387L9.29721 6.9668L7.75424 12.0693C7.57389 12.666 7.3877 13.3333 7.18881 13.9287L6.99545 14.5078L6.80893 13.9268C6.59592 13.2629 6.39601 12.5705 6.19565 11.9072L5.08627 8.23926C4.88598 7.57702 4.69102 6.91852 4.48569 6.25879C4.44028 6.11312 4.36433 6.01583 4.28061 5.96484C4.20138 5.91664 4.09472 5.8971 3.95346 5.94434C3.80853 5.99455 3.69096 6.11623 3.5433 6.27539C2.42476 7.48098 2.09767 9.21983 2.65854 10.7656C3.0301 11.7896 3.73263 12.6351 4.65072 13.2305C4.92938 13.4112 5.1897 13.5426 5.49936 13.6904L5.41049 14.0713C4.50589 14.0567 3.55005 14.0663 2.63901 14.0713H2.54721L2.48666 14.002C2.01491 13.4609 1.57718 12.7382 1.306 12.0791C0.690356 10.6006 0.690281 8.9365 1.306 7.45801C1.97271 5.85961 3.25356 4.59538 4.86068 3.9502L4.97787 3.90332L5.07065 3.98828C5.09345 4.00917 5.1058 4.0309 5.10776 4.03418C5.11221 4.04165 5.11492 4.04838 5.11654 4.05176C5.11989 4.05875 5.12298 4.0649 5.12436 4.06836C5.12734 4.0759 5.13063 4.08454 5.13315 4.0918C5.1384 4.10697 5.14499 4.12726 5.15268 4.15137C5.16842 4.20075 5.19018 4.27173 5.21713 4.36035C5.27112 4.53786 5.34689 4.79053 5.43686 5.09375C5.61682 5.70027 5.85528 6.51292 6.09897 7.34375C6.43778 8.49893 6.78701 9.68858 7.00033 10.4141C7.01781 10.3517 7.03559 10.2908 7.05209 10.2344L8.85971 4.07324L8.92123 3.8623L9.12631 3.94434Z",
-  nino: "M7.00076 9.69983L9.98084 4.85547L14 13.8551L11.3165 13.8551C10.9222 12.9806 10.4909 12.0889 10.0834 11.2176C9.88074 10.784 9.67631 10.3296 9.46605 9.90117L7.00081 13.3249C6.92986 13.2378 6.83933 13.104 6.7724 13.011L6.33417 12.4022L5.16402 10.776C4.95964 10.492 4.74373 10.1796 4.5328 9.90258C4.31959 10.333 4.10782 10.8087 3.90252 11.2475L2.68268 13.8555L0 13.8548C0.199873 13.3917 0.416481 12.9213 0.622523 12.46L1.84396 9.72528L4.01673 4.86339C4.05446 4.89264 4.58705 5.77794 4.66286 5.90121L7.00076 9.69983Z",
-};
-
 const defaultCollectionBrands = ["pyaterochka", "perekrestok", "vprok", "chizhik"];
 const timelineToday = new Date();
 timelineToday.setHours(12, 0, 0, 0);
@@ -75,7 +76,7 @@ function buildAvailabilityCalendar(monthOffset) {
 }
 
 const availabilityByDate = Object.fromEntries(
-  days.map(({ date }, index) => [date, index % 5 === 4 ? "busy" : "free"]),
+  days.map(({ id }, index) => [id, index % 5 === 4 ? "busy" : "free"]),
 );
 
 const defaultSearchLocation = {
@@ -194,6 +195,11 @@ function isVisualDefaultAvailability({ from, preset, presets, to }) {
 }
 
 const prototypeStorageKey = "x5-shift-prototype-state";
+
+function readCatalogRuntimeState() {
+  const requestedState = new URLSearchParams(window.location.search).get("catalogState");
+  return ["error", "stale"].includes(requestedState) ? requestedState : "ready";
+}
 
 function readPrototypeState() {
   try {
@@ -675,14 +681,6 @@ const dayGroups = days.map((day, dayIndex) => {
   };
 });
 
-const myTaskStatuses = {
-  booked: { label: "записаны", tone: "success" },
-  pending: { label: "на подтверждении", tone: "warning" },
-  signing: { label: "на подписание", tone: "warning" },
-  completed: { label: "смена завершена", tone: "neutral" },
-  cancelled: { label: "отменена", tone: "danger" },
-};
-
 const demoMyTaskRecords = [
   { day: dayGroups[1], id: "demo-my-task-booked", status: "booked", task: dayGroups[1].tasks[0] },
   { day: dayGroups[3], id: "demo-my-task-pending", status: "pending", task: dayGroups[3].tasks[1] },
@@ -691,7 +689,50 @@ const demoMyTaskRecords = [
 ];
 
 const demoSigningTaskRecords = [
-  { day: dayGroups[2], id: "demo-signing-task-ready", status: "signing", task: dayGroups[2].tasks[0] },
+  {
+    day: dayGroups[2],
+    deadline: "подпишите до конца дня",
+    document: "акт выполненных работ",
+    id: "demo-signing-task-ready",
+    signing: { status: "waiting_user" },
+    status: "signing",
+    task: dayGroups[2].tasks[0],
+  },
+  {
+    day: dayGroups[4],
+    document: "акт выполненных работ",
+    id: "demo-signing-task-processing",
+    signing: { status: "processing" },
+    status: "signing",
+    task: dayGroups[4].tasks[1],
+  },
+  {
+    day: dayGroups[6],
+    document: "акт выполненных работ",
+    id: "demo-signing-task-signed",
+    signing: { status: "signed" },
+    status: "signing",
+    task: dayGroups[6].tasks[0],
+  },
+  {
+    day: dayGroups[7],
+    document: "акт выполненных работ",
+    id: "demo-signing-task-rejected",
+    signing: { status: "rejected" },
+    status: "signing",
+    task: dayGroups[7].tasks[2],
+  },
+];
+
+const demoFavoriteServiceRecords = [
+  {
+    day: dayGroups[1],
+    service: { ...dayGroups[1].tasks[0], isFavorite: true, state: "available" },
+  },
+  {
+    day: dayGroups[5],
+    service: { ...dayGroups[5].tasks[2], isFavorite: true, state: "expired" },
+  },
 ];
 
 const sortOptions = [
@@ -700,226 +741,6 @@ const sortOptions = [
   { id: "earnings", label: "выше заработок" },
   { id: "hourly-rate", label: "выше цена за час" },
 ];
-
-function getDistanceInMeters(distance) {
-  const value = Number.parseFloat(distance.replace(",", "."));
-  return distance.includes("км") ? value * 1000 : value;
-}
-
-function getPaymentValue(payment) {
-  return Number(payment.replace(/[^\d]/g, ""));
-}
-
-function getHourlyRateValue(rate) {
-  return Number(rate.replace(/[^\d]/g, ""));
-}
-
-function getTaskDuration(task) {
-  const { end, start } = getTaskHours(task);
-  return (end - start + 24) % 24;
-}
-
-function isTaskWithinAvailability(task, availability) {
-  const { end, start } = getTaskHours(task);
-  const duration = getTaskDuration(task);
-  const isWithinWindow = (from, to) => {
-    const availableFrom = Number.parseInt(from, 10);
-    const availableTo = Number.parseInt(to, 10);
-    if (![start, end, availableFrom, availableTo].every(Number.isFinite)) return true;
-
-    const isInside = (hour) => (availableFrom < availableTo
-      ? hour >= availableFrom && hour <= availableTo
-      : hour >= availableFrom || hour <= availableTo);
-
-    return Array.from({ length: duration + 1 }, (_, index) => isInside((start + index) % 24)).every(Boolean);
-  };
-  const selectedPresetIds = Array.isArray(availability.presets)
-    ? availability.presets
-    : availability.preset ? [availability.preset] : [];
-  const selectedPresets = availabilityTimePresets.filter((preset) => selectedPresetIds.includes(preset.id));
-
-  if (selectedPresets.length > 0) {
-    return selectedPresets.some((preset) => isWithinWindow(preset.from, preset.to));
-  }
-
-  return isWithinWindow(availability.from, availability.to);
-}
-
-function matchesDurationPreference(task, preference) {
-  const duration = getTaskDuration(task);
-  if (!preference.length) return true;
-
-  return preference.some((option) => (
-    (option === "short" && duration >= 4 && duration <= 6)
-    || (option === "regular" && duration >= 8 && duration <= 9)
-    || (option === "long" && duration >= 10)
-  ));
-}
-
-function seededValue(seed) {
-  let value = 2166136261;
-
-  for (let index = 0; index < seed.length; index += 1) {
-    value ^= seed.charCodeAt(index);
-    value = Math.imul(value, 16777619);
-  }
-
-  return (value >>> 0) / 4294967296;
-}
-
-function formatPayment(value) {
-  return `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(value)},00 ₽`;
-}
-
-function getShortLocationLabel(label) {
-  return label.split(",")[0].trim() || "выбранная точка";
-}
-
-function getSortedTasks(tasks, sortBy) {
-  if (sortBy === "recommended") {
-    return [...tasks].sort((first, second) => (second.recommendation ?? 0) - (first.recommendation ?? 0));
-  }
-
-  return [...tasks].sort((first, second) => {
-    if (sortBy === "nearby") {
-      return getDistanceInMeters(first.distance) - getDistanceInMeters(second.distance);
-    }
-
-    if (sortBy === "hourly-rate") {
-      return getHourlyRateValue(second.rate) - getHourlyRateValue(first.rate);
-    }
-
-    return getPaymentValue(second.payment) - getPaymentValue(first.payment);
-  });
-}
-
-function getOrderedTasks(tasks, sortBy, hasAppliedSort) {
-  if (hasAppliedSort) return getSortedTasks(tasks, sortBy);
-
-  // Personal offers stay first until the employee explicitly chooses a sort order.
-  return [
-    ...tasks.filter((task) => task.variant === "special"),
-    ...tasks.filter((task) => task.variant !== "special"),
-  ];
-}
-
-function BrandMark({ brand }) {
-  const logos = {
-    pyaterochka: { alt: "Пятёрочка", src: assetUrl("logo-pyaterochka.svg") },
-    perekrestok: { alt: "Перекрёсток", src: assetUrl("logo-perekrestok.svg") },
-    chizhik: { alt: "Чижик", src: assetUrl("logo-chizhik.svg") },
-    vprok: { alt: "Впрок", src: assetUrl("logo-vprok.svg") },
-    mnogoLososya: { alt: "Много лосося", src: assetUrl("logo-mnogo-lososya.svg") },
-  };
-  const logo = logos[brand];
-
-  return <img alt={logo.alt} className="brand-logo" src={logo.src} />;
-}
-
-function MetroIcon({ metro }) {
-  return (
-    <svg
-      aria-label={metro.label}
-      className="metro-icon"
-      fill="none"
-      role="img"
-      viewBox="0 0 14 18"
-    >
-      <path d={metroIconPaths[metro.city]} fill={metro.color} />
-    </svg>
-  );
-}
-
-function formatCountdown(seconds) {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const remainingSeconds = seconds % 60;
-  return [hours, minutes, remainingSeconds].map((unit) => String(unit).padStart(2, "0")).join(":");
-}
-
-function OfferCountdown({ initialSeconds = 19936, render }) {
-  const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => setSecondsLeft((current) => Math.max(0, current - 1)), 1000);
-    return () => window.clearInterval(interval);
-  }, []);
-
-  const value = formatCountdown(secondsLeft);
-  const ariaLabel = `До окончания предложения ${value}`;
-  return render ? render({ value, ariaLabel }) : <span aria-label={ariaLabel} className="special-card-timer">{value}</span>;
-}
-
-function getShortDayLabel(day) {
-  return day?.label?.replace(/^сегодня,\s*/i, "") ?? "1 июня";
-}
-
-function getGigTaskCardVariant(task, { revealRestrictionTags = false } = {}) {
-  const restrictionCount = task.restrictionTags?.length ?? 0;
-  if (task.variant === "special" && restrictionCount === 0) return "special";
-  if (restrictionCount > 0) return revealRestrictionTags ? "top-tags" : "default";
-  if (task.badge) return "match";
-  return "default";
-}
-
-function TaskCard({ day, revealRestrictionTags = false, task, onOpen }) {
-  const cardVariant = getGigTaskCardVariant(task, { revealRestrictionTags });
-  const isPersonalOffer = cardVariant === "special";
-  const showMatchBadge = cardVariant === "match";
-  const showStatus = cardVariant === "status" || cardVariant === "status-plus";
-  const showRestrictionTags = cardVariant === "top-tags";
-  return (
-    <TaskCardShell
-      ariaLabel={onOpen ? `Подробнее: ${task.title}` : undefined}
-      className={isPersonalOffer ? taskCardStyles.special : undefined}
-      onOpen={onOpen}
-      brand={<BrandMark brand={task.brand} />}
-      header={<>
-          {showRestrictionTags && <span className={taskCardStyles.topTags}>{task.restrictionTags.map((tag) => <Badge key={tag} size="small" tone="warning" variant="soft">{tag}</Badge>)}</span>}
-          {showMatchBadge && <Badge className="gig-task-badge" tone="accent" variant="soft">подходит вам</Badge>}
-          {showStatus && <Badge className="gig-task-status-label" leadingIcon={<i />} tone="success" variant="plain">{cardVariant === "status-plus" ? "есть ограничения" : "не подходит"}</Badge>}
-          {isPersonalOffer && <span className="special-card-badges"><Badge tone="accent">специально для вас</Badge><OfferCountdown render={({ value, ariaLabel }) => <Badge aria-label={ariaLabel} tone="accent">{value}</Badge>} /></span>}
-          <h2 className={taskCardStyles.title}>{task.title}</h2>
-          <p className={taskCardStyles.address}>
-            {task.metro && <MetroIcon metro={task.metro} />}
-            <span>
-              {task.metro && <>{task.metro.station} · </>}
-              {task.address} · <img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />{task.distance}
-            </span>
-          </p>
-      </>}
-      details={<><div className={taskCardStyles.payment}>
-          <p>{task.payment}</p>
-          <p>{task.rate}</p>
-        </div><div className={taskCardStyles.time}>
-          <p>{task.hours}</p>
-          <p>{task.breakInfo}</p>
-        </div></>}
-      action={isPersonalOffer && <Button fullWidth onClick={(event) => { event.stopPropagation(); onOpen?.(); }} size="small" variant="secondary">принять задание</Button>}
-    />
-  );
-}
-
-function TaskSkeletonCard() {
-  return (
-    <article aria-label="Загрузка заданий" className="task-skeleton-card">
-      <div className="task-skeleton-top"><span /><i /></div>
-      <span className="task-skeleton-title" />
-      <span className="task-skeleton-address" />
-      <div className="task-skeleton-divider" />
-      <div className="task-skeleton-bottom"><span /><span /></div>
-    </article>
-  );
-}
-
-function TimelineLoadingState() {
-  return (
-    <section aria-label="Загрузка заданий" className="timeline-loading-state" role="status">
-      <TaskSkeletonCard />
-      <TaskSkeletonCard />
-    </section>
-  );
-}
 
 function ServiceLaunchScreen() {
   return (
@@ -936,38 +757,6 @@ function getRussianPlural(count, forms) {
   if (lastDigit === 1) return forms[0];
   if (lastDigit > 1 && lastDigit < 5) return forms[1];
   return forms[2];
-}
-
-function TaskMessageCard({ hiddenCount, onShowAll, onSubscribe, variant = "no-more" }) {
-  const isDayEmpty = variant === "empty-day-filtered";
-  const title = isDayEmpty ? "в этот день нет подходящих услуг" : "подходящих услуг больше нет";
-  const servicesLabel = `${hiddenCount} ${getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"])}`;
-  const subtitle = isDayEmpty
-    ? `есть ещё ${servicesLabel} по другим условиям`
-    : `ещё ${servicesLabel} по другим условиям`;
-  return (
-    <article className={`task-message-card ${isDayEmpty ? "task-message-card-filtered-day" : "task-message-card-no-more"}`}>
-      <h3>{title}</h3>
-      <p>{subtitle}</p>
-      <div className="task-message-actions">
-        <Button className="task-message-subscribe" fullWidth leadingIcon={<img alt="" src={assetUrl("task-hidden-star.svg")} />} onClick={onSubscribe} variant="ghost">подписаться на новые задания</Button>
-        <Button className="task-message-show-all" fullWidth onClick={onShowAll} trailingIcon={<img alt="" src={assetUrl("task-hidden-chevron-down.svg")} />} variant="primary">показать остальные</Button>
-      </div>
-    </article>
-  );
-}
-
-function NoTasksForDayCard({ onSubscribe }) {
-  return (
-    <article className="task-message-card task-message-card-empty">
-      <h3>в этот день услуг нет</h3>
-      <Button className="task-message-subscribe" fullWidth leadingIcon={<img alt="" src={assetUrl("task-hidden-star.svg")} />} onClick={onSubscribe} variant="ghost">подписаться на новые задания</Button>
-    </article>
-  );
-}
-
-function EndOfTimelinePlaceholder() {
-  return <p className="timeline-end-placeholder" role="status">Больше заданий нет</p>;
 }
 
 function CardFiltersSheet({ filters, onApply, onClose, onOpenFullFilters }) {
@@ -1160,178 +949,6 @@ function BookingSuccessScreen({ task, day, onGoToMyTasks, onBackToTasks }) {
       </div>
     </section>
   );
-}
-
-function MyTasksView({ bookedTasks }) {
-  const records = [
-    ...bookedTasks.map((booking) => ({ ...booking, status: "booked" })),
-    ...demoMyTaskRecords,
-  ].filter((booking) => myTaskStatuses[booking.status]);
-
-  return <section className="my-tasks-list">
-    {records.map((booking) => <MyTaskCard booking={booking} key={booking.id} />)}
-  </section>;
-}
-
-function SigningTasksView() {
-  const records = demoSigningTaskRecords.filter((booking) => booking.status === "signing" && myTaskStatuses[booking.status]);
-
-  if (records.length === 0) {
-    return <p className="task-empty-state my-tasks-empty">Заданий на подписание нет</p>;
-  }
-
-  return <section className="my-tasks-list">
-    {records.map((booking) => <MyTaskCard booking={booking} key={booking.id} />)}
-  </section>;
-}
-
-function MyTaskCard({ booking }) {
-  const { day, task } = booking;
-  const dateFragment = `${day.label}, ${day.secondaryLabel}`.match(/\d+ июня/)?.[0];
-  const date = dateFragment ? `${dateFragment}, 2025` : `${day.label}, ${day.secondaryLabel}`;
-  const status = myTaskStatuses[booking.status] ?? myTaskStatuses.booked;
-
-  return <MyTaskCardView
-    address={task.metro ? <>{task.metro.station} · {task.address}</> : task.address}
-    brand={<BrandMark brand={task.brand} />}
-    date={date}
-    distance={task.distance}
-    distanceMark={<img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />}
-    hours={task.hours}
-    metro={task.metro && <MetroIcon metro={task.metro} />}
-    payment={task.payment}
-    rate={task.rate}
-    status={status}
-    title={task.title}
-  />;
-}
-
-function FavoriteCollectionsView({ collections, onApplyCollection, onEditCollection, onRemoveCollection }) {
-  const [section, setSection] = useState("stores");
-  const [actionsTarget, setActionsTarget] = useState(null);
-  const [stores, setStores] = useState(defaultFavoriteStores);
-  const targetLabel = actionsTarget?.type === "store" ? "магазин" : "подборку";
-
-  function closeActions() {
-    setActionsTarget(null);
-  }
-
-  function editTarget() {
-    if (actionsTarget?.type === "collection") onEditCollection(actionsTarget.collection);
-    closeActions();
-  }
-
-  function removeTarget() {
-    if (actionsTarget?.type === "collection") onRemoveCollection(actionsTarget.collection.id);
-    if (actionsTarget?.type === "store") setStores((current) => current.filter((store) => store.id !== actionsTarget.store.id));
-    closeActions();
-  }
-
-  return (
-    <div className="favorites-view">
-      <div aria-label="Разделы избранного" className="favorites-tabs" role="tablist">
-        <button
-          aria-selected={section === "stores"}
-          className={section === "stores" ? "favorites-tab favorites-tab-active" : "favorites-tab"}
-          onClick={() => setSection("stores")}
-          role="tab"
-          type="button"
-        >
-          магазины
-        </button>
-        <button
-          aria-selected={section === "collections"}
-          className={section === "collections" ? "favorites-tab favorites-tab-active" : "favorites-tab"}
-          onClick={() => setSection("collections")}
-          role="tab"
-          type="button"
-        >
-          подборки
-        </button>
-      </div>
-
-      {section === "stores" && stores.length > 0 ? (
-        <div className="favorite-stores-list">
-          {stores.map((store) => <article className="favorite-store-card" key={store.id}>
-            <div className="favorite-store-details">
-              <div className="favorite-store-header">
-                <div>
-                  <h2>{store.title}</h2>
-                  <p><BrandMark brand={store.brand} /><MetroIcon metro={store.metro} />{store.address}</p>
-                </div>
-                <button aria-label={`Настройки магазина ${store.title}`} className="card-kebab-button" onClick={() => setActionsTarget({ store, type: "store" })} type="button"><img alt="" src={assetUrl("kebab.svg")} /></button>
-              </div>
-              <div className="favorite-chip-row">
-                {store.chips.map((chip) => <span className="favorite-chip" key={chip}>{chip}</span>)}
-              </div>
-            </div>
-            <button className="favorite-apply" onClick={() => setSection("collections")} type="button">показать задания</button>
-          </article>)}
-        </div>
-      ) : section === "stores" ? <p className="task-empty-state my-tasks-empty">Сохранённых магазинов пока нет</p> : collections.length === 0 ? (
-        <p className="task-empty-state my-tasks-empty">Сохранённых подборок пока нет</p>
-      ) : (
-        <div className="favorite-collections-list">
-          {collections.map((collection) => {
-            const collectionBrands = collection.filters.brands.length ? collection.filters.brands : defaultCollectionBrands;
-            const collectionServices = normalizeSelectedServices(collection.filters.service);
-            const collectionChips = [
-              collectionServices.length ? getServiceSelectionSummary(collectionServices) : "уборка урожая пшеницы",
-              ...(collection.availability?.labels || ["1, 2, 3 июня"]),
-              "Пн, Ср, Пт",
-              collection.filters.minimumPayment ? `от ${collection.filters.minimumPayment} ₽` : "от 1500 ₽",
-              collection.radius ? `до ${collection.radius} км` : "до 50 км",
-              collection.location.label ? `... ${getShortLocationLabel(collection.location.label)}` : null,
-            ].filter(Boolean);
-
-            return (
-              <article className="favorite-collection-card" key={collection.id}>
-                <div className="favorite-collection-header">
-                  <h2>{collection.title}</h2>
-                  <button aria-label={`Настройки подборки ${collection.title}`} className="card-kebab-button" onClick={() => setActionsTarget({ collection, type: "collection" })} type="button"><img alt="" src={assetUrl("kebab.svg")} /></button>
-                </div>
-                <div className="favorite-brand-row">
-                  {collectionBrands.slice(0, 4).map((brand) => <BrandMark brand={brand} key={brand} />)}
-                </div>
-                <div className="favorite-chip-row">
-                  {collectionChips.map((chip) => <span className="favorite-chip" key={chip}>{chip}</span>)}
-                </div>
-                <button className="favorite-apply" onClick={() => onApplyCollection(collection)} type="button">показать задания</button>
-              </article>
-            );
-          })}
-        </div>
-      )}
-
-      {actionsTarget && <div className="collection-actions-sheet-layer" onClick={closeActions}>
-        <section aria-label={`Действия: ${targetLabel}`} aria-modal="true" className="collection-actions-sheet" onClick={(event) => event.stopPropagation()} role="dialog">
-          <span aria-hidden="true" className="collection-actions-sheet-handle" />
-          <button className="collection-actions-edit" onClick={editTarget} type="button">редактировать {targetLabel}</button>
-          <button className="collection-actions-delete" onClick={removeTarget} type="button">удалить {targetLabel}</button>
-          <button className="collection-actions-cancel" onClick={closeActions} type="button">отмена</button>
-        </section>
-      </div>}
-    </div>
-  );
-}
-
-function EmployeeShiftCard({ day, shift }) {
-  const isPrimaryShift = shift.type === "primary";
-  const shiftTitle = isPrimaryShift ? "основная смена" : "сверхурочная смена";
-
-  return <EmployeeShiftCardView
-    address={shift.address}
-    brand={<BrandMark brand={shift.brand} />}
-    breakInfo={shift.breakInfo ?? "11 ч + 1 ч перерыв"}
-    date={day.secondaryLabel}
-    distance={shift.distance}
-    distanceMark={<img alt="" className="distance-mark" src={assetUrl("map-pin.svg")} />}
-    hours={shift.hours}
-    metro={shift.metro && <><MetroIcon metro={shift.metro} />{shift.metro.station} ·</>}
-    shiftTitle={shiftTitle}
-    title={shift.title}
-    weekday={getShortDayLabel(day)}
-  />;
 }
 
 function IconButton({ alt, src, label, onClick }) {
@@ -2348,17 +1965,15 @@ export function App() {
   const [searchLocation, setSearchLocation] = useState(persistedState.searchLocation || emptySearchLocation);
   const [appliedFilters, setAppliedFilters] = useState(persistedState.appliedFilters || emptyFilters);
   const [favoriteCollections, setFavoriteCollections] = useState(persistedState.favoriteCollections || defaultFavoriteCollections);
+  const [favoriteServiceRecords, setFavoriteServiceRecords] = useState(demoFavoriteServiceRecords);
+  const [signingTaskRecords, setSigningTaskRecords] = useState(demoSigningTaskRecords);
   const [pendingCollectionAvailability, setPendingCollectionAvailability] = useState(null);
   const [editingCollection, setEditingCollection] = useState(null);
   const [catalogVersion, setCatalogVersion] = useState(persistedState.catalogVersion || 0);
-  const [selectedAvailabilityDates, setSelectedAvailabilityDates] = useState(persistedState.selectedAvailabilityDates || []);
-  const [selectedAvailabilityWeekdays, setSelectedAvailabilityWeekdays] = useState(persistedState.selectedAvailabilityWeekdays || []);
-  const [availabilityTime, setAvailabilityTime] = useState(persistedState.availabilityTime || emptyAvailabilityTime);
-  const [selectedAvailabilityDuration, setSelectedAvailabilityDuration] = useState(() => (
-    Array.isArray(persistedState.selectedAvailabilityDuration)
-      ? persistedState.selectedAvailabilityDuration
-      : persistedState.selectedAvailabilityDuration ? [persistedState.selectedAvailabilityDuration] : []
-  ));
+  const [selectedAvailabilityDates, setSelectedAvailabilityDates] = useState([]);
+  const [selectedAvailabilityWeekdays, setSelectedAvailabilityWeekdays] = useState([]);
+  const [availabilityTime, setAvailabilityTime] = useState(emptyAvailabilityTime);
+  const [selectedAvailabilityDuration, setSelectedAvailabilityDuration] = useState([]);
   const [bookedTasks, setBookedTasks] = useState(persistedState.bookedTasks || []);
   const [currentView, setCurrentView] = useState("tasks");
   const [isFiltersClosing, setIsFiltersClosing] = useState(false);
@@ -2369,6 +1984,7 @@ export function App() {
   const [scrollTargetDay, setScrollTargetDay] = useState(null);
   const [isTimelineLoading, setIsTimelineLoading] = useState(false);
   const [expandedFilteredDays, setExpandedFilteredDays] = useState([]);
+  const [catalogRuntimeState, setCatalogRuntimeState] = useState(readCatalogRuntimeState);
 
   function closeFilters() {
     setIsFiltersClosing(true);
@@ -2376,6 +1992,13 @@ export function App() {
       setIsFiltersClosing(false);
       setCurrentView("tasks");
     }, 260);
+  }
+
+  function clearCatalogRuntimeState() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("catalogState");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    setCatalogRuntimeState("ready");
   }
   const hasFilterChangesFromDefault = appliedFilters.brands.length > 0
     || Boolean(appliedFilters.minimumPayment)
@@ -2444,7 +2067,6 @@ export function App() {
   useEffect(() => {
     window.localStorage.setItem(prototypeStorageKey, JSON.stringify({
       appliedFilters,
-      availabilityTime,
       bookedTasks,
       catalogVersion,
       defaultStateVersion: prototypeDefaultStateVersion,
@@ -2452,12 +2074,9 @@ export function App() {
       hasAppliedSort,
       searchLocation,
       searchRadius,
-      selectedAvailabilityDates,
-      selectedAvailabilityDuration,
-      selectedAvailabilityWeekdays,
       sortBy,
     }));
-  }, [appliedFilters, availabilityTime, bookedTasks, catalogVersion, favoriteCollections, hasAppliedSort, searchLocation, searchRadius, selectedAvailabilityDates, selectedAvailabilityDuration, selectedAvailabilityWeekdays, sortBy]);
+  }, [appliedFilters, bookedTasks, catalogVersion, favoriteCollections, hasAppliedSort, searchLocation, searchRadius, sortBy]);
 
   useEffect(() => {
     const timeline = document.querySelector(".date-timeline");
@@ -2598,10 +2217,12 @@ export function App() {
 
   function getBookingState(candidate) {
     if (bookedTasks.some((booking) => booking.id === candidate.task.id)) return "booked";
-    if (!isAvailableForMatching(candidate.day.date) || !isTaskWithinAvailability(candidate.task, availabilityTime)) return "conflict";
+    if (!isAvailableForMatching(candidate.day.id) || !isTaskWithinAvailability(candidate.task, availabilityTime)) return "conflict";
     const sameDayBookings = [
-      ...(acceptedGigByDate[candidate.day.date] ? [acceptedGigByDate[candidate.day.date]] : []),
-      ...bookedTasks.filter((booking) => booking.day.date === candidate.day.date).map((booking) => booking.task),
+      ...(acceptedGigByDate[candidate.day.id] || acceptedGigByDate[candidate.day.date]
+        ? [acceptedGigByDate[candidate.day.id] ?? acceptedGigByDate[candidate.day.date]]
+        : []),
+      ...bookedTasks.filter((booking) => booking.day.id === candidate.day.id).map((booking) => booking.task),
     ];
     if (sameDayBookings.some((shift) => shiftsOverlap(candidate.task, shift))) return "conflict";
     return "available";
@@ -2613,35 +2234,14 @@ export function App() {
     setIsSortSheetOpen(false);
   }
 
-  function isAvailableForMatching(date) {
-    if (availabilityByDate[date] !== "free") return false;
+  function isAvailableForMatching(dayId) {
+    if (availabilityByDate[dayId] !== "free") return false;
 
     const hasManualAvailability = selectedAvailabilityDates.length > 0 || selectedAvailabilityWeekdays.length > 0;
     if (!hasManualAvailability) return true;
 
-    const weekday = days.find((day) => day.date === date)?.weekday;
-    return selectedAvailabilityDates.includes(date) || selectedAvailabilityWeekdays.includes(weekday);
-  }
-
-  function getEmployeeShifts(day) {
-    const acceptedShifts = [
-      ...(acceptedGigByDate[day.date] ? [{ ...acceptedGigByDate[day.date], type: "gig" }] : []),
-      ...bookedTasks
-        .filter((booking) => booking.day.date === day.date)
-        .map((booking) => ({ ...booking.task, type: "gig" })),
-    ];
-    if (acceptedShifts.length) return acceptedShifts;
-    if (availabilityByDate[day.date] !== "busy") return [];
-
-    return [{
-      address: "Косой переулок, 550, к. 8",
-      brand: "pyaterochka",
-      distance: "350 м",
-      hours: "10:00 – 22:00",
-      metro: { city: "spb", color: "#d6083b", label: "Метро Санкт-Петербурга", station: "Площадь Восстания" },
-      title: "управление транспортом",
-      type: "primary",
-    }];
+    const day = days.find((candidate) => candidate.id === dayId);
+    return selectedAvailabilityDates.includes(dayId) || selectedAvailabilityWeekdays.includes(day?.weekday);
   }
 
   function getLocationTasks(day, dayIndex) {
@@ -2696,109 +2296,6 @@ export function App() {
         storeId: store.id,
       };
     });
-  }
-
-  function getTaskMismatchReasons(task, date) {
-    const maximumDistance = Number.isFinite(searchRadius) ? searchRadius * 1000 : Infinity;
-    const minimumPayment = Number.parseInt(appliedFilters.minimumPayment.replace(/\D/g, ""), 10) || 0;
-    const selectedServices = normalizeSelectedServices(appliedFilters.service)
-      .map((service) => service.toLocaleLowerCase("ru-RU"));
-    const selectedStores = normalizeSelectedStores(appliedFilters.stores);
-    const taskService = task.title.toLocaleLowerCase("ru-RU");
-    const isSuggested = Boolean(task.badge || task.variant === "special");
-    const reasons = [];
-    const hasFilterMismatch = (appliedFilters.brands.length > 0 && !appliedFilters.brands.includes(task.brand))
-      || (selectedStores.length > 0 && !selectedStores.includes(task.storeId))
-      || (selectedServices.length > 0 && !selectedServices.some((service) => taskService.includes(service)))
-      || getPaymentValue(task.payment) < minimumPayment
-      || !matchesDurationPreference(task, selectedAvailabilityDuration);
-
-    if (!isAvailableForMatching(date)) reasons.push("Вне доступности");
-    if (!isTaskWithinAvailability(task, availabilityTime)) reasons.push("Пересекается со сменой");
-    if (Number.isFinite(maximumDistance) && getDistanceInMeters(task.distance) > maximumDistance) reasons.push("Вне радиуса");
-    if (hasFilterMismatch || (!isSuggested && reasons.length === 0)) reasons.push("Не совпадает с фильтрами");
-    reasons.push(...task.mismatchHints);
-
-    return [...new Set(reasons)];
-  }
-
-  function matchesCatalogFilters(task) {
-    const minimumPayment = Number.parseInt(appliedFilters.minimumPayment.replace(/\D/g, ""), 10) || 0;
-    const selectedServices = normalizeSelectedServices(appliedFilters.service)
-      .map((service) => service.toLocaleLowerCase("ru-RU"));
-    const selectedStores = normalizeSelectedStores(appliedFilters.stores);
-    const taskService = task.title.toLocaleLowerCase("ru-RU");
-    const maximumDistance = Number.isFinite(searchRadius) ? searchRadius * 1000 : Infinity;
-
-    return !(
-      (appliedFilters.brands.length > 0 && !appliedFilters.brands.includes(task.brand))
-      || (selectedStores.length > 0 && !selectedStores.includes(task.storeId))
-      || (selectedServices.length > 0 && !selectedServices.some((service) => taskService.includes(service)))
-      || getPaymentValue(task.payment) < minimumPayment
-      || getDistanceInMeters(task.distance) > maximumDistance
-      || !matchesDurationPreference(task, selectedAvailabilityDuration)
-    );
-  }
-
-  function overlapsBookedShift(task, date) {
-    const primaryShift = availabilityByDate[date] === "busy" ? [{ hours: "10:00 – 22:00" }] : [];
-    const acceptedShifts = [
-      ...(acceptedGigByDate[date] ? [acceptedGigByDate[date]] : []),
-      ...bookedTasks
-        .filter((booking) => booking.day.date === date)
-        .map((booking) => booking.task),
-    ];
-
-    return [...primaryShift, ...acceptedShifts].some((shift) => shiftsOverlap(task, shift));
-  }
-
-  function matchesDefaultAvailability(task, date) {
-    const hasExplicitAvailability = Boolean(
-      availabilityTime.from || availabilityTime.to || availabilityTime.preset || availabilityTime.presets?.length,
-    );
-    const effectiveAvailability = hasExplicitAvailability ? availabilityTime : defaultAvailabilityTime;
-    return isAvailableForMatching(date)
-      && isTaskWithinAvailability(task, effectiveAvailability);
-  }
-
-  function getTasksForFeed(tasks, date) {
-    const availableCatalogTasks = tasks.filter((task) => (
-      matchesCatalogFilters(task) && !overlapsBookedShift(task, date)
-    ));
-    const matchingTasks = availableCatalogTasks.filter((task) => matchesDefaultAvailability(task, date));
-    const visibleTasks = (onlyMatching ? matchingTasks : availableCatalogTasks).map((task) => ({
-      ...task,
-      badge: onlyMatching ? "подходит вам" : undefined,
-    }));
-    const hiddenTasks = onlyMatching
-      ? availableCatalogTasks
-        .filter((task) => !matchingTasks.some((matchingTask) => matchingTask.id === task.id))
-        .map((task) => ({
-          ...task,
-          badge: undefined,
-          restrictionTags: ["Не совпадает с доступностью"],
-        }))
-      : [];
-
-    const hasCatalogFilters = appliedFilters.brands.length > 0
-      || Boolean(appliedFilters.minimumPayment)
-      || normalizeSelectedServices(appliedFilters.service).length > 0
-      || normalizeSelectedStores(appliedFilters.stores).length > 0
-      || Number.isFinite(searchRadius);
-    const shouldLimitDefaultFeed = onlyMatching
-      && !hasCatalogFilters
-      && selectedAvailabilityDates.length === 0
-      && selectedAvailabilityWeekdays.length === 0
-      && selectedAvailabilityDuration.length === 0;
-
-    const orderedVisibleTasks = getOrderedTasks(visibleTasks, sortBy, hasAppliedSort);
-
-    return {
-      hiddenTasks: getSortedTasks(hiddenTasks, sortBy),
-      visibleTasks: shouldLimitDefaultFeed
-        ? orderedVisibleTasks.slice(0, DEFAULT_VISIBLE_DEMO_TASKS_PER_DAY)
-        : orderedVisibleTasks,
-    };
   }
 
   if (startupPhase === "spinner") {
@@ -2925,9 +2422,11 @@ export function App() {
           </div>
         </section>}
 
-        <section aria-label={activeTab === 2 ? "Мои задания" : activeTab === 1 ? "Избранное" : "Список заданий"} className={isTaskListLoading ? "task-list task-list-loading" : "task-list"}>
-          {activeTab === 1 ? <FavoriteCollectionsView
+        <section aria-label={activeTab === 3 ? "Задания на подписание" : activeTab === 2 ? "Мои задания" : activeTab === 1 ? "Избранное" : "Список заданий"} className={isTaskListLoading ? "task-list task-list-loading" : "task-list"}>
+          {activeTab === 1 ? <FavoritesView
             collections={favoriteCollections}
+            defaultBrands={defaultCollectionBrands}
+            favoriteStores={defaultFavoriteStores}
             onApplyCollection={(collection) => {
               const hasLocationChanged = collection.location.label !== searchLocation.label
                 || collection.location.coords[0] !== searchLocation.coords[0]
@@ -2939,61 +2438,72 @@ export function App() {
               if (hasLocationChanged) setCatalogVersion((current) => current + 1);
               setActiveTab(0);
             }}
+            onApplyStore={(store) => {
+              setAppliedFilters({ ...emptyFilters, stores: [store.id] });
+              setActiveTab(0);
+            }}
             onEditCollection={(collection) => {
               setEditingCollection(collection);
               setCurrentView("filters");
             }}
+            onOpenService={openTaskDetails}
             onRemoveCollection={(id) => setFavoriteCollections((collections) => collections.filter((collection) => collection.id !== id))}
-          /> : activeTab === 2 ? <MyTasksView bookedTasks={bookedTasks} /> : activeTab === 3 ? <SigningTasksView /> : isTaskListLoading ? <TimelineLoadingState /> : dayGroups.map((day, dayIndex) => {
-            const employeeShifts = getEmployeeShifts(day);
-            const hasDemoEmptyDay = day.date === "5" || day.date === "14";
-            const dayTasks = hasDemoEmptyDay ? [] : getLocationTasks(day, dayIndex);
-            const taskFeed = getTasksForFeed(dayTasks, day.date);
-            const isFilteredDayExpanded = expandedFilteredDays.includes(day.date);
-            const visibleTasks = taskFeed.visibleTasks;
-            const hasFilteredOutTasks = taskFeed.hiddenTasks.length > 0 && !isFilteredDayExpanded;
-            const hasNoFeedContent = employeeShifts.length === 0
-              && visibleTasks.length === 0
-              && taskFeed.hiddenTasks.length === 0;
-
-            return (
-              <section
-                className="task-day-section"
-                data-day={day.date}
-                data-day-key={day.id}
-                key={day.id}
-                ref={(node) => { daySectionRefs.current[day.id] = node; }}
-              >
-                <h2 className="day-heading">{day.label}, <span>{day.secondaryLabel}</span></h2>
-                {employeeShifts.map((shift, index) => <EmployeeShiftCard day={day} key={`${day.date}-${shift.type}-${shift.hours}-${index}`} shift={shift} />)}
-                {visibleTasks.map((task) => <TaskCard day={day} key={task.id} onOpen={() => openTaskDetails(task, day)} task={task} />)}
-                {isFilteredDayExpanded && taskFeed.hiddenTasks.length > 0 && <button
-                  className="hide-incompatible-button"
-                  onClick={() => setExpandedFilteredDays((current) => current.filter((date) => date !== day.date))}
-                  type="button"
-                >
-                  скрыть неподходящие <img alt="" src={assetUrl("chevron-down.svg")} />
-                </button>}
-                {isFilteredDayExpanded && taskFeed.hiddenTasks.map((task) => <TaskCard day={day} key={task.id} onOpen={() => openTaskDetails(task, day)} revealRestrictionTags task={task} />)}
-                {hasFilteredOutTasks && <TaskMessageCard
-                  hiddenCount={taskFeed.hiddenTasks.length}
-                  onSubscribe={() => {
-                    setPendingCollectionAvailability({ key: day.date, label: `${day.label}, ${day.secondaryLabel}` });
+            onRemoveService={(id) => setFavoriteServiceRecords((records) => records.filter(({ service }) => service.id !== id))}
+            serviceRecords={favoriteServiceRecords}
+          /> : activeTab === 2 ? (
+            <MyTasksList bookedTasks={bookedTasks} demoRecords={demoMyTaskRecords} />
+          ) : activeTab === 3 ? (
+            <SigningList
+              onPrimaryAction={(id) => setSigningTaskRecords((records) => records.map((record) => (
+                record.id === id ? { ...record, signing: { ...record.signing, status: "processing" } } : record
+              )))}
+              records={signingTaskRecords}
+            />
+          ) : isTaskListLoading ? (
+            <CatalogLoadingState />
+          ) : (
+            <>
+              {catalogRuntimeState === "stale" && <CatalogStaleState onRefresh={clearCatalogRuntimeState} />}
+              {catalogRuntimeState === "error" ? (
+                <CatalogErrorState onRetry={clearCatalogRuntimeState} />
+              ) : (
+                <TaskFeed
+                  dayGroups={dayGroups}
+                  employeeShiftContext={{
+                    acceptedGigByDate,
+                    availabilityByDate,
+                    bookedTasks,
+                  }}
+                  expandedFilteredDays={expandedFilteredDays}
+                  feedContext={{
+                    acceptedGigByDate,
+                    appliedFilters,
+                    availabilityByDate,
+                    availabilityTime,
+                    bookedTasks,
+                    hasAppliedSort,
+                    onlyMatching,
+                    searchRadius,
+                    selectedAvailabilityDates,
+                    selectedAvailabilityDuration,
+                    selectedAvailabilityWeekdays,
+                    sortBy,
+                  }}
+                  getLocationTasks={getLocationTasks}
+                  onChangeFilters={() => setCurrentView("filters")}
+                  onCollapseDay={(dayId) => setExpandedFilteredDays((current) => current.filter((id) => id !== dayId))}
+                  onExpandDay={(dayId) => setExpandedFilteredDays((current) => current.includes(dayId) ? current : [...current, dayId])}
+                  onOpenTask={openTaskDetails}
+                  onSubscribe={(day) => {
+                    setPendingCollectionAvailability({ key: day.id, label: `${day.label}, ${day.secondaryLabel}` });
                     setCurrentView("filters");
                   }}
-                  variant={visibleTasks.length === 0 ? "empty-day-filtered" : "no-more"}
-                  onShowAll={() => setExpandedFilteredDays((current) => [...current, day.date])}
-                />}
-                {hasNoFeedContent && <NoTasksForDayCard onSubscribe={() => {
-                  setPendingCollectionAvailability({ key: day.date, label: `${day.label}, ${day.secondaryLabel}` });
-                  setCurrentView("filters");
-                }} />}
-                {dayIndex === dayGroups.length - 1 && <EndOfTimelinePlaceholder />}
-              </section>
-            );
-          })}
+                  registerDaySection={(dayId, node) => { daySectionRefs.current[dayId] = node; }}
+                />
+              )}
+            </>
+          )}
         </section>
-
       </section> : currentView === "settings" ? <ScheduleSettings
         initialAvailabilityTime={availabilityTime}
         initialSelectedDates={selectedAvailabilityDates}
@@ -3045,11 +2555,13 @@ export function App() {
         }}
         onSave={({ filters, location, radius }) => {
           if (editingCollection) {
+            const minimumPaymentValue = Number.parseInt(String(filters.minimumPayment).replace(/\D/g, ""), 10) || 0;
             setFavoriteCollections((collections) => collections.map((collection) => collection.id === editingCollection.id ? {
               ...collection,
               filters: { ...filters, brands: [...filters.brands] },
               location: { ...location, coords: [...location.coords] },
               radius,
+              resultCount: minimumPaymentValue > 10_000 ? 0 : undefined,
               title: editingCollection.title,
             } : collection));
             setEditingCollection(null);
@@ -3067,6 +2579,7 @@ export function App() {
           closeFilters();
         }}
         onSaveCollection={({ availability, filters, location, notifications, radius, title }) => {
+          const minimumPaymentValue = Number.parseInt(String(filters.minimumPayment).replace(/\D/g, ""), 10) || 0;
           setFavoriteCollections((collections) => [
             {
               availability,
@@ -3075,6 +2588,7 @@ export function App() {
               location,
               notifications,
               radius,
+              resultCount: minimumPaymentValue > 10_000 ? 0 : undefined,
               title,
             },
             ...collections,

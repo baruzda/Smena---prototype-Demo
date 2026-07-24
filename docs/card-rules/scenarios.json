@@ -18,7 +18,8 @@
           "RULE-PLACEMENT-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-CATALOG-002",
@@ -41,7 +42,8 @@
           "EXC-PLACEMENT-002"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-MATCH-001",
@@ -284,7 +286,8 @@
           "RULE-SHIFT-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-SHIFT-002",
@@ -304,7 +307,8 @@
           "RULE-SHIFT-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-MYTASKS-001",
@@ -381,7 +385,8 @@
           "RULE-FAVORITES-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-FAVORITES-002",
@@ -397,11 +402,26 @@
         "template": "service_offer_card",
         "variant": "favorite_unavailable",
         "section": "services_unavailable",
+        "visibleContent": [
+          "favorite.unavailable_status",
+          "favorite.remove_action"
+        ],
+        "enabledActions": [
+          "favorite.remove_action"
+        ],
+        "disabledActions": [
+          "service.primary_action"
+        ],
+        "appliedRules": [
+          "RULE-FAVORITES-001",
+          "RULE-FAVORITES-004"
+        ],
         "appliedExceptions": [
           "EXC-FAVORITES-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-FAVORITES-003",
@@ -419,7 +439,8 @@
           "RULE-FAVORITES-002"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-FAVORITES-004",
@@ -438,7 +459,8 @@
           "RULE-FAVORITES-002"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-FAVORITES-005",
@@ -456,7 +478,8 @@
           "RULE-FAVORITES-003"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-FAVORITES-006",
@@ -472,7 +495,191 @@
           "RULE-FAVORITES-003"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-FAVORITES-007",
+      "name": "Избранное открывается со вкладки услуг и двумя секциями",
+      "given": {
+        "surface": "favorites",
+        "favoriteServices": [
+          { "state": "available", "isFavorite": true },
+          { "state": "expired", "isFavorite": true }
+        ]
+      },
+      "expected": {
+        "template": "service_offer_card",
+        "section": "services_available",
+        "appliedRules": ["RULE-FAVORITES-001", "RULE-FAVORITES-004"]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/app.spec.mjs"
+    },
+    {
+      "id": "SCN-FAVORITES-008",
+      "name": "Пользователь удаляет недоступную услугу из избранного",
+      "given": {
+        "surface": "favorites",
+        "userAction": "favorite.remove_action",
+        "service": {
+          "state": "expired",
+          "isFavorite": true
+        }
+      },
+      "expected": {
+        "enabledActions": ["favorite.remove_action"],
+        "disabledActions": ["service.primary_action"],
+        "notInSections": ["services_unavailable"],
+        "appliedRules": ["RULE-FAVORITES-004"]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/app.spec.mjs"
+    },
+    {
+      "id": "SCN-FAVORITES-009",
+      "name": "Принятые и завершённые услуги покидают избранное",
+      "given": {
+        "surface": "favorites",
+        "service": {
+          "state": ["pending_confirmation", "signing_required", "booked", "active", "completed"],
+          "isFavorite": true
+        }
+      },
+      "expected": {
+        "notInSections": ["services_available", "services_unavailable"],
+        "appliedRules": ["RULE-FAVORITES-001"]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-FAVORITES-010",
+      "name": "Отменённая избранная услуга остаётся до явного удаления",
+      "given": {
+        "surface": "favorites",
+        "service": {
+          "state": "cancelled",
+          "isFavorite": true
+        }
+      },
+      "expected": {
+        "template": "service_offer_card",
+        "variant": "favorite_unavailable",
+        "section": "services_unavailable",
+        "visibleContent": ["favorite.unavailable_status", "favorite.remove_action"],
+        "enabledActions": ["favorite.remove_action"],
+        "disabledActions": ["service.primary_action"],
+        "appliedRules": ["RULE-FAVORITES-001", "RULE-FAVORITES-004"],
+        "appliedExceptions": ["EXC-FAVORITES-001"]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-FAVORITES-011",
+      "name": "Сохранённая подборка без результатов остаётся видимой",
+      "given": {
+        "surface": "favorites",
+        "collection": {
+          "isSaved": true,
+          "resultCount": 0
+        }
+      },
+      "expected": {
+        "template": "saved_collection_card",
+        "variant": "empty_collection",
+        "section": "collections",
+        "visibleContent": [
+          "collection.filters_summary",
+          "collection.location",
+          "collection.empty_status",
+          "collection.empty_description"
+        ],
+        "enabledActions": [
+          "collection.edit",
+          "collection.delete"
+        ],
+        "disabledActions": [
+          "collection.apply"
+        ],
+        "appliedRules": [
+          "RULE-FAVORITES-002",
+          "RULE-FAVORITES-005",
+          "RULE-FAVORITES-006"
+        ],
+        "appliedExceptions": [
+          "EXC-FAVORITES-002"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-FAVORITES-012",
+      "name": "Пустая подборка открывает изменение условий",
+      "given": {
+        "surface": "favorites",
+        "userAction": "collection.edit",
+        "collection": {
+          "isSaved": true,
+          "resultCount": 0
+        }
+      },
+      "expected": {
+        "template": "saved_collection_card",
+        "variant": "empty_collection",
+        "section": "collections",
+        "visibleContent": [
+          "collection.empty_status",
+          "collection.empty_description"
+        ],
+        "enabledActions": [
+          "collection.edit",
+          "collection.delete"
+        ],
+        "disabledActions": [
+          "collection.apply"
+        ],
+        "appliedRules": [
+          "RULE-FAVORITES-002",
+          "RULE-FAVORITES-005",
+          "RULE-FAVORITES-006"
+        ],
+        "appliedExceptions": [
+          "EXC-FAVORITES-002"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/app.spec.mjs"
+    },
+    {
+      "id": "SCN-FAVORITES-013",
+      "name": "Непустая подборка открывает выдачу",
+      "given": {
+        "surface": "favorites",
+        "collection": {
+          "isSaved": true,
+          "resultCount": 1
+        }
+      },
+      "expected": {
+        "template": "saved_collection_card",
+        "section": "collections",
+        "enabledActions": [
+          "collection.edit",
+          "collection.apply",
+          "collection.delete"
+        ],
+        "disabledActions": [],
+        "appliedRules": [
+          "RULE-FAVORITES-002",
+          "RULE-FAVORITES-005",
+          "RULE-FAVORITES-006"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-SIGNING-001",
@@ -491,11 +698,19 @@
         "template": "signing_card",
         "variant": "waiting_user",
         "section": "waiting_user",
+        "visibleContent": [
+          "signing.document_status"
+        ],
+        "enabledActions": [
+          "signing.primary_action"
+        ],
         "appliedRules": [
-          "RULE-SIGNING-001"
+          "RULE-SIGNING-001",
+          "RULE-SIGNING-005"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-SIGNING-002",
@@ -511,14 +726,166 @@
         }
       },
       "expected": {
+        "template": "signing_card",
+        "variant": "processing",
+        "section": "processing",
         "notInSections": [
           "waiting_user"
+        ],
+        "visibleContent": [
+          "signing.document_status"
+        ],
+        "disabledActions": [
+          "signing.primary_action"
+        ],
+        "appliedRules": [
+          "RULE-SIGNING-002",
+          "RULE-SIGNING-005"
         ],
         "appliedExceptions": [
           "EXC-SIGNING-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-SIGNING-003",
+      "name": "Подписанные документы остаются в табе",
+      "given": {
+        "surface": "signing",
+        "service": {
+          "state": "signing_required"
+        },
+        "signing": {
+          "actor": "system",
+          "status": "signed"
+        }
+      },
+      "expected": {
+        "template": "signing_card",
+        "variant": "signed",
+        "section": "signed",
+        "visibleContent": [
+          "signing.document_status"
+        ],
+        "disabledActions": [
+          "signing.primary_action"
+        ],
+        "appliedRules": [
+          "RULE-SIGNING-003",
+          "RULE-SIGNING-005"
+        ],
+        "appliedExceptions": [
+          "EXC-SIGNING-001"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-SIGNING-004",
+      "name": "Отклонённые документы остаются в табе",
+      "given": {
+        "surface": "signing",
+        "service": {
+          "state": "signing_required"
+        },
+        "signing": {
+          "actor": "system",
+          "status": "rejected"
+        }
+      },
+      "expected": {
+        "template": "signing_card",
+        "variant": "rejected",
+        "section": "rejected",
+        "visibleContent": [
+          "signing.document_status"
+        ],
+        "disabledActions": [
+          "signing.primary_action"
+        ],
+        "appliedRules": [
+          "RULE-SIGNING-004",
+          "RULE-SIGNING-005"
+        ],
+        "appliedExceptions": [
+          "EXC-SIGNING-001"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-SIGNING-005",
+      "name": "Подписание переводит документ на проверку",
+      "given": {
+        "surface": "signing",
+        "action": "signing.primary_action",
+        "signing": {
+          "actor": "user",
+          "status": "waiting_user"
+        }
+      },
+      "expected": {
+        "template": "signing_card",
+        "variant": "processing",
+        "section": "processing",
+        "disabledActions": [
+          "signing.primary_action"
+        ],
+        "appliedRules": [
+          "RULE-SIGNING-002",
+          "RULE-SIGNING-005"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/app.spec.mjs"
+    },
+    {
+      "id": "SCN-SIGNING-006",
+      "name": "Документы на проверке не попадают в секцию подписанных",
+      "given": {
+        "surface": "signing",
+        "signing": {
+          "actor": "system",
+          "status": "processing"
+        }
+      },
+      "expected": {
+        "notInSections": [
+          "signed"
+        ],
+        "appliedRules": [
+          "RULE-SIGNING-002",
+          "RULE-SIGNING-005"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-SIGNING-007",
+      "name": "Документы на проверке не попадают в секцию отклонённых",
+      "given": {
+        "surface": "signing",
+        "signing": {
+          "actor": "system",
+          "status": "processing"
+        }
+      },
+      "expected": {
+        "notInSections": [
+          "rejected"
+        ],
+        "appliedRules": [
+          "RULE-SIGNING-002",
+          "RULE-SIGNING-005"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-CONTENT-001",
@@ -564,6 +931,56 @@
       "executionStatus": "declarative"
     },
     {
+      "id": "SCN-CATALOG-003",
+      "name": "Отфильтрованная услуга не попадает в список скрытых",
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "matchesFilters": false,
+          "overlapsPrimarySchedule": false
+        },
+        "catalog": {
+          "otherOffersExpanded": true
+        }
+      },
+      "expected": {
+        "notInSections": [
+          "other_offers"
+        ],
+        "appliedRules": [
+          "RULE-HIDDEN-001"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-CATALOG-004",
+      "name": "Конфликт с основной сменой не попадает в список скрытых",
+      "given": {
+        "surface": "tasks",
+        "service": {
+          "state": "available",
+          "matchesFilters": true,
+          "overlapsPrimarySchedule": true
+        },
+        "catalog": {
+          "otherOffersExpanded": true
+        }
+      },
+      "expected": {
+        "notInSections": [
+          "other_offers"
+        ],
+        "appliedRules": [
+          "RULE-HIDDEN-001"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
       "id": "SCN-ACTION-001",
       "name": "Услуга пересекается с основной сменой",
       "given": {
@@ -581,7 +998,8 @@
           "RULE-ACTION-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
     },
     {
       "id": "SCN-ACTION-002",
@@ -602,7 +1020,64 @@
           "RULE-ACTION-001"
         ]
       },
-      "executionStatus": "declarative"
+      "executionStatus": "verified",
+      "testEvidence": "tests/service-offer-presentation.test.mjs"
+    },
+    {
+      "id": "SCN-CATALOG-005",
+      "name": "Частично скрытая выдача содержит отдельное сообщение скрытых услуг",
+      "given": {
+        "surface": "tasks",
+        "catalog": {
+          "visibleCount": 3,
+          "hiddenCount": 2,
+          "hiddenReason": "filters"
+        }
+      },
+      "expected": {
+        "uiStates": [
+          "catalog.partially_hidden",
+          "hidden_services.message"
+        ]
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/app.spec.mjs"
+    },
+    {
+      "id": "SCN-CATALOG-006",
+      "name": "Ошибка обновления без сохранённых данных",
+      "given": {
+        "surface": "tasks",
+        "catalog": {
+          "requestState": "error",
+          "hasCachedData": false
+        }
+      },
+      "expected": {
+        "uiStates": ["catalog.error"],
+        "actions": ["retry"],
+        "cardsVisible": false
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/app.spec.mjs"
+    },
+    {
+      "id": "SCN-CATALOG-007",
+      "name": "Старые данные остаются при ошибке обновления",
+      "given": {
+        "surface": "tasks",
+        "catalog": {
+          "requestState": "error",
+          "hasCachedData": true
+        }
+      },
+      "expected": {
+        "uiStates": ["catalog.stale"],
+        "actions": ["refresh"],
+        "cardsVisible": true
+      },
+      "executionStatus": "verified",
+      "testEvidence": "tests/app.spec.mjs"
     }
   ]
 }

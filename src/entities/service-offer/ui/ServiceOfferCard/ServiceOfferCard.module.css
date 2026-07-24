@@ -1,0 +1,372 @@
+.card {
+  animation: card-soft-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 12px;
+  position: relative;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.special {
+  box-shadow: inset 0 0 0 1px #c9bffa;
+}
+
+.restriction_status,
+.restriction_status_plus,
+.restriction_tags {
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+}
+
+.favoriteUnavailableCard {
+  animation: favorite-unavailable-soft-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  background: #f8f8f9;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 12px;
+  position: relative;
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.favoriteUnavailableTop {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 28px;
+}
+
+.favoriteUnavailableCopy {
+  min-width: 0;
+}
+
+.favoriteUnavailableCard h2 {
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 21px;
+  margin: 0;
+}
+
+.favoriteUnavailableAddress {
+  color: #6c737d;
+  font-size: 14px;
+  line-height: 18px;
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.favoriteUnavailableAddressWithMetro {
+  display: block;
+}
+
+.favoriteUnavailableDivider {
+  background: rgb(0 0 0 / 0.12);
+  height: 1px;
+  margin: 0;
+}
+
+.favoriteUnavailableBottom {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.favoriteUnavailablePayment p {
+  color: #000;
+  font-size: 18px;
+  line-height: 21px;
+  margin: 0;
+}
+
+.favoriteUnavailablePayment p + p {
+  color: #6c737d;
+  font-size: 14px;
+  line-height: 18px;
+  margin-top: 2px;
+}
+
+.favoriteUnavailableTime {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.favoriteUnavailableTime p {
+  color: #6c737d;
+  font-size: 14px;
+  line-height: 18px;
+  margin: 4px 0 0;
+  white-space: nowrap;
+}
+
+.favoriteUnavailableTime > p:first-child {
+  color: #000;
+  font-size: 18px;
+  letter-spacing: 0;
+  line-height: 21px;
+  margin: 0;
+}
+
+.top {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 28px;
+}
+
+.copy {
+  min-width: 0;
+}
+
+.suitableMarker {
+  background: rgb(100 70 255 / 10%);
+  border-radius: 6px;
+  color: #6446ff;
+  display: inline-flex;
+  font-size: 14px;
+  line-height: 18px;
+  margin-bottom: 4px;
+  padding: 2px 8px;
+}
+
+.favoriteUnavailableStatus {
+  color: #6c737d;
+  display: inline-flex;
+  font-size: 14px;
+  line-height: 18px;
+  margin-bottom: 4px;
+}
+
+.restrictionStatus {
+  align-items: center;
+  color: #28a975;
+  display: inline-flex;
+  font-size: 14px;
+  gap: 6px;
+  line-height: 18px;
+  margin-bottom: 4px;
+}
+
+.restrictionStatus i {
+  background: currentcolor;
+  border-radius: 50%;
+  height: 8px;
+  width: 8px;
+}
+
+.specialMarkers {
+  align-items: center;
+  display: inline-flex;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.specialMarker,
+.specialTimer {
+  background: #6446ff;
+  border-radius: 6px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 14px;
+  line-height: 18px;
+  padding: 2px 6px;
+}
+
+.card h2 {
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 21px;
+  margin: 0;
+}
+
+.address {
+  color: #6c737d;
+  font-size: 14px;
+  line-height: 18px;
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.addressWithMetro {
+  display: block;
+}
+
+.metroIcon {
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: -4px;
+}
+
+.brandLogo {
+  height: 28px;
+  margin: 0;
+  width: 28px;
+}
+
+.divider {
+  background: rgb(0 0 0 / 0.12);
+  height: 1px;
+  margin: 0;
+}
+
+.bottom {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.payment p {
+  color: #000;
+  font-size: 18px;
+  line-height: 21px;
+  margin: 0;
+}
+
+.payment p + p {
+  color: #6c737d;
+  font-size: 14px;
+  line-height: 18px;
+  margin-top: 2px;
+}
+
+.time {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.time p {
+  color: #6c737d;
+  font-size: 14px;
+  line-height: 18px;
+  margin: 4px 0 0;
+  white-space: nowrap;
+}
+
+.time > p:first-child {
+  color: #000;
+  font-size: 18px;
+  letter-spacing: 0;
+  line-height: 21px;
+  margin: 0;
+}
+
+.restrictions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.restrictions span {
+  background: #fff0e8;
+  border-radius: 6px;
+  color: #ff7a32;
+  font-size: 12px;
+  line-height: 14px;
+  padding: 2px 6px;
+}
+
+.primaryAction {
+  background: #f4f4f5;
+  border: 0;
+  border-radius: 100px;
+  color: #000;
+  cursor: pointer;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 14px;
+  height: 32px;
+  line-height: 18px;
+  margin-top: 2px;
+  position: relative;
+  width: 100%;
+  z-index: 2;
+}
+
+.primaryAction:disabled {
+  color: #93979f;
+  cursor: not-allowed;
+}
+
+.favoriteRemoveAction {
+  background: #fff;
+  border: 0;
+  border-radius: 100px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+  color: #000;
+  cursor: pointer;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 14px;
+  height: 32px;
+  line-height: 18px;
+  margin-top: 2px;
+  position: relative;
+  width: 100%;
+  z-index: 2;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.openButton {
+  background: transparent;
+  border: 0;
+  border-radius: 16px;
+  cursor: pointer;
+  inset: 0;
+  padding: 0;
+  position: absolute;
+  z-index: 1;
+}
+
+.openButton:focus-visible {
+  box-shadow: inset 0 0 0 2px #6646ff, 0 0 0 2px rgb(102 70 255 / 0.2);
+  outline: 0;
+}
+
+@media (hover: hover) {
+  .clickable:hover {
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.06);
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes card-soft-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes favorite-unavailable-soft-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .favoriteUnavailableCard {
+    animation: none;
+    transition: none;
+  }
+}

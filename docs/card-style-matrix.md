@@ -13,38 +13,61 @@
 
 ## Variants Figma → код
 
-| Figma variant | Компонент / mode | CSS namespace | Фон / рамка | Верх | Низ / действия | Статус |
-| --- | --- | --- | --- | --- | --- | --- |
-| `sceleton` | `TaskSkeletonCard` | `task-skeleton-*` | white + stroke | placeholders + logo circle | divider + placeholders | Реализовано |
-| `default` | `TaskCard cardVariant="default"` fallback | `gig-task-*` | white + stroke | title + address + brand | payment/rate + hours/break | Реализовано |
-| `подходит вам` | `TaskCard cardVariant="match"` | `gig-task-*` | white + stroke | violet badge `подходит вам` + title + address + brand | payment/rate + hours/break | Реализовано |
-| `status+` | `TaskCard cardVariant="status-plus"` | `gig-task-*` | white + stroke | status label + title + address + brand | old/new payment + old/new time | Реализован отдельный mode |
-| `status` | `TaskCard cardVariant="status"` | `gig-task-*` | white + stroke | status label + title + address + brand | payment/rate + time/date | Реализован отдельный mode |
-| `теги ограничений` | `TaskCard cardVariant="top-tags"` | `task-card-top-tags-*` | white + stroke | orange restriction chips + title + address + brand | payment/rate + hours/break | Реализован отдельный mode |
-| `специально для вас` | `TaskCard cardVariant="special"` | `gig-task-*`, `special-card-*` | white + violet stroke | violet badge + timer + title + address + brand | payment/rate + hours/break + CTA | Реализовано |
-| `основная смена` | `EmployeeShiftCard` with `shift.type === "primary"` | `employee-shift-*` | `Card variant="filled"`, no stroke | grey badge + title + address + brand | акцент: дата; secondary: день недели; time | Реализовано отдельным namespace |
-| `сверхурочная смена` | `EmployeeShiftCard` with `shift.type !== "primary"` | `employee-shift-*` | `Card variant="filled"`, no stroke | grey badge + title + address + brand | акцент: дата; secondary: день недели; time | Реализовано для смен, не для услуг |
-| `моё задание` | `MyTaskCard` | `my-task-*` | `Card variant="outlined"` | status + title + address + brand | payment/rate + date/hours | Реализовано отдельным namespace |
-| `подходящих услуг больше нет` | `TaskMessageCard variant="no-more"` | `task-message-*` | grey-light | centered title + explanatory text | subscribe + show all | Реализовано |
-| `в этот день нет подходящих услуг` | `TaskMessageCard variant="empty-day-filtered"` | `task-message-*` | grey-light | centered title + explanatory text | subscribe + show all | Реализовано |
-| `в этот день услуг нет` | `NoTasksForDayCard` (день без смен и заданий) | `task-message-*` | grey-light | centered title | subscribe | Реализовано |
-| `избранное-подборка` | saved collection card | `favorite-collection-*` | white + stroke | collection title + logos + menu | chips + CTA | Реализовано |
-| `избранное - магазин` | demo store card in stores tab | `favorite-store-*` | white + stroke | title + store/address + menu | chips + CTA | Реализовано |
+| Registry template / variant | Компонент | Изолированный стиль | Статус |
+| --- | --- | --- | --- |
+| `service_offer_card.default` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | verified |
+| `service_offer_card.special` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | verified |
+| `service_offer_card.restriction_status` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | verified |
+| `service_offer_card.restriction_status_plus` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | verified |
+| `service_offer_card.restriction_tags` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | verified |
+| `service_offer_card.favorite_unavailable` | `ServiceOfferCard` | `ServiceOfferCard.module.css` | verified; unavailable status + remove-only action |
+| `employee_shift_card.primary_shift` | `EmployeeShiftCard` | `EmployeeShiftCard.module.css` | verified |
+| `employee_shift_card.accepted_extra_shift` | `EmployeeShiftCard` | `EmployeeShiftCard.module.css` | verified |
+| `my_service_card.pending` | `MyServiceCard` | `MyServiceCard.module.css` | verified |
+| `my_service_card.booked` | `MyServiceCard` | `MyServiceCard.module.css` | verified |
+| `my_service_card.active` | `MyServiceCard` | `MyServiceCard.module.css` | verified |
+| `my_service_card.completed` | `MyServiceCard` | `MyServiceCard.module.css` | verified |
+| `my_service_card.cancelled` | `MyServiceCard` | `MyServiceCard.module.css` | verified |
+| `signing_card.waiting_user` | `SigningCard` | `SigningCard.module.css` | verified; единственный variant с CTA `подписать` |
+| `signing_card.processing` | `SigningCard` | `SigningCard.module.css` | verified; остаётся в Signing без CTA |
+| `signing_card.signed` | `SigningCard` | `SigningCard.module.css` | verified; остаётся в Signing без CTA |
+| `signing_card.rejected` | `SigningCard` | `SigningCard.module.css` | verified; остаётся в Signing без CTA |
+| `saved_collection_card.active_collection` | `FavoriteCollectionCard` | `FavoriteCollectionCard.module.css` | verified |
+| `saved_collection_card.empty_collection` | `FavoriteCollectionCard` | `FavoriteCollectionCard.module.css` | verified; DEC-014 zero-result copy, edit recovery, apply hidden |
+| `favorite_store_card.default` | `FavoriteStoreCard` | `FavoriteStoreCard.module.css` | verified |
+
+Marker `suitable_for_you` — отдельная ось presentation model и не выбирает structural variant.
+
+## Связанные UI-состояния
+
+| UI-state | Компонент | Стиль | Статус |
+| --- | --- | --- | --- |
+| `catalog.loading` | `CatalogLoadingState` | `CatalogStates.module.css` | verified |
+| `service_offer.skeleton` | `ServiceCardSkeleton` | `CatalogStates.module.css` | verified |
+| `catalog.filtered_empty` | `FilteredServicesState` | `CatalogStates.module.css` | verified |
+| `catalog.partially_hidden` | `PartiallyHiddenState` | `CatalogStates.module.css` | verified |
+| `hidden_services.message` | `HiddenServicesState` | `CatalogStates.module.css` | verified |
+| `catalog.empty_day` | `EmptyDayState` | `CatalogStates.module.css` | verified |
+| `catalog.error` | `CatalogErrorState` | `CatalogStates.module.css` | verified; DEC-015 full replacement without cached data |
+| `catalog.stale` | `CatalogStaleState` | `CatalogStates.module.css` | verified; DEC-015 inline warning with cached cards |
 
 ## Запрещённые пересечения
 
-- `gig-task-*` нельзя использовать в `EmployeeShiftCard`.
-- `employee-shift-*` нельзя использовать в `TaskCard`.
-- `my-task-*` нельзя использовать в ленте заданий.
+- CSS Module одной card family нельзя импортировать в другую card family.
+- Стили `ServiceOfferCard`, `EmployeeShiftCard`, `MyServiceCard`, `SigningCard`, `FavoriteCollectionCard` и `FavoriteStoreCard` семантически независимы.
 - `details-*` нельзя использовать в карточках ленты.
-- Бейджи не взаимозаменяемы: `gig-task-badge`, `employee-shift-badge`, `details-match-badge`, `my-task-status` — разные элементы.
+- Бейджи остаются внутренними элементами своей family и не превращаются в общий semantic component.
 - Нельзя использовать текстовые псевдо-иконки (`☆`, `⌄`) вместо экспортированных assets, если asset уже есть.
+- `HiddenServicesState` обязан получать причину скрытия: `filters`, `availability` или `mixed`. Текст причины:
+  - `filters`: «ещё N услуг скрыты из-за фильтров» / «N услуг скрыты из-за фильтров»;
+  - `availability`: «ещё N услуг скрыты из-за настроек доступности» / «N услуг скрыты из-за настроек доступности»;
+  - `mixed`: «ещё N услуг скрыты из-за фильтров или выбранного времени» / «N услуг скрыты из-за фильтров или выбранного времени».
 
 ## Чеклист перед деплоем
 
-1. `rg "\\b(task-card-bottom|task-hours|match-badge)\\b|gig-task.*employee|employee.*gig-task" src/App.jsx src/styles.css`
-2. Собрать проект.
-3. Открыть локальный preview.
+1. `npm run test:unit`
+2. `npm run test:visual`
+3. Собрать проект и открыть локальный preview.
 4. Проверить минимум эти states:
    - обычная/подходящая услуга;
    - обычная услуга без бейджа;
@@ -53,4 +76,7 @@
    - `подходящих услуг больше нет`;
    - `в этот день нет подходящих услуг`;
    - `в этот день услуг нет`.
-5. Если правка затрагивает карточки, обновить эту матрицу в том же коммите.
+   - `не удалось обновить каталог`;
+   - stale-предупреждение вместе с карточками.
+5. Проверить `tests/card-variants.visual.spec.mjs`: на каждый variant из registry должен быть отдельный snapshot.
+6. Если правка затрагивает карточки, обновить эту матрицу и component bindings в том же коммите.

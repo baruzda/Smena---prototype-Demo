@@ -1,0 +1,71 @@
+function getRussianPlural(count, forms) {
+  const remainder = Math.abs(count) % 100;
+  const lastDigit = remainder % 10;
+  if (remainder > 10 && remainder < 20) return forms[2];
+  if (lastDigit === 1) return forms[0];
+  if (lastDigit > 1 && lastDigit < 5) return forms[1];
+  return forms[2];
+}
+
+function getHiddenReasonText(hiddenReason) {
+  if (hiddenReason === "filters") return "фильтров";
+  if (hiddenReason === "availability") return "настроек доступности";
+  return "фильтров или выбранного времени";
+}
+
+export function resolveCatalogStatePresentation({
+  canChangeFilters = false,
+  canReveal = true,
+  hiddenCount = 0,
+  hiddenReason = "mixed",
+  type,
+}) {
+  if (type === "error") {
+    return Object.freeze({
+      uiState: "catalog.error",
+      title: "не удалось обновить каталог",
+      subtitle: "проверьте подключение и попробуйте ещё раз",
+      actions: Object.freeze(["retry"]),
+    });
+  }
+
+  if (type === "stale") {
+    return Object.freeze({
+      uiState: "catalog.stale",
+      title: "показаны неактуальные данные",
+      subtitle: "обновите каталог, чтобы увидеть актуальные услуги",
+      actions: Object.freeze(["refresh"]),
+    });
+  }
+
+  const reason = getHiddenReasonText(hiddenReason);
+  const serviceWord = getRussianPlural(hiddenCount, ["услуга", "услуги", "услуг"]);
+
+  if (type === "filtered_empty") {
+    const actions = ["subscribe"];
+    if (canReveal) actions.push("show_all");
+    if (canChangeFilters) actions.push("change_filters");
+    return Object.freeze({
+      uiState: "catalog.filtered_empty",
+      title: "в этот день нет подходящих услуг",
+      subtitle: `${hiddenCount} ${serviceWord} скрыты из-за ${reason}`,
+      actions: Object.freeze(actions),
+    });
+  }
+
+  if (type === "empty_day") {
+    return Object.freeze({
+      uiState: "catalog.empty_day",
+      title: "в этот день услуг нет",
+      subtitle: null,
+      actions: Object.freeze(["subscribe"]),
+    });
+  }
+
+  return Object.freeze({
+    uiState: type === "hidden_services" ? "hidden_services.message" : "catalog.partially_hidden",
+    title: "подходящих услуг больше нет",
+    subtitle: `ещё ${hiddenCount} ${serviceWord} скрыты из-за ${reason}`,
+    actions: Object.freeze(["subscribe", "show_all"]),
+  });
+}

@@ -28,8 +28,8 @@
         },
         {
           "id": "favorite_unavailable",
-          "name": "Недоступная избранная услуга (legacy presentation)",
-          "description": "Legacy-совместимость исключения избранного до отдельного решения о варианте."
+      "name": "Недоступная избранная услуга",
+      "description": "Утверждённая DEC-013 presentation: без details/booking, с единственным действием явного удаления."
         },
         {
           "id": "restriction_status",
@@ -147,6 +147,10 @@
         {
           "id": "signed",
           "name": "Подписано"
+        },
+        {
+          "id": "rejected",
+          "name": "Отклонено"
         }
       ]
     },
@@ -165,20 +169,23 @@
       "name": "Карточка сохранённой подборки",
       "description": "Сохранённые фильтры, территория и радиус.",
       "slots": [
-        "title",
-        "filters_summary",
-        "location",
-        "actions"
+    "title",
+    "filters_summary",
+    "location",
+    "status",
+    "actions"
       ],
       "supportedSurfaces": ["favorites"],
       "variants": [
         {
           "id": "active_collection",
-          "name": "Активная подборка"
+          "name": "Активная подборка",
+          "description": "Сохранённые условия с доступным переходом к результатам."
         },
         {
           "id": "empty_collection",
-          "name": "Без результатов"
+          "name": "Без результатов",
+          "description": "DEC-014: сохранённые условия без текущих результатов, с zero-result copy и primary recovery через редактирование."
         }
       ]
     }

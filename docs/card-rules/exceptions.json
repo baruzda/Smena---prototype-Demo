@@ -17,6 +17,8 @@
       "id": "EXC-PLACEMENT-002",
       "name": "Скрытая фильтрами услуга не попадает в основную секцию",
       "status": "active",
+      "relatedQuestion": "OPEN-QUESTION-014",
+      "decision": "DEC-009",
       "baseRule": "RULE-PLACEMENT-001",
       "when": { "all": [
         { "path": "service", "operator": "not_equals", "reference": "catalog.appliedFiltersResult" },
@@ -58,6 +60,7 @@
       "id": "EXC-FAVORITES-001",
       "name": "Недоступная избранная услуга сохраняется отдельной карточкой",
       "status": "active",
+      "relatedQuestion": "OPEN-QUESTION-012",
       "baseRule": "RULE-FAVORITES-001",
       "when": { "all": [
         { "path": "service.isFavorite", "operator": "equals", "value": true },
@@ -65,21 +68,37 @@
       ] },
       "override": { "action": "place", "surface": "favorites", "section": "services_unavailable", "variant": "favorite_unavailable" },
       "priority": 800,
-      "reason": "Избранное сохраняет пользовательский выбор и объясняет, почему услуга больше недоступна."
+      "reason": "Избранное сохраняет пользовательский выбор и объясняет, почему услуга больше недоступна.",
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-013" }
+    },
+    {
+      "id": "EXC-FAVORITES-002",
+      "name": "Пустая сохранённая подборка остаётся в Избранном",
+      "status": "active",
+      "relatedQuestion": "OPEN-QUESTION-027",
+      "baseRule": "RULE-FAVORITES-002",
+      "when": { "all": [
+        { "path": "collection.isSaved", "operator": "not_equals", "value": false },
+        { "path": "collection.resultCount", "operator": "equals", "value": 0 }
+      ] },
+      "override": { "action": "place", "surface": "favorites", "section": "collections", "variant": "empty_collection" },
+      "priority": 800,
+      "reason": "Нулевой результат не отменяет сохранённые пользователем условия; карточка остаётся и предлагает изменить подборку.",
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-014" }
     },
     {
       "id": "EXC-SIGNING-001",
       "name": "Документ без действия пользователя не показывается как ожидающий",
-      "status": "provisional",
-      "relatedQuestion": "OPEN-QUESTION-011",
+      "status": "active",
       "baseRule": "RULE-SIGNING-001",
       "when": { "any": [
         { "path": "signing.actor", "operator": "not_equals", "value": "user" },
-        { "path": "signing.status", "operator": "in", "value": ["processing", "signed"] }
+        { "path": "signing.status", "operator": "in", "value": ["processing", "signed", "rejected"] }
       ] },
       "override": { "action": "remove_from_surface", "section": "waiting_user" },
       "priority": 900,
-      "reason": "Секция ожидания должна содержать только документы, по которым пользователь может совершить действие."
+      "reason": "Секция ожидания должна содержать только документы, по которым пользователь может совершить действие.",
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-012" }
     }
   ]
 }

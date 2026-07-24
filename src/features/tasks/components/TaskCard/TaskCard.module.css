@@ -1,6 +1,0 @@
-.title { margin: 0; color: #000; font-family: "X5 Sans", Arial, sans-serif; font-size: 18px; font-weight: 400; letter-spacing: 0; line-height: 21px; }
-.address { display: block; margin: 4px 0 0; overflow-wrap: anywhere; color: #6c737d; font-size: 14px; line-height: 18px; }.address :global(.metro-icon) { display: inline-block; height: 18px; margin-right: 4px; vertical-align: -4px; width: 14px; }
-.payment p { margin: 0; color: #000; font-size: 18px; line-height: 21px; }.payment p + p { margin-top: 2px; color: #6c737d; font-size: 14px; line-height: 18px; }
-.time { flex: 0 0 auto; text-align: right; }.time p { margin: 4px 0 0; color: #6c737d; font-size: 14px; line-height: 18px; white-space: nowrap; }.time > p:first-child { margin: 0; color: #000; font-size: 18px; letter-spacing: 0; line-height: 21px; }
-.special { box-shadow: inset 0 0 0 1px #c9bffa; }
-.topTags { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 2px; }

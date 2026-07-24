@@ -15,8 +15,7 @@
       "name": "Карточки услуг отображаются только в ленте заданий",
       "source": "src/App.jsx#TaskCard",
       "observedBehavior": { "surface": "tasks" },
-      "approvalStatus": "unresolved",
-      "relatedQuestion": "OPEN-QUESTION-011",
+      "approvalStatus": "superseded_by_decision",
       "mustNotBeUsedAsProductTruth": true
     },
     {

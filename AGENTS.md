@@ -1,9 +1,5 @@
 # Prototype Instructions
 
-## Card and UI changes
-
-Before changing cards, card content, markers, actions, placement, list states or related styles, read `.codex/rules/card-rules.md`, `docs/card-rules/README.md`, `docs/card-rules/component-bindings.json` and `docs/card-rules/migration-map.json`. Declare scope as LOCAL, SHARED or GLOBAL; LOCAL is the default. Do not change React or CSS before identifying entity, state dimensions, surface, template, structural variant, markers, content elements, rule IDs, exceptions and scenarios. Treat `active` rules as approved product truth, never implementation observations. Update scenarios, component bindings and migration map together; never edit generated reports manually or remove legacy implementation before `verified`. Run every mandatory check listed in `.codex/rules/card-rules.md`.
-
 Run the local server yourself and open the preview in the browser available to this environment. Do not give the user server-start instructions when you can run it.
 
 Before making substantial visual changes, use the Product Design plugin's `get-context` skill when the visual source is unclear or no longer matches the current goal. When the user gives durable prototype-specific design feedback, preferences, or decisions, record them in `AGENTS.md`.
@@ -37,8 +33,6 @@ For visual fixes after user-reported mismatch or regression, run an independent 
 Every UI completion report must state scope, changed files/components, affected shared components, checked screens, tests run, changed visual baselines, and remaining risks.
 
 Prototype motion preference: use smooth, purposeful animations for state changes where they clarify hierarchy or reduce abruptness. Filter sheets, availability/settings sheets, modal overlays, sticky controls, cards, and floating actions should enter/exit softly while respecting reduced-motion preferences.
-
-Default launch sequence: on every full prototype reload, show a centered service spinner for 1 second, then the tasks screen with two task-card skeletons for 1 second, then show the settings onboarding. Do not persist a dismissed onboarding state across reloads.
 
 Default launch sequence: on every full prototype reload, show a centered service spinner for 1 second, then the tasks screen with two task-card skeletons for 1 second, then show the settings onboarding. Do not persist a dismissed onboarding state across reloads.
 

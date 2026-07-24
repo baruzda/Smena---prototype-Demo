@@ -1,0 +1,294 @@
+.card {
+  background: #fff;
+  border: 1px solid rgb(0 0 0 / 0.12);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px;
+  position: relative;
+}
+
+.emptyCard {
+  animation: empty-collection-enter 180ms ease-out both;
+  background: #fff;
+  border: 1px solid rgb(0 0 0 / 0.12);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px;
+  position: relative;
+}
+
+.emptyHeader {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.emptyHeader h2 {
+  flex: 1 1 auto;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 21px;
+  margin: 0;
+}
+
+.emptyKebab {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 100px;
+  color: #000;
+  cursor: pointer;
+  display: inline-flex;
+  height: 40px;
+  justify-content: center;
+  margin: -8px -8px 0 0;
+  padding: 0;
+  width: 40px;
+}
+
+.emptyKebab img {
+  height: 24px;
+  width: 24px;
+}
+
+.emptyBrandRow {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.emptyChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%;
+}
+
+.emptyChip {
+  align-items: center;
+  background: rgb(0 0 0 / 5%);
+  border-radius: 6px;
+  color: #000;
+  display: inline-flex;
+  font-size: 14px;
+  height: 32px;
+  line-height: 18px;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.emptyState {
+  background: #f7f7f8;
+  border-radius: 12px;
+  color: #000;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+
+.emptyState strong {
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.emptyState p {
+  color: rgb(0 0 0 / 0.58);
+  font-size: 14px;
+  line-height: 18px;
+  margin: 0;
+}
+
+.emptyEditAction {
+  background: #f4f4f5;
+  border: 0;
+  border-radius: 100px;
+  color: #000;
+  cursor: pointer;
+  font-family: "X5 Sans", Arial, sans-serif;
+  flex: 0 0 auto;
+  font-size: 14px;
+  height: 40px;
+  line-height: 18px;
+  padding: 0 20px;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.emptyMenu {
+  background: #fff;
+  border: 1px solid rgb(0 0 0 / 0.12);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  display: grid;
+  padding: 4px;
+  position: absolute;
+  right: 8px;
+  top: 44px;
+  width: 190px;
+  z-index: 3;
+}
+
+.emptyMenu button {
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: #000;
+  cursor: pointer;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 14px;
+  min-height: 40px;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.header {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.header h2 {
+  flex: 1 1 auto;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 21px;
+  margin: 0;
+}
+
+.kebab {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 100px;
+  color: #000;
+  cursor: pointer;
+  display: inline-flex;
+  height: 40px;
+  justify-content: center;
+  margin: -8px -8px 0 0;
+  padding: 0;
+  width: 40px;
+}
+
+.kebab img {
+  height: 24px;
+  width: 24px;
+}
+
+.brandRow {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.brandLogo {
+  height: 32px;
+  margin: 0;
+  width: 32px;
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%;
+}
+
+.chip {
+  align-items: center;
+  background: rgb(0 0 0 / 5%);
+  border-radius: 6px;
+  color: #000;
+  display: inline-flex;
+  font-size: 14px;
+  height: 32px;
+  line-height: 18px;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.apply {
+  background: #f4f4f5;
+  border: 0;
+  border-radius: 100px;
+  color: #000;
+  cursor: pointer;
+  font-family: "X5 Sans", Arial, sans-serif;
+  flex: 0 0 auto;
+  font-size: 14px;
+  height: 40px;
+  line-height: 18px;
+  padding: 0 20px;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.menu {
+  background: #fff;
+  border: 1px solid rgb(0 0 0 / 0.12);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  display: grid;
+  padding: 4px;
+  position: absolute;
+  right: 8px;
+  top: 44px;
+  width: 190px;
+  z-index: 3;
+}
+
+.menu button {
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: #000;
+  cursor: pointer;
+  font-family: "X5 Sans", Arial, sans-serif;
+  font-size: 14px;
+  min-height: 40px;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.kebab:focus-visible,
+.apply:focus-visible,
+.menu button:focus-visible {
+  outline: 2px solid #6446ff;
+  outline-offset: 2px;
+}
+
+.emptyKebab:focus-visible,
+.emptyEditAction:focus-visible,
+.emptyMenu button:focus-visible {
+  outline: 2px solid #6446ff;
+  outline-offset: 2px;
+}
+
+@keyframes empty-collection-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emptyCard {
+    animation: none;
+  }
+}

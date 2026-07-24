@@ -19,8 +19,15 @@
 | restrictions.summary | Короткий статус ограничений | restrictions | computed | Нет | - | service_offer_card |
 | restrictions.tags | Причины ограничений | restrictions | service.restrictionTags | Нет | - | service_offer_card |
 | service.primary_action | Основное действие | actions | computed | Нет | - | service_offer_card, my_service_card |
+| favorite.unavailable_status | Статус недоступной избранной услуги | markers | computed | Нет | - | service_offer_card |
+| favorite.remove_action | Удалить недоступную услугу из избранного | actions | computed | Нет | - | service_offer_card |
 | signing.document_status | Статус документов | document | signing.status | Да | Статус уточняется | signing_card |
 | signing.deadline | Срок подписания | deadline | signing.deadline | Нет | - | signing_card |
-| signing.primary_action | Действие с документами | actions | computed | Да | - | signing_card |
+| signing.primary_action | Действие с документами | actions | computed | Нет | - | signing_card |
 | collection.filters_summary | Состав подборки | filters_summary | collection.filters | Да | Без дополнительных фильтров | saved_collection_card |
 | collection.location | Территория подборки | location | collection.location | Нет | Любая территория | saved_collection_card |
+| collection.empty_status | Статус пустой сохранённой подборки | status | computed | Нет | - | saved_collection_card |
+| collection.empty_description | Пояснение пустой сохранённой подборки | status | computed | Нет | - | saved_collection_card |
+| collection.apply | Показать задания подборки | actions | computed | Нет | - | saved_collection_card |
+| collection.edit | Изменить подборку | actions | computed | Нет | - | saved_collection_card |
+| collection.delete | Удалить подборку | actions | computed | Нет | - | saved_collection_card |

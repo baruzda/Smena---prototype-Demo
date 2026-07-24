@@ -289,8 +289,9 @@
       "priority": 700,
       "exceptions": ["EXC-FAVORITES-001"],
       "supersedes": [],
-      "source": { "documents": ["README.md"], "decision": "DEC-001" },
-      "tests": ["SCN-FAVORITES-001", "SCN-FAVORITES-002"]
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-013" },
+      "relatedQuestion": "OPEN-QUESTION-012",
+      "tests": ["SCN-FAVORITES-001", "SCN-FAVORITES-002", "SCN-FAVORITES-007", "SCN-FAVORITES-009", "SCN-FAVORITES-010"]
     },
     {
       "id": "RULE-FAVORITES-002",
@@ -306,10 +307,10 @@
       "effect": { "action": "place" },
       "otherwise": { "action": "remove_from_surface" },
       "priority": 700,
-      "exceptions": [],
+      "exceptions": ["EXC-FAVORITES-002"],
       "supersedes": [],
-      "source": { "documents": ["README.md"], "decision": "DEC-001" },
-      "tests": ["SCN-FAVORITES-003", "SCN-FAVORITES-004"]
+      "source": { "documents": ["README.md", "AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-014" },
+      "tests": ["SCN-FAVORITES-003", "SCN-FAVORITES-004", "SCN-FAVORITES-011", "SCN-FAVORITES-012"]
     },
     {
       "id": "RULE-FAVORITES-003",
@@ -331,9 +332,83 @@
       "tests": ["SCN-FAVORITES-005", "SCN-FAVORITES-006"]
     },
     {
+      "id": "RULE-FAVORITES-004",
+      "name": "Недоступную избранную услугу можно только удалить",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["favorites"],
+        "templates": ["service_offer_card"]
+      },
+      "target": { "type": "content_element", "id": "favorite.remove_action" },
+      "when": {
+        "all": [
+          { "path": "service.isFavorite", "operator": "equals", "value": true },
+          { "path": "service.state", "operator": "in", "value": ["unavailable", "cancelled", "expired"] }
+        ]
+      },
+      "effect": { "action": "enable" },
+      "otherwise": { "action": "disable" },
+      "priority": 900,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-013" },
+      "relatedQuestion": "OPEN-QUESTION-013",
+      "tests": ["SCN-FAVORITES-002", "SCN-FAVORITES-008"]
+    },
+    {
+      "id": "RULE-FAVORITES-005",
+      "name": "Показать задания доступно только для непустой подборки",
+      "status": "active",
+      "scope": {
+        "entity": "saved_collection",
+        "surfaces": ["favorites"],
+        "templates": ["saved_collection_card"]
+      },
+      "target": { "type": "action", "id": "collection.apply" },
+      "when": {
+        "all": [
+          { "path": "collection.isSaved", "operator": "not_equals", "value": false },
+          { "path": "collection.resultCount", "operator": "greater_than", "value": 0 }
+        ]
+      },
+      "effect": { "action": "enable" },
+      "otherwise": { "action": "disable" },
+      "priority": 900,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-014" },
+      "relatedQuestion": "OPEN-QUESTION-027",
+      "tests": ["SCN-FAVORITES-011", "SCN-FAVORITES-012", "SCN-FAVORITES-013"]
+    },
+    {
+      "id": "RULE-FAVORITES-006",
+      "name": "Сохранённую подборку можно изменить",
+      "status": "active",
+      "scope": {
+        "entity": "saved_collection",
+        "surfaces": ["favorites"],
+        "templates": ["saved_collection_card"]
+      },
+      "target": { "type": "action", "id": "collection.edit" },
+      "when": {
+        "all": [
+          { "path": "collection.isSaved", "operator": "not_equals", "value": false }
+        ]
+      },
+      "effect": { "action": "enable" },
+      "otherwise": { "action": "disable" },
+      "priority": 900,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-014" },
+      "relatedQuestion": "OPEN-QUESTION-027",
+      "tests": ["SCN-FAVORITES-011", "SCN-FAVORITES-012", "SCN-FAVORITES-013"]
+    },
+    {
       "id": "RULE-SIGNING-001",
       "name": "Документы пользователя показываются в табе На подписание",
-      "status": "provisional",
+      "status": "active",
       "scope": {
         "entity": "service_offer",
         "surfaces": ["signing"],
@@ -351,9 +426,84 @@
       "priority": 800,
       "exceptions": ["EXC-SIGNING-001"],
       "supersedes": [],
-      "source": { "documents": ["README.md"], "decision": "DEC-001" },
-      "relatedQuestion": "OPEN-QUESTION-011",
-      "tests": ["SCN-SIGNING-001", "SCN-SIGNING-002"]
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-012" },
+      "tests": ["SCN-SIGNING-001", "SCN-SIGNING-002", "SCN-SIGNING-003", "SCN-SIGNING-004"]
+    },
+    {
+      "id": "RULE-SIGNING-002",
+      "name": "Документы на проверке остаются в табе Signing",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["signing"],
+        "templates": ["signing_card"]
+      },
+      "target": { "type": "placement", "surface": "signing", "section": "processing" },
+      "when": { "all": [{ "path": "signing.status", "operator": "equals", "value": "processing" }] },
+      "effect": { "action": "place" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 800,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-012" },
+      "tests": ["SCN-SIGNING-002", "SCN-SIGNING-005"]
+    },
+    {
+      "id": "RULE-SIGNING-003",
+      "name": "Подписанные документы остаются в табе Signing",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["signing"],
+        "templates": ["signing_card"]
+      },
+      "target": { "type": "placement", "surface": "signing", "section": "signed" },
+      "when": { "all": [{ "path": "signing.status", "operator": "equals", "value": "signed" }] },
+      "effect": { "action": "place" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 800,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-012" },
+      "tests": ["SCN-SIGNING-003", "SCN-SIGNING-006"]
+    },
+    {
+      "id": "RULE-SIGNING-004",
+      "name": "Отклонённые документы остаются в табе Signing",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["signing"],
+        "templates": ["signing_card"]
+      },
+      "target": { "type": "placement", "surface": "signing", "section": "rejected" },
+      "when": { "all": [{ "path": "signing.status", "operator": "equals", "value": "rejected" }] },
+      "effect": { "action": "place" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 800,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-012" },
+      "tests": ["SCN-SIGNING-004", "SCN-SIGNING-007"]
+    },
+    {
+      "id": "RULE-SIGNING-005",
+      "name": "Подписать можно только документ в ожидании пользователя",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["signing"],
+        "templates": ["signing_card"]
+      },
+      "target": { "type": "action", "id": "signing.primary_action" },
+      "when": { "all": [{ "path": "signing.status", "operator": "equals", "value": "waiting_user" }] },
+      "effect": { "action": "enable" },
+      "otherwise": { "action": "disable" },
+      "priority": 900,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md", "docs/card-rules/product-decision-brief.md"], "decision": "DEC-012" },
+      "tests": ["SCN-SIGNING-001", "SCN-SIGNING-002", "SCN-SIGNING-003", "SCN-SIGNING-004", "SCN-SIGNING-005"]
     },
     {
       "id": "RULE-CONTENT-001",
@@ -374,6 +524,31 @@
       "source": { "code": "src/App.jsx#TaskCard", "observation": "OBS-CONTENT-METRO-001" },
       "relatedQuestion": "OPEN-QUESTION-026",
       "tests": ["SCN-CONTENT-001", "SCN-CONTENT-002"]
+    },
+    {
+      "id": "RULE-HIDDEN-001",
+      "name": "Список скрытых услуг исключает фильтры и основную смену",
+      "status": "active",
+      "scope": {
+        "entity": "service_offer",
+        "surfaces": ["tasks"],
+        "templates": ["service_offer_card"]
+      },
+      "target": { "type": "placement", "surface": "tasks", "section": "other_offers" },
+      "when": {
+        "all": [
+          { "path": "service", "operator": "matches_filters", "reference": "catalog.appliedFilters" },
+          { "path": "service.dateTime", "operator": "not_overlaps", "reference": "user.primarySchedule" }
+        ]
+      },
+      "effect": { "action": "place" },
+      "otherwise": { "action": "remove_from_surface" },
+      "priority": 700,
+      "exceptions": [],
+      "supersedes": [],
+      "source": { "documents": ["AGENTS.md"], "decision": "DEC-009" },
+      "relatedQuestion": "OPEN-QUESTION-014",
+      "tests": ["SCN-CATALOG-003", "SCN-CATALOG-004"]
     },
     {
       "id": "RULE-ACTION-001",

@@ -1,0 +1,9 @@
+.icon {
+  background: var(--metro-color);
+  display: block;
+  flex: 0 0 14px;
+  height: 18px;
+  -webkit-mask: var(--metro-icon) center / contain no-repeat;
+  mask: var(--metro-icon) center / contain no-repeat;
+  width: 14px;
+}
