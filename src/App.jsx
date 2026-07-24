@@ -2891,7 +2891,7 @@ export function App() {
                   ref={scheduleSettingsButtonRef}
                   type="button"
                 >
-                  <img alt="" src={assetUrl("schedule_ic.svg")} />
+                  <img alt="" src={assetUrl("calendar_clock.svg")} />
                   {hasAvailabilityChangesFromDefault && <span aria-hidden="true" className="filter-settings-badge" />}
                 </button>
               </div>
@@ -3219,7 +3219,7 @@ export function App() {
             }}
             type="button"
           >
-            <img alt="" src={assetUrl("schedule_ic.svg")} />
+            <img alt="" src={assetUrl("calendar_clock.svg")} />
           </button>
         </div>
       )}

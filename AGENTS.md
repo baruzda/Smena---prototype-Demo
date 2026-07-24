@@ -18,6 +18,8 @@ Employee shift card decision: in the lower-left date block, show the calendar da
 
 Unavailable task card decision: show restriction tags above the task title, next to the brand mark; never place them below the payment and time details.
 
+Availability settings control decision: use the exported `calendar_clock.svg` icon in the schedule controls and availability onboarding target.
+
 ## UI architecture and change safety
 
 Every UI task has one scope: `LOCAL` (one component or screen), `SHARED` (a reusable component and every consumer), or `GLOBAL` (tokens, theme, typography, or global rules). If scope is absent, use `LOCAL`.
