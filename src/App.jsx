@@ -295,6 +295,10 @@ const DEMO_SERVICE_TITLES = [
   "дозревание бананов",
 ];
 
+const DEMO_TASKS_PER_DAY = 60;
+const DEMO_TASK_BRANDS = ["pyaterochka", "perekrestok", "chizhik", "vprok"];
+const DEFAULT_VISIBLE_DEMO_TASKS_PER_DAY = 6;
+
 const DEMO_STORES = [
   { id: "store-8", building: 8 },
   { id: "store-40", building: 40 },
@@ -2649,15 +2653,23 @@ export function App() {
       [15000, 47000],
       [52000, 72000],
     ];
+    const shiftPatterns = [
+      { duration: 4, startHour: 8 },
+      { duration: 4, startHour: 12 },
+      { duration: 4, startHour: 16 },
+      { duration: 7, startHour: 23 },
+      { duration: 7, startHour: 9 },
+    ];
     const locationAddress = effectiveSearchLocation.label.replace(/, Россия$/, "");
 
-    return distanceBands.map(([minDistance, maxDistance], taskIndex) => {
-      const seed = `${locationKey}-${day.date}-${taskIndex}`;
-      const source = taskTemplates[Math.floor(seededValue(`${seed}-template`) * taskTemplates.length)];
-      const store = DEMO_STORES[(dayIndex * distanceBands.length + taskIndex) % DEMO_STORES.length];
+    return Array.from({ length: DEMO_TASKS_PER_DAY }, (_, taskIndex) => {
+      const distanceBandIndex = taskIndex % distanceBands.length;
+      const [minDistance, maxDistance] = distanceBands[distanceBandIndex];
+      const seed = `${locationKey}-${day.id}-${taskIndex}`;
+      const source = taskTemplates[(dayIndex * DEMO_TASKS_PER_DAY + taskIndex) % taskTemplates.length];
+      const store = DEMO_STORES[taskIndex % DEMO_STORES.length];
       const rate = 210 + Math.floor(seededValue(`${seed}-rate`) * 151);
-      const startHour = taskIndex === 5 ? 23 : 8 + Math.floor(seededValue(`${seed}-start`) * 4);
-      const duration = 7 + Math.floor(seededValue(`${seed}-duration`) * 3);
+      const { duration, startHour } = shiftPatterns[taskIndex % shiftPatterns.length];
       const endHour = (startHour + duration) % 24;
       const distanceInMeters = minDistance + Math.floor(seededValue(`${seed}-distance`) * (maxDistance - minDistance));
       const hasBreak = duration > 8;
@@ -2665,18 +2677,19 @@ export function App() {
 
       return {
         ...source,
-        title: DEMO_SERVICE_TITLES[(dayIndex * distanceBands.length + taskIndex) % DEMO_SERVICE_TITLES.length],
+        brand: DEMO_TASK_BRANDS[taskIndex % DEMO_TASK_BRANDS.length],
+        title: DEMO_SERVICE_TITLES[(dayIndex * DEMO_TASKS_PER_DAY + taskIndex) % DEMO_SERVICE_TITLES.length],
         address: getStoreAddress(locationAddress, store),
         badge: undefined,
         breakInfo: hasBreak ? `${duration - 1} ч + 1 ч перерыв` : `${duration} ч без перерыва`,
         distance: distanceInMeters >= 1000 ? `${(distanceInMeters / 1000).toFixed(1).replace(".", ",")} км` : `${distanceInMeters} м`,
         hours: `${String(startHour).padStart(2, "0")}:00 – ${String(endHour).padStart(2, "0")}:00`,
-        id: `${day.date}-${catalogVersion}-${taskIndex}-${source.id}`,
+        id: `${day.id}-${catalogVersion}-${taskIndex}-${source.id}`,
         metro: undefined,
         payment: formatPayment(payment),
         recommendation: Math.floor(seededValue(`${seed}-recommendation`) * 100),
         rate: `${rate} ₽/час`,
-        mismatchHints: taskIndex === 2 ? ["Пересекается со сменой"] : [],
+        mismatchHints: taskIndex % 10 === 2 ? ["Пересекается со сменой"] : [],
         variant: taskIndex === 3 && [0, 1, 4].includes(dayIndex) ? "special" : undefined,
         storeId: store.id,
       };
@@ -2764,9 +2777,24 @@ export function App() {
         }))
       : [];
 
+    const hasCatalogFilters = appliedFilters.brands.length > 0
+      || Boolean(appliedFilters.minimumPayment)
+      || normalizeSelectedServices(appliedFilters.service).length > 0
+      || normalizeSelectedStores(appliedFilters.stores).length > 0
+      || Number.isFinite(searchRadius);
+    const shouldLimitDefaultFeed = onlyMatching
+      && !hasCatalogFilters
+      && selectedAvailabilityDates.length === 0
+      && selectedAvailabilityWeekdays.length === 0
+      && selectedAvailabilityDuration.length === 0;
+
+    const orderedVisibleTasks = getOrderedTasks(visibleTasks, sortBy, hasAppliedSort);
+
     return {
       hiddenTasks: getSortedTasks(hiddenTasks, sortBy),
-      visibleTasks: getOrderedTasks(visibleTasks, sortBy, hasAppliedSort),
+      visibleTasks: shouldLimitDefaultFeed
+        ? orderedVisibleTasks.slice(0, DEFAULT_VISIBLE_DEMO_TASKS_PER_DAY)
+        : orderedVisibleTasks,
     };
   }
 
